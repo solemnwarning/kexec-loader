@@ -1,4 +1,4 @@
-/* kexec-loader - Compile-time configuration
+/* kexec-loader - Console header
  * Copyright (C) 2007, Daniel Collins <solemnwarning@solemnwarning.net>
  * All rights reserved.
  *
@@ -28,11 +28,7 @@
  * EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
-#ifndef KEXEC_LOADER_CTCONFIG_H
-#define KEXEC_LOADER_CTCONFIG_H
+#ifndef KEXEC_LOADER_CONSOLE_H
+#define KEXEC_LOADER_CONSOLE_H
 
-#define CONFIG_FILE "/kexec-loader.conf"
-
-#define TTY_MAX 6
-
-#endif /* !KEXEC_LOADER_CTCONFIG_H */
+#endif /* !KEXEC_LOADER_CONSOLE_H */

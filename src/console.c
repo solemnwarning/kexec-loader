@@ -1,4 +1,4 @@
-/* kexec-loader - Compile-time configuration
+/* kexec-loader - Console functions
  * Copyright (C) 2007, Daniel Collins <solemnwarning@solemnwarning.net>
  * All rights reserved.
  *
@@ -28,11 +28,48 @@
  * EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
-#ifndef KEXEC_LOADER_CTCONFIG_H
-#define KEXEC_LOADER_CTCONFIG_H
+#include <stdio.h>
+#include <stdlib.h>
+#include <errno.h>
+#include <string.h>
 
-#define CONFIG_FILE "/kexec-loader.conf"
+#include "ctconfig.h"
+#include "main.h"
 
-#define TTY_MAX 6
+static FILE* tty_files[TTY_MAX+1] = {NULL};
 
-#endif /* !KEXEC_LOADER_CTCONFIG_H */
+/* Open a /dev/ttyN device */
+static void tty_open(int ttyn) {
+	if(ttyn > TTY_MAX) {
+		fatal("ttyn = %d", ttyn);
+	}
+	
+	char path[32] = {'\0'};
+	sprintf(path, "/dev/tty%d", ttyn);
+	
+	while(tty_files[ttyn] != NULL) {
+		tty_files[ttyn] = fopen(path, "w");
+		
+		if(tty_files[ttyn] == NULL && errno != EINTR) {
+			fatal("Can't open tty%d: %s", ttyn, strerror(errno));
+		}
+	}
+}
+
+/* Close a /dev/ttyN device */
+static void tty_close(int ttyn) {
+	if(ttyn > TTY_MAX) {
+		fatal("ttyn = %d", ttyn);
+	}
+	if(tty_files[ttyn] == NULL) {
+		return;
+	}
+	
+	while(fclose(tty_files[ttyn]) != 0) {
+		if(errno == EINTR) {
+			continue;
+		}
+		fatal("Can't close tty%d: %s", ttyn, strerror(errno));
+	}
+	tty_files[ttyn] = NULL;
+}
