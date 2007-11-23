@@ -1,4 +1,4 @@
-/* kexec-loader - Mount-related functions
+/* kexec-loader - Main source
  * Copyright (C) 2007, Daniel Collins <solemnwarning@solemnwarning.net>
  * All rights reserved.
  *
@@ -28,24 +28,19 @@
  * EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
-#include <sys/types.h>
-#include <sys/stat.h>
-#include <unistd.h>
-#include <sys/mount.h>
-#include <errno.h>
-#include <string.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <stdarg.h>
 
-#include "mount.h"
-#include "main.h"
-
-/* Mount the /proc filesystem if not already mounted */
-void mount_proc(void) {
-	struct stat mounts;
-	if(stat("/proc/mounts", &mounts) == 0) {
-		return;
-	}
+/* Fatal error encountered, abort! */
+void fatal_r(char const* file, unsigned int line, char const* fmt, ...) {
+	va_list argv;
+	va_start(argv, fmt);
 	
-	if(mount("proc", "/proc", "proc", 0, NULL) == -1) {
-		fatal("Can't mount /proc filesystem: %s", strerror(errno));
-	}
+	fprintf(stderr, "fatal() called at %s:%u!\n", file, line);
+	vfprintf(stderr, fmt, argv);
+	
+	va_end(argv);
+	
+	exit(1);
 }
