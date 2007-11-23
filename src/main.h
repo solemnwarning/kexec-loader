@@ -34,4 +34,7 @@
 #define fatal(...) fatal_r(__FILE__, __LINE__, __VA_ARGS__)
 void fatal_r(char const* file, unsigned int line, char const* fmt, ...);
 
+#define debug(...) debug_r(__FILE__, __LINE__, __VA_ARGS__)
+void debug_r(char const* file, unsigned int line, char const* fmt, ...);
+
 #endif /* !KEXEC_LOADER_MAIN_H */

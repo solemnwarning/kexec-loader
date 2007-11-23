@@ -1,4 +1,4 @@
-/* kexec-loader - Main source
+/* kexec-loader - Configuration functions
  * Copyright (C) 2007, Daniel Collins <solemnwarning@solemnwarning.net>
  * All rights reserved.
  *
@@ -30,36 +30,40 @@
 
 #include <stdio.h>
 #include <stdlib.h>
-#include <stdarg.h>
+#include <errno.h>
+#include <string.h>
 
-#include "mount.h"
+#include "config.h"
+#include "ctconfig.h"
+#include "main.h"
 
-/* Fatal error encountered, abort! */
-void fatal_r(char const* file, unsigned int line, char const* fmt, ...) {
-	va_list argv;
-	va_start(argv, fmt);
-	
-	fprintf(stderr, "fatal() called at %s:%u!\n", file, line);
-	vfprintf(stderr, fmt, argv);
-	
-	va_end(argv);
-	
-	exit(1);
+static FILE* cfg_handle = NULL;
+
+/* Open configuration file */
+static void config_open(void) {
+	while(cfg_handle == NULL) {
+		cfg_handle = fopen(CONFIG_FILE, "r");
+		
+		if(cfg_handle == NULL && errno != EINTR) {
+			fatal("Can't open configuration file: %s", strerror(errno));
+		}
+	}
 }
 
-/* Write debug message to console */
-void debug_r(char const* file, unsigned int line, char const* fmt, ...) {
-	char buf[256] = {'\0'};
+/* Close configuration file */
+static void config_close(void) {
+	if(cfg_handle == NULL) {
+		return;
+	}
 	
-	va_list argv;
-	va_start(argv, fmt);
-	vsnprintf(buf, 255, fmt, argv);
-	va_end(argv);
-	
-	printf("debug(%s) at %s:%u\n", buf, file, line);
-}
-
-int main(int argc, char** argv) {
-	mount_proc();
-	return(0);
+	while(fclose(cfg_handle) != 0) {
+		if(errno == EINTR) {
+			continue;
+		}
+		
+		debug("Can't close config file: %s", strerror(errno));
+		debug("Dropping handle %p!", cfg_handle);
+		break;
+	}
+	cfg_handle = NULL;
 }

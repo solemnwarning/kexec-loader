@@ -1,4 +1,4 @@
-/* kexec-loader - Main source
+/* kexec-loader - Configuration header
  * Copyright (C) 2007, Daniel Collins <solemnwarning@solemnwarning.net>
  * All rights reserved.
  *
@@ -28,38 +28,7 @@
  * EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
-#include <stdio.h>
-#include <stdlib.h>
-#include <stdarg.h>
+#ifndef KEXEC_LOADER_CONF_H
+#define KEXEC_LOADER_CONF_H
 
-#include "mount.h"
-
-/* Fatal error encountered, abort! */
-void fatal_r(char const* file, unsigned int line, char const* fmt, ...) {
-	va_list argv;
-	va_start(argv, fmt);
-	
-	fprintf(stderr, "fatal() called at %s:%u!\n", file, line);
-	vfprintf(stderr, fmt, argv);
-	
-	va_end(argv);
-	
-	exit(1);
-}
-
-/* Write debug message to console */
-void debug_r(char const* file, unsigned int line, char const* fmt, ...) {
-	char buf[256] = {'\0'};
-	
-	va_list argv;
-	va_start(argv, fmt);
-	vsnprintf(buf, 255, fmt, argv);
-	va_end(argv);
-	
-	printf("debug(%s) at %s:%u\n", buf, file, line);
-}
-
-int main(int argc, char** argv) {
-	mount_proc();
-	return(0);
-}
+#endif /* !KEXEC_LOADER_CONF_H */
