@@ -32,6 +32,8 @@
 #include <stdlib.h>
 #include <stdarg.h>
 
+#include "mount.h"
+
 /* Fatal error encountered, abort! */
 void fatal_r(char const* file, unsigned int line, char const* fmt, ...) {
 	va_list argv;
@@ -43,4 +45,9 @@ void fatal_r(char const* file, unsigned int line, char const* fmt, ...) {
 	va_end(argv);
 	
 	exit(1);
+}
+
+int main(int argc, char** argv) {
+	mount_proc();
+	return(0);
 }
