@@ -35,4 +35,7 @@
 
 #define TTY_MAX 6
 
+#define DEBUG_TTYN 2
+#define DEBUG_FILE "/kexec-loader.log"
+
 #endif /* !KEXEC_LOADER_CTCONFIG_H */

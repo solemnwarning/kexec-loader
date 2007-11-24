@@ -31,6 +31,9 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdarg.h>
+#include <errno.h>
+#include <string.h>
+#include <unistd.h>
 
 #include "mount.h"
 
@@ -49,14 +52,36 @@ void fatal_r(char const* file, unsigned int line, char const* fmt, ...) {
 
 /* Write debug message to console */
 void debug_r(char const* file, unsigned int line, char const* fmt, ...) {
+	#if defined(DEBUG_TTYN) || defined(DEBUG_FILE)
 	char buf[256] = {'\0'};
+	char obuf[256] = {'\0'};
 	
 	va_list argv;
 	va_start(argv, fmt);
 	vsnprintf(buf, 255, fmt, argv);
 	va_end(argv);
 	
-	printf("debug(%s) at %s:%u\n", buf, file, line);
+	snprintf(obuf, 255, "debug(%s) at %s:%u\n", buf, file, line);
+	#endif
+	
+	#ifdef DEBUG_TTYN
+	tty_write(DEBUG_TTYN, obuf, strlen(obuf));
+	#endif
+	
+	#ifdef DEBUG_FILE
+	static FILE* debug_fh = NULL;
+	while(debug_fh == NULL) {
+		debug_fh = fopen(DEBUG_FILE, "a");
+		
+		if(debug_fh == NULL && errno != EINTR) {
+			return;
+		}
+	}
+	
+	fprintf(debug_fh, "%s", obuf);
+	fsync(fileno(debug_fh));
+	sync();
+	#endif
 }
 
 int main(int argc, char** argv) {
