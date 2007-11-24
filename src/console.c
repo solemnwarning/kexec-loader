@@ -73,3 +73,19 @@ static void tty_close(int ttyn) {
 	}
 	tty_files[ttyn] = NULL;
 }
+
+/* Write data to a /dev/ttyN device */
+void tty_write(int ttyn, unsigned char* data, size_t size) {
+	tty_open(ttyn);
+	
+	size_t bytes = 0;
+	size_t retval = 0;
+	while(bytes < size) {
+		retval = fwrite(data+bytes, 1, size-bytes, tty_files[ttyn]);
+		if(ferror(tty_files[ttyn])) {
+			fatal("Can't write to tty%d: %s", ttyn, strerror(errno));
+		}
+		
+		bytes += retval;
+	}
+}
