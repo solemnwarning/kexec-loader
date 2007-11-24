@@ -50,7 +50,9 @@ void fatal_r(char const* file, unsigned int line, char const* fmt, ...) {
 	
 	va_end(argv);
 	
-	exit(1);
+	while(1) {
+		sleep(9999);
+	}
 }
 
 /* Write debug message to console */
