@@ -36,6 +36,9 @@
 #include <unistd.h>
 
 #include "mount.h"
+#include "main.h"
+#include "ctconfig.h"
+#include "console.h"
 
 /* Fatal error encountered, abort! */
 void fatal_r(char const* file, unsigned int line, char const* fmt, ...) {

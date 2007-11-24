@@ -75,7 +75,7 @@ static void tty_close(int ttyn) {
 }
 
 /* Write data to a /dev/ttyN device */
-void tty_write(int ttyn, unsigned char* data, size_t size) {
+void tty_write(int ttyn, char* data, size_t size) {
 	tty_open(ttyn);
 	
 	size_t bytes = 0;
