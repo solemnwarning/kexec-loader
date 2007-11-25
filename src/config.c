@@ -37,6 +37,7 @@
 #include "ctconfig.h"
 #include "main.h"
 #include "debug.h"
+#include "misc.h"
 
 static FILE* cfg_handle = NULL;
 
@@ -67,4 +68,23 @@ static void config_close(void) {
 		break;
 	}
 	cfg_handle = NULL;
+}
+
+/* Read next line from configuration file */
+static char* config_readline(void) {
+	config_open();
+	
+	char* line = allocate(1024);
+	if(fgets(line, 1024, cfg_handle) == NULL) {
+		if(feof(cfg_handle)) {
+			config_close();
+			
+			free(line);
+			return(NULL);
+		}
+		
+		fatal("Can't read config file: %s", strerror(errno));
+	}
+	
+	return(line);
 }
