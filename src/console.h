@@ -31,6 +31,6 @@
 #ifndef KEXEC_LOADER_CONSOLE_H
 #define KEXEC_LOADER_CONSOLE_H
 
-void tty_write(int ttyn, char* data, size_t size);
+void console_init(void);
 
 #endif /* !KEXEC_LOADER_CONSOLE_H */

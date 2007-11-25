@@ -32,60 +32,32 @@
 #include <stdlib.h>
 #include <errno.h>
 #include <string.h>
+#include <termios.h>
+#include <unistd.h>
 
 #include "ctconfig.h"
 #include "main.h"
 
-static FILE* tty_files[TTY_MAX+1] = {NULL};
+static FILE* debug_tty = NULL;
 
-/* Open a /dev/ttyN device */
-static void tty_open(int ttyn) {
-	if(ttyn > TTY_MAX) {
-		fatal("ttyn = %d", ttyn);
-	}
-	
-	char path[32] = {'\0'};
-	sprintf(path, "/dev/tty%d", ttyn);
-	
-	while(tty_files[ttyn] != NULL) {
-		tty_files[ttyn] = fopen(path, "w");
-		
-		if(tty_files[ttyn] == NULL && errno != EINTR) {
-			fatal("Can't open tty%d: %s", ttyn, strerror(errno));
-		}
-	}
-}
-
-/* Close a /dev/ttyN device */
-static void tty_close(int ttyn) {
-	if(ttyn > TTY_MAX) {
-		fatal("ttyn = %d", ttyn);
-	}
-	if(tty_files[ttyn] == NULL) {
-		return;
-	}
-	
-	while(fclose(tty_files[ttyn]) != 0) {
+/* Initialize console(s) */
+void console_init(void) {
+	struct termios attribs;
+	while(tcgetattr(fileno(stdin), &attribs) == -1) {
 		if(errno == EINTR) {
 			continue;
 		}
-		fatal("Can't close tty%d: %s", ttyn, strerror(errno));
+		
+		fatal("Can't get stdin attributes: %s", strerror(errno));
 	}
-	tty_files[ttyn] = NULL;
-}
-
-/* Write data to a /dev/ttyN device */
-void tty_write(int ttyn, char* data, size_t size) {
-	tty_open(ttyn);
 	
-	size_t bytes = 0;
-	size_t retval = 0;
-	while(bytes < size) {
-		retval = fwrite(data+bytes, 1, size-bytes, tty_files[ttyn]);
-		if(ferror(tty_files[ttyn])) {
-			fatal("Can't write to tty%d: %s", ttyn, strerror(errno));
+	attribs.c_lflag &= ~ICANON;
+	
+	while(tcsetattr(fileno(stdin), TCSANOW, &attribs) == -1) {
+		if(errno == EINTR) {
+			continue;
 		}
 		
-		bytes += retval;
+		fatal("Can't set stdin attributes: %s", strerror(errno));
 	}
 }

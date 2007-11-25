@@ -36,6 +36,7 @@
 #include "config.h"
 #include "ctconfig.h"
 #include "main.h"
+#include "debug.h"
 
 static FILE* cfg_handle = NULL;
 
