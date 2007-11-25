@@ -58,4 +58,11 @@ void console_init(void) {
 		
 		fatal("Can't set stdin attributes: %s", strerror(errno));
 	}
+	
+	if(setvbuf(stdout, NULL, _IONBF, 0) != 0) {
+		fatal("Can't set stdout buffer: %s", strerror(errno));
+	}
+	if(setvbuf(stderr, NULL, _IONBF, 0) != 0) {
+		fatal("Can't set stderr buffer: %s", strerror(errno));
+	}
 }
