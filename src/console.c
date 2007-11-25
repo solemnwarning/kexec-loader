@@ -38,8 +38,6 @@
 #include "ctconfig.h"
 #include "main.h"
 
-static FILE* debug_tty = NULL;
-
 /* Initialize console(s) */
 void console_init(void) {
 	struct termios attribs;
