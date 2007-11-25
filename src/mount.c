@@ -49,3 +49,8 @@ void mount_proc(void) {
 		fatal("Can't mount /proc filesystem: %s", strerror(errno));
 	}
 }
+
+/* Unmount all filesystems */
+void unmount_all(void) {
+	
+}

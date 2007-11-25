@@ -58,5 +58,6 @@ void fatal_r(char const* file, unsigned int line, char const* fmt, ...) {
 int main(int argc, char** argv) {
 	console_init();
 	mount_proc();
+	unmount_all();
 	return(0);
 }
