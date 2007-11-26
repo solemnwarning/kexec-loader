@@ -36,7 +36,7 @@
 #include <unistd.h>
 
 #include "ctconfig.h"
-#include "main.h"
+#include "misc.h"
 
 /* Initialize console(s) */
 void console_init(void) {

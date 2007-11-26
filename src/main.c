@@ -30,30 +30,13 @@
 
 #include <stdio.h>
 #include <stdlib.h>
-#include <stdarg.h>
 #include <errno.h>
 #include <string.h>
-#include <unistd.h>
 
 #include "mount.h"
 #include "main.h"
 #include "ctconfig.h"
 #include "console.h"
-
-/* Fatal error encountered, abort! */
-void fatal_r(char const* file, unsigned int line, char const* fmt, ...) {
-	va_list argv;
-	va_start(argv, fmt);
-	
-	fprintf(stderr, "fatal() called at %s:%u!\n", file, line);
-	vfprintf(stderr, fmt, argv);
-	
-	va_end(argv);
-	
-	while(1) {
-		sleep(9999);
-	}
-}
 
 int main(int argc, char** argv) {
 	console_init();

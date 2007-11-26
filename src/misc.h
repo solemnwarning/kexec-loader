@@ -34,6 +34,9 @@
 #define allocate(size) allocate_r(__FILE__, __LINE__, size)
 void* allocate_r(char const* file, unsigned int line, size_t size);
 
+#define fatal(...) fatal_r(__FILE__, __LINE__, __VA_ARGS__)
+void fatal_r(char const* file, unsigned int line, char const* fmt, ...);
+
 char* strclone(char const* string, size_t maxlen);
 
 #endif /* !KEXEC_LOADER_MISC_H */

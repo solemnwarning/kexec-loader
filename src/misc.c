@@ -31,6 +31,9 @@
 #include <stdlib.h>
 #include <errno.h>
 #include <string.h>
+#include <stdio.h>
+#include <stdarg.h>
+#include <unistd.h>
 
 #include "misc.h"
 #include "main.h"
@@ -44,6 +47,22 @@ void* allocate_r(char const* file, unsigned int line, size_t size) {
 	
 	memset(ptr, 0, size);
 	return(ptr);
+}
+
+
+/* Fatal error encountered, abort! */
+void fatal_r(char const* file, unsigned int line, char const* fmt, ...) {
+	va_list argv;
+	va_start(argv, fmt);
+	
+	fprintf(stderr, "fatal() called at %s:%u!\n", file, line);
+	vfprintf(stderr, fmt, argv);
+	
+	va_end(argv);
+	
+	while(1) {
+		sleep(9999);
+	}
 }
 
 /* Copy a string */

@@ -39,13 +39,13 @@ kexec-loader: main.o mount.o config.o console.o debug.o misc.o
 main.o: main.c main.h
 	$(CC) $(CFLAGS) $(INCLUDES) -c -o main.o main.c
 
-mount.o: mount.c mount.h main.o
+mount.o: mount.c mount.h misc.o
 	$(CC) $(CFLAGS) $(INCLUDES) -c -o mount.o mount.c
 
-config.o: config.c config.h
+config.o: config.c config.h misc.o
 	$(CC) $(CFLAGS) $(INCLUDES) -c -o config.o config.c
 
-console.o: console.c console.h
+console.o: console.c console.h misc.o
 	$(CC) $(CFLAGS) $(INCLUDES) -c -o console.o console.c
 
 debug.o: debug.c debug.h

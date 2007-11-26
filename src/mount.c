@@ -36,7 +36,7 @@
 #include <string.h>
 
 #include "mount.h"
-#include "main.h"
+#include "misc.h"
 
 /* Mount the /proc filesystem if not already mounted */
 void mount_proc(void) {

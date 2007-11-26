@@ -31,7 +31,4 @@
 #ifndef KEXEC_LOADER_MAIN_H
 #define KEXEC_LOADER_MAIN_H
 
-#define fatal(...) fatal_r(__FILE__, __LINE__, __VA_ARGS__)
-void fatal_r(char const* file, unsigned int line, char const* fmt, ...);
-
 #endif /* !KEXEC_LOADER_MAIN_H */
