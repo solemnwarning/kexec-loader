@@ -68,7 +68,7 @@ void fatal_r(char const* file, unsigned int line, char const* fmt, ...) {
 /* Copy a string */
 char* strclone(char const* string, size_t maxlen) {
 	size_t len = 0;
-	while(len < maxlen || maxlen == 0) {
+	while(len < maxlen) {
 		if(string[len] == '\0') {
 			break;
 		}

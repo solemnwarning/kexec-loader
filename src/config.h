@@ -31,4 +31,6 @@
 #ifndef KEXEC_LOADER_CONF_H
 #define KEXEC_LOADER_CONF_H
 
+void config_load(void);
+
 #endif /* !KEXEC_LOADER_CONF_H */

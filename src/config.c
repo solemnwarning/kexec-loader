@@ -86,5 +86,72 @@ static char* config_readline(void) {
 		fatal("Can't read config file: %s", strerror(errno));
 	}
 	
+	/* Remove newline and carridge return characters from the end of the
+	 * line.
+	*/
+	size_t end = strlen(line)-1;
+	while(line[end] == '\n' || line[end] == '\r') {
+		line[end] = '\0';
+		line--;
+	}
+	
 	return(line);
+}
+
+/* Load configuration from file */
+void config_load(void) {
+	char* line = NULL;
+	size_t len = 0;
+	size_t count = 0;
+	
+	char* name = NULL;
+	char* value = NULL;
+	
+	while((line = config_readline()) != NULL) {
+		len = strlen(line);
+		value = NULL;
+		
+		/* Remove leading spaces/tabs from line */
+		count = 0;
+		while(line[count] == ' ' || line[count] == '\t') {
+			count++;
+		}
+		if(count > 0) {
+			memmove(line, line+count, (len+1)-count);
+			len -= count;
+		}
+		
+		/* Skip line if it's a comment */
+		if(line[0] == '#') {
+			free(line);
+			continue;
+		}
+		
+		/* Copy name from line and set value pointer to line */
+		count = 0;
+		while(line[count] != ' ' && line[count] != '\t' && line[count] != '=') {
+			count++;
+		}
+		name = strclone(line, count);
+		value = line+count;
+		
+		/* Remove leading spaces/tabs/equals signs from value */
+		count = 0;
+		while(value[count] == ' ' || value[count] == '\t' || value[count] != '=') {
+			count++;
+		}
+		if(count > 0) {
+			memmove(value, value+count, (strlen(value)+1)-count);
+		}
+		
+		/* Remove trailing spaces/tabs from value */
+		count = strlen(value)-1;
+		while(value[count] == ' ' || value[count] == '\t') {
+			value[count] = '\0';
+			count--;
+		}
+		
+		free(name);
+		free(line);
+	}
 }
