@@ -30,6 +30,56 @@
 
 #ifndef KEXEC_LOADER_CONF_H
 #define KEXEC_LOADER_CONF_H
+#include <time.h>
+
+#define MOUNT_DEFAULTS(ptr) \
+	(ptr)->device = NULL;\
+	(ptr)->mpoint = NULL;\
+	(ptr)->fstype = NULL;\
+	(ptr)->next = NULL;
+
+#define MOUNT_DEFAULTS_DEFINE {NULL,NULL,NULL,NULL}
+
+struct kl_mount {
+	char* device;
+	char* mpoint;
+	char* fstype;
+	
+	struct kl_mount* next;
+};
+
+#define TARGET_DEFAULTS(ptr) \
+	(ptr)->name = NULL;\
+	(ptr)->flags = 0;\
+	(ptr)->kernel = NULL;\
+	(ptr)->append = NULL;\
+	(ptr)->initrd = NULL;\
+	(ptr)->mounts = NULL;\
+	(ptr)->next = NULL;
+
+#define TARGET_DEFAULTS_DEFINE {NULL,0,NULL,NULL,NULL,NULL,NULL}
+
+struct kl_target {
+	char* name;
+	int flags;
+	
+	char* kernel;
+	char* append;
+	char* initrd;
+	
+	struct kl_mount* mounts;
+	struct kl_target* next;
+};
+
+#define CONFIG_DEFAULTS_DEFINE {0,NULL};
+
+struct kl_config {
+	time_t timeout;
+	
+	struct kl_target* targets;
+};
+
+extern struct kl_config config;
 
 void config_load(void);
 

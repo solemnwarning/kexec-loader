@@ -39,6 +39,8 @@
 #include "debug.h"
 #include "misc.h"
 
+struct kl_config config = CONFIG_DEFAULTS_DEFINE;
+
 static FILE* cfg_handle = NULL;
 
 /* Open configuration file */
