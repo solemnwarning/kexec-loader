@@ -129,15 +129,15 @@ void config_load(void) {
 		
 		/* Copy name from line and set value pointer to line */
 		count = 0;
-		while(line[count] != ' ' && line[count] != '\t' && line[count] != '=') {
+		while(line[count] != ' ' && line[count] != '\t') {
 			count++;
 		}
 		name = strclone(line, count);
 		value = line+count;
 		
-		/* Remove leading spaces/tabs/equals signs from value */
+		/* Remove leading spaces/tabs from value */
 		count = 0;
-		while(value[count] == ' ' || value[count] == '\t' || value[count] != '=') {
+		while(value[count] == ' ' || value[count] == '\t') {
 			count++;
 		}
 		if(count > 0) {
