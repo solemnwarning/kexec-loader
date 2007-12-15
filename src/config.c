@@ -153,6 +153,10 @@ void config_load(void) {
 			count--;
 		}
 		
+		if(str_compare(name, "timeout", STR_NOCASE)) {
+			config.timeout = strtoul(value, NULL, 10);
+		}
+		
 		free(name);
 		free(line);
 	}

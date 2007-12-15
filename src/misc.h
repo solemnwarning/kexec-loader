@@ -31,6 +31,13 @@
 #ifndef KEXEC_LOADER_MISC_H
 #define KEXEC_LOADER_MISC_H
 
+/* String comparison flags */
+#define STR_NOCASE	1	/* Do case-insensitive comparision */
+#define STR_MAXLEN	2	/* Don't compare more then ... bytes */
+#define STR_WILDCARDS	4	/* Parse wildcard characters * and ? */
+#define STR_WILDCARD1	8	/* Parse wildcard characters * and ? in str1 */
+#define STR_WILDCARD2	16	/* Parse wildcard characters * and ? in str2 */
+
 #define allocate(size) allocate_r(__FILE__, __LINE__, size)
 void* allocate_r(char const* file, unsigned int line, size_t size);
 
@@ -38,5 +45,6 @@ void* allocate_r(char const* file, unsigned int line, size_t size);
 void fatal_r(char const* file, unsigned int line, char const* fmt, ...);
 
 char* strclone(char const* string, size_t maxlen);
+int str_compare(char const*, char const*, int, ...);
 
 #endif /* !KEXEC_LOADER_MISC_H */

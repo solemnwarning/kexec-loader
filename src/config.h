@@ -74,7 +74,7 @@ struct kl_target {
 #define CONFIG_DEFAULTS_DEFINE {0,NULL};
 
 struct kl_config {
-	time_t timeout;
+	unsigned int timeout;
 	
 	struct kl_target* targets;
 };
