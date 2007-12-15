@@ -27,8 +27,8 @@
 # NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE,
 # EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-export CC=gcc
-export CFLAGS=-Wall
+export CC=i386-linux-uclibc-gcc
+export CFLAGS=-Wall -static
 export INCLUDES=
 export LIBS=
 

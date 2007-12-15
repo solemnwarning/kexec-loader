@@ -105,11 +105,15 @@ void config_load(void) {
 	char* line = NULL;
 	size_t len = 0;
 	size_t count = 0;
+	size_t lnum = 0;
 	
 	char* name = NULL;
 	char* value = NULL;
 	
+	int validcfg = 0;
+	
 	while((line = config_readline()) != NULL) {
+		lnum++;
 		len = strlen(line);
 		value = NULL;
 		
@@ -153,8 +157,15 @@ void config_load(void) {
 			count--;
 		}
 		
+		validcfg = 0;
 		if(str_compare(name, "timeout", STR_NOCASE)) {
 			config.timeout = strtoul(value, NULL, 10);
+			debug("timeout='%s' (%u)", value, config.timeout);
+			
+			validcfg = 1;
+		}
+		if(!validcfg) {
+			printf("Unknown configuration variable '%s' at line %u\n", name, lnum);
 		}
 		
 		free(name);
