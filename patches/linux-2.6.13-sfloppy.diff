@@ -1,0 +1,15 @@
+diff -ru linux-2.6.13.orig/init/do_mounts.c linux-2.6.13/init/do_mounts.c
+--- linux-2.6.13.orig/init/do_mounts.c	2005-08-29 00:41:01.000000000 +0100
++++ linux-2.6.13/init/do_mounts.c	2007-11-19 23:30:13.000000000 +0000
+@@ -345,6 +345,11 @@
+ 		sys_ioctl(fd, FDEJECT, 0);
+ 		sys_close(fd);
+ 	}
++	
++	if(strcmp(fmt, "root floppy") == 0) {
++		return;
++	}
++	
+ 	printk(KERN_NOTICE "VFS: Insert %s and press ENTER\n", buf);
+ 	fd = sys_open("/dev/console", O_RDWR, 0);
+ 	if (fd >= 0) {
