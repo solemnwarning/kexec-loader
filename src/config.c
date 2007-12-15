@@ -34,7 +34,7 @@
 #include <string.h>
 
 #include "config.h"
-#include "ctconfig.h"
+#include "../config.h"
 #include "main.h"
 #include "debug.h"
 #include "misc.h"

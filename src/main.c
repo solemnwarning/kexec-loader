@@ -35,7 +35,7 @@
 
 #include "mount.h"
 #include "main.h"
-#include "ctconfig.h"
+#include "../config.h"
 #include "console.h"
 
 int main(int argc, char** argv) {

@@ -35,7 +35,7 @@
 #include <termios.h>
 #include <unistd.h>
 
-#include "ctconfig.h"
+#include "../config.h"
 #include "misc.h"
 
 /* Initialize console(s) */
