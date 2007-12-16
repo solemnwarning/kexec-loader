@@ -1,6 +1,5 @@
-diff -ru linux-2.6.13.orig/init/do_mounts.c linux-2.6.13/init/do_mounts.c
 --- linux-2.6.13.orig/init/do_mounts.c	2005-08-29 00:41:01.000000000 +0100
-+++ linux-2.6.13/init/do_mounts.c	2007-11-19 23:30:13.000000000 +0000
++++ linux-2.6.13/init/do_mounts.c	2007-12-15 23:39:53.000000000 +0000
 @@ -345,6 +345,11 @@
  		sys_ioctl(fd, FDEJECT, 0);
  		sys_close(fd);
