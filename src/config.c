@@ -127,8 +127,8 @@ void config_load(void) {
 			len -= count;
 		}
 		
-		/* Skip line if it's a comment */
-		if(line[0] == '#') {
+		/* Skip line if it's a comment, or empty */
+		if(line[0] == '#' || line[0] == '\0') {
 			free(line);
 			continue;
 		}
