@@ -39,6 +39,7 @@
 #include "../config.h"
 #include "console.h"
 #include "config.h"
+#include "mkdev.h"
 
 int main(int argc, char** argv) {
 	console_init();
@@ -46,6 +47,7 @@ int main(int argc, char** argv) {
 	printf("\nWelcome to kexec-loader " VERSION "!\n");
 	printf("Copyright (C) 2007 Daniel Collins\n");
 	
+	create_devices();
 	mount_proc();
 	config_load();
 	

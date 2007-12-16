@@ -1,4 +1,4 @@
-/* kexec-loader - Compile-time configuration
+/* kexec-loader - Create devices in device list - header
  * Copyright (C) 2007, Daniel Collins <solemnwarning@solemnwarning.net>
  * All rights reserved.
  *
@@ -28,15 +28,9 @@
  * EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
-#ifndef KEXEC_LOADER_CTCONFIG_H
-#define KEXEC_LOADER_CTCONFIG_H
+#ifndef KEXEC_LOADER_MKDEV_H
+#define KEXEC_LOADER_MKDEV_H
 
-#define VERSION "v1.0 alpha"
+void create_devices(void);
 
-#define CONFIG_FILE "/etc/kexec-loader.conf"
-#define DEVICES_FILE "/etc/devices.conf"
-
-#define DEBUG_CONSOLE "/dev/tty2"
-#define DEBUG_FILE "/kexec-loader.log"
-
-#endif /* !KEXEC_LOADER_CTCONFIG_H */
+#endif /* !KEXEC_LOADER_MKDEV_H */
