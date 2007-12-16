@@ -1,5 +1,5 @@
 --- linux-2.6.13.orig/init/main.c	2005-08-29 00:41:01.000000000 +0100
-+++ linux-2.6.13/init/main.c	2007-12-16 18:16:36.000000000 +0000
++++ linux-2.6.13/init/main.c	2007-12-16 19:12:38.000000000 +0000
 @@ -640,6 +640,25 @@
  #endif
  }
@@ -26,13 +26,16 @@
  static int init(void * unused)
  {
  	lock_kernel();
-@@ -695,8 +714,7 @@
+@@ -695,11 +714,7 @@
  	system_state = SYSTEM_RUNNING;
  	numa_default_policy();
  
 -	if (sys_open((const char __user *) "/dev/console", O_RDWR, 0) < 0)
 -		printk(KERN_WARNING "Warning: unable to open an initial console.\n");
+-
+-	(void) sys_dup(0);
+-	(void) sys_dup(0);
 +	open_console();
- 
- 	(void) sys_dup(0);
- 	(void) sys_dup(0);
+ 	
+ 	/*
+ 	 * We try each of these until one succeeds.
