@@ -31,6 +31,8 @@
 #ifndef KEXEC_LOADER_CTCONFIG_H
 #define KEXEC_LOADER_CTCONFIG_H
 
+#define VERSION "v1.0 alpha"
+
 #define CONFIG_FILE "/kexec-loader.conf"
 
 #define DEBUG_CONSOLE "/dev/tty2"

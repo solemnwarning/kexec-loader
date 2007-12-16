@@ -32,6 +32,7 @@
 #include <stdlib.h>
 #include <errno.h>
 #include <string.h>
+#include <unistd.h>
 
 #include "mount.h"
 #include "main.h"
@@ -40,7 +41,15 @@
 
 int main(int argc, char** argv) {
 	console_init();
+	
+	printf("\nWelcome to kexec-loader " VERSION "!\n");
+	printf("Copyright (C) 2007 Daniel Collins\n");
+	
 	mount_proc();
 	unmount_all();
-	return(0);
+	
+	while(1) {
+		sleep(9999);
+	}
+	return(1);
 }
