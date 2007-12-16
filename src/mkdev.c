@@ -75,7 +75,7 @@ static void devices_close(void) {
 		return;
 	}
 	
-	while(fclose(devices) == 0) {
+	while(fclose(devices) != 0) {
 		if(errno == EINTR) {
 			continue;
 		}
