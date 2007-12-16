@@ -94,7 +94,7 @@ static char* config_readline(void) {
 	size_t end = strlen(line)-1;
 	while(line[end] == '\n' || line[end] == '\r') {
 		line[end] = '\0';
-		line--;
+		end--;
 	}
 	
 	return(line);

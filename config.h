@@ -33,7 +33,7 @@
 
 #define VERSION "v1.0 alpha"
 
-#define CONFIG_FILE "/kexec-loader.conf"
+#define CONFIG_FILE "/etc/kexec-loader.conf"
 
 #define DEBUG_CONSOLE "/dev/tty2"
 #define DEBUG_FILE "/kexec-loader.log"

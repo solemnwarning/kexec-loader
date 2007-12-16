@@ -38,6 +38,7 @@
 #include "main.h"
 #include "../config.h"
 #include "console.h"
+#include "config.h"
 
 int main(int argc, char** argv) {
 	console_init();
@@ -46,6 +47,8 @@ int main(int argc, char** argv) {
 	printf("Copyright (C) 2007 Daniel Collins\n");
 	
 	mount_proc();
+	config_load();
+	
 	unmount_all();
 	
 	while(1) {
