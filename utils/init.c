@@ -1,4 +1,4 @@
-/* kexec-loader - Compile-time configuration
+/* kexec-loader - initramfs /init program
  * Copyright (C) 2007, Daniel Collins <solemnwarning@solemnwarning.net>
  * All rights reserved.
  *
@@ -28,18 +28,74 @@
  * EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
-#ifndef KEXEC_LOADER_CTCONFIG_H
-#define KEXEC_LOADER_CTCONFIG_H
+#include <stdio.h>
+#include <stdlib.h>
+#include <stdarg.h>
+#include <sys/mount.h>
+#include <errno.h>
+#include <string.h>
+#include <unistd.h>
 
-#define VERSION "v1.0 alpha"
+#include "../config.h"
 
-#define CONFIG_FILE "/etc/kexec-loader.conf"
-#define DEVICES_FILE "/etc/devices.conf"
+#ifdef DEBUG
+#define debug(...) debug_r(__LINE__, __VA_ARGS__)
+#else
+#define debug(...)
+#endif
 
-#define DEBUG_CONSOLE "/dev/tty2"
-#define DEBUG_FILE "/kexec-loader.log"
+#define inf_sleep() while(1) { sleep(9999); }
 
-#define BINPREFIX "/sbin"
-#define DEBUG
+static char* argv0 = "init";
+static int got_root = 0;
 
-#endif /* !KEXEC_LOADER_CTCONFIG_H */
+/* Print a debug message to the console
+ *
+ * Only works if DEBUG is defined, if debug isn't defined the debug message
+ * strings will be ommited from the source too.
+*/
+static void debug_r(unsigned int line, char const* fmt, ...) {
+	va_list argv;
+	va_start(argv, fmt);
+	
+	char buf[128] = {'\0'};
+	vsnprintf(buf, 127, fmt, argv);
+	printf("%s: debug(%s) at line %u\n", argv, buf, line);
+	
+	va_end(argv);
+}
+
+/* Attempt to mount  a device as the new root filesystem
+ *
+ * The filesystem will only be treated as valid if it contains a kexec-loader
+ * program in BINPREFIX
+*/
+static void mount_root(char const* rdev) {
+	if(got_root) {
+		return;
+	}
+	debug("Trying '%s' as root filesystem", rdev);
+	
+	if(mount(rdev, "/rootfs", NULL, 0, NULL) == -1) {
+		debug("Mounting '%s' as root failed: %s", rdev, strerror(errno));
+		return;
+	}
+}
+
+int main(int argc, char** argv) {
+	if(argc >= 1) {
+		argv0 = argv[0];
+	}
+	
+	mount_root("/dev/fd0");
+	mount_root("/dev/fd1");
+	mount_root("/dev/sda");
+	mount_root("/dev/sdb");
+	if(!got_root) {
+		fprintf(stderr, "Could not find root filesystem\n");
+		inf_sleep();
+	}
+	
+	inf_sleep();
+	return(0);
+}

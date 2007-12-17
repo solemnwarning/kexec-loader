@@ -1,4 +1,4 @@
-# kexec-loader - Root makefile
+# kexec-loader - Utils makefile
 # Copyright (C) 2007, Daniel Collins <solemnwarning@solemnwarning.net>
 # All rights reserved.
 #
@@ -27,21 +27,11 @@
 # NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE,
 # EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-export CC=i386-linux-uclibc-gcc
-export CFLAGS=-Wall -static
-export INCLUDES=
-export LIBS=
-
-all:
-	@$(MAKE) -C src/
-	@$(MAKE) -C utils/
+all: init
 
 clean:
-	@$(MAKE) -C src/ clean
-	@$(MAKE) -C utils/ clean
+	rm -f *.o init
 
-check:
-	@$(MAKE) -C src/ clean
-	@$(MAKE) -C src/
-	@$(MAKE) -C utils/ clean
-	@$(MAKE) -C utils/
+init: init.c
+	$(CC) $(CFLAGS) $(INCLUDES) -c -o init.o init.c
+	$(CC) $(CFLAGS) $(LIBS) -static -o init init.o
