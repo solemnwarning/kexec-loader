@@ -35,6 +35,9 @@
 #include <errno.h>
 #include <string.h>
 #include <unistd.h>
+#include <sys/types.h>
+#include <sys/stat.h>
+#include <sys/syscall.h>
 
 #include "../config.h"
 
@@ -45,6 +48,7 @@
 #endif
 
 #define inf_sleep() while(1) { sleep(9999); }
+#define eprintf(...) fprintf(stderr, __VA_ARGS__)
 
 static char* argv0 = "init";
 static int got_root = 0;
@@ -77,8 +81,25 @@ static void mount_root(char const* rdev) {
 	debug("Trying '%s' as root filesystem", rdev);
 	
 	if(mount(rdev, "/rootfs", NULL, 0, NULL) == -1) {
-		debug("Mounting '%s' as root failed: %s", rdev, strerror(errno));
+		debug("Mounting /rootfs failed: %s", strerror(errno));
 		return;
+	}
+	struct stat stdata;
+	if(stat("/rootfs/" BINPREFIX "/kexec-loader", &stdata) == -1) {
+		debug("Can't stat kexec-loader: %s", strerror(errno));
+		goto mount_root_nonexist;
+	}
+	
+	if(syscall(SYS_pivot_root, "/rootfs", "/rootfs/initrd") == -1) {
+		eprintf("Can't pivot_root(): %s\n", strerror(errno));
+		inf_sleep();
+	}
+	chdir("/");
+	
+	mount_root_nonexist:
+	if(umount("/rootfs") == -1) {
+		eprintf("Can't unmount /rootfs: %s\n", strerror(errno));
+		inf_sleep();
 	}
 }
 
@@ -92,7 +113,7 @@ int main(int argc, char** argv) {
 	mount_root("/dev/sda");
 	mount_root("/dev/sdb");
 	if(!got_root) {
-		fprintf(stderr, "Could not find root filesystem\n");
+		eprintf("Could not find root filesystem\n");
 		inf_sleep();
 	}
 	
