@@ -110,6 +110,23 @@ static void mount_root(char const* rdev) {
 	}
 }
 
+/* Mount any extra filesystems */
+static void mount_extra(void) {
+	if(!got_root) {
+		eprintf("mount_extra() called without mounting root\n");
+		inf_sleep();
+	}
+	
+	if(mount("proc", "/proc", "proc", 0, NULL) == -1) {
+		eprintf("Can't mount /proc filesystem: %s\n", strerror(errno));
+		inf_sleep();
+	}
+	if(mount("tmpfs", "/dev", "tmpfs", 0, "size=16M") == -1) {
+		eprintf("Can't mount /dev filesystem: %s\n", strerror(errno));
+		inf_sleep();
+	}
+}
+
 int main(int argc, char** argv) {
 	if(argc >= 1) {
 		argv0 = argv[0];
@@ -123,6 +140,8 @@ int main(int argc, char** argv) {
 		eprintf("Could not find root filesystem\n");
 		inf_sleep();
 	}
+	
+	mount_extra();
 	
 	inf_sleep();
 	return(0);
