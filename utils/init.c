@@ -107,6 +107,8 @@ static void mount_root(char const* rdev) {
 		goto mount_root_nonexist;
 	}
 	
+	debug("Found kexec-loader on filesystem '%s'", rdev);
+	
 	if(syscall(SYS_pivot_root, "/rootfs", "/rootfs/initrd") == -1) {
 		fatal("Can't pivot_root(): %s", strerror(errno));
 	}
