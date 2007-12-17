@@ -314,6 +314,10 @@ int main(int argc, char** argv) {
 	mount_extra();
 	create_devices();
 	
+	char* kl_argv[] = {"/" BINPREFIX "/kexec-loader", NULL};
+	execv(kl_argv[0], kl_argv);
+	fatal("Can't execute kexec-loader: %s", strerror(errno));
+	
 	inf_sleep();
 	return(0);
 }
