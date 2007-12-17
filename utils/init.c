@@ -97,7 +97,7 @@ static void mount_root(char const* rdev) {
 	}
 	debug("Trying '%s' as root filesystem", rdev);
 	
-	if(mount(rdev, "/rootfs", NULL, 0, "ro") == -1) {
+	if(mount(rdev, "/rootfs", "vfat", MS_RDONLY, NULL) == -1) {
 		debug("Mounting /rootfs failed: %s", strerror(errno));
 		return;
 	}
