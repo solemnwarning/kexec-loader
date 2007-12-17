@@ -38,6 +38,7 @@
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <sys/syscall.h>
+#include <fcntl.h>
 
 #include "../config.h"
 
@@ -50,9 +51,11 @@
 #define inf_sleep() while(1) { sleep(9999); }
 #define eprintf(...) fprintf(stderr, __VA_ARGS__)
 #define fatal(...) fatal_r(__LINE__, __VA_ARGS__)
+#define allocate(size) allocate_r(__LINE__, size)
 
 static char* argv0 = "init";
 static int got_root = 0;
+static FILE* devices = NULL;
 
 /* Print a debug message to the console
  *
@@ -84,6 +87,17 @@ static void fatal_r(unsigned int line, char const* fmt, ...) {
 	
 	va_end(argv);
 	inf_sleep();
+}
+
+/* Error checking malloc() wrapper, also zeros memory */
+void* allocate_r(unsigned int line, size_t size) {
+	void* ptr = malloc(size);
+	if(ptr == NULL) {
+		fatal_r(line, "Can't allocate %u bytes: %s", strerror(errno));
+	}
+	
+	memset(ptr, 0, size);
+	return(ptr);
 }
 
 /* Attempt to mount  a device as the new root filesystem
@@ -141,6 +155,149 @@ static void mount_extra(void) {
 	}
 }
 
+/* Attempt to open the device list DEVICES_FILE
+ *
+ * If the file is opened sucessfully 1 is returned, zero is returned if the
+ * file does not exist and any other error will cause fatal().
+ *
+ * If the file is already opened, 2 will be returned and no other action will
+ * be performed.
+*/
+static int devices_open(void) {
+	if(devices != NULL) {
+		return(2);
+	}
+	
+	while(devices == NULL) {
+		if((devices = fopen(DEVICES_FILE, "r")) != NULL) {
+			break;
+		}
+		
+		if(errno == EINTR) {
+			continue;
+		}
+		if(errno == ENOENT) {
+			return(0);
+		}
+		fatal("Can't open devices file: %s", strerror(errno));
+	}
+	
+	return(1);
+}
+
+/* Close the device list file if it's open */
+static void devices_close(void) {
+	if(devices == NULL) {
+		return;
+	}
+	
+	while(fclose(devices) != 0) {
+		if(errno == EINTR) {
+			continue;
+		}
+		
+		fatal("Can't close devices file: %s", strerror(errno));
+	}
+	devices = NULL;
+}
+
+/* Read the next available line from the device list into a buffer that's
+ * allocated by allocate()
+ *
+ * If the file is not open when this is called, it will be opened and reading
+ * will begin from the start of the file.
+ *
+ * If the file does not exist or has no more lines available NULL will be
+ * returned, in the event of EOF the file will also be closed.
+*/
+static char* devices_readline(void) {
+	if(!devices_open()) {
+		return(NULL);
+	}
+	
+	char* line = allocate(1024);
+	if(fgets(line, 1024, devices) == NULL) {
+		if(feof(devices)) {
+			devices_close();
+			
+			free(line);
+			return(NULL);
+		}
+		
+		fatal("Can't read devices file: %s", strerror(errno));
+	}
+	
+	/* Remove newline and carridge return characters from the end of the
+	 * line.
+	*/
+	size_t end = strlen(line)-1;
+	while(line[end] == '\n' || line[end] == '\r') {
+		line[end] = '\0';
+		end--;
+	}
+	
+	return(line);
+}
+
+/* Create any devices listed in the devices.conf specified by DEVICES_FILE
+ *
+ * If DEVICES_FILE cannot be opened create_devices() will return without
+ * doing anything
+*/
+static void create_devices(void) {
+	char* line = NULL;
+	char filename[512] = {'\0'};
+	
+	while((line = devices_readline()) != NULL) {
+		char type = '\0';
+		int major = -1;
+		int minor = -1;
+		int step = 0;
+		
+		char* token = strtok(line, "\t ");
+		while(token != NULL) {
+			if(step == 0) {
+				snprintf(filename, 511, "/dev/%s", token);
+			}
+			if(step == 1) {
+				type = token[0];
+			}
+			if(step == 2) {
+				major = atoi(token);
+			}
+			if(step == 3) {
+				minor = atoi(token);
+			}
+			step++;
+			
+			token = strtok(NULL, "\t ");
+		}
+		
+		if(type != 'b' && type != 'c') {
+			printf("Invalid device type: %c\n", type);
+			goto create_devices_eloop;
+		}
+		if(major < 0 || major > 255) {
+			printf("Invalid device major: %d\n", major);
+			goto create_devices_eloop;
+		}
+		if(minor < 0 || minor > 255) {
+			printf("Invalid device minor: %d\n", minor);
+			goto create_devices_eloop;
+		}
+		
+		if(type == 'b' && mknod(filename, 0600 | S_IFBLK, makedev(major,minor) == -1)) {
+			printf("Can't create block device %s: %s\n", filename, strerror(errno));
+		}
+		if(type == 'c' && mknod(filename, 0600 | S_IFCHR, makedev(major,minor) == -1)) {
+			printf("Can't create character device %s: %s\n", filename, strerror(errno));
+		}
+		
+		create_devices_eloop:
+		free(line);
+	}
+}
+
 int main(int argc, char** argv) {
 	if(argc >= 1) {
 		argv0 = argv[0];
@@ -155,6 +312,7 @@ int main(int argc, char** argv) {
 	}
 	
 	mount_extra();
+	create_devices();
 	
 	inf_sleep();
 	return(0);
