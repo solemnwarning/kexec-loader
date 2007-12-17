@@ -38,18 +38,6 @@
 #include "mount.h"
 #include "misc.h"
 
-/* Mount the /proc filesystem if not already mounted */
-void mount_proc(void) {
-	struct stat mounts;
-	if(stat("/proc/mounts", &mounts) == 0) {
-		return;
-	}
-	
-	if(mount("proc", "/proc", "proc", 0, NULL) == -1) {
-		fatal("Can't mount /proc filesystem: %s", strerror(errno));
-	}
-}
-
 /* Unmount all filesystems */
 void unmount_all(void) {
 	
