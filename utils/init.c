@@ -49,6 +49,7 @@
 
 #define inf_sleep() while(1) { sleep(9999); }
 #define eprintf(...) fprintf(stderr, __VA_ARGS__)
+#define fatal(...) fatal_r(__LINE__, __VA_ARGS__)
 
 static char* argv0 = "init";
 static int got_root = 0;
@@ -64,9 +65,25 @@ static void debug_r(unsigned int line, char const* fmt, ...) {
 	
 	char buf[128] = {'\0'};
 	vsnprintf(buf, 127, fmt, argv);
-	printf("%s: debug(%s) at line %u\n", argv, buf, line);
+	printf("%s: debug(%s) at line %u\n", argv0, buf, line);
 	
 	va_end(argv);
+}
+
+/* Handle a fatal error
+ *
+ * Basically outputs the error message and sleeps forever
+*/
+static void fatal_r(unsigned int line, char const* fmt, ...) {
+	va_list argv;
+	va_start(argv, fmt);
+	
+	eprintf("%s: fatal() called at line %u!\n", argv0, line);
+	vfprintf(stderr, fmt, argv);
+	fflush(stderr);
+	
+	va_end(argv);
+	inf_sleep();
 }
 
 /* Attempt to mount  a device as the new root filesystem
@@ -91,8 +108,7 @@ static void mount_root(char const* rdev) {
 	}
 	
 	if(syscall(SYS_pivot_root, "/rootfs", "/rootfs/initrd") == -1) {
-		eprintf("Can't pivot_root(): %s\n", strerror(errno));
-		inf_sleep();
+		fatal("Can't pivot_root(): %s", strerror(errno));
 	}
 	chdir("/");
 	
@@ -105,25 +121,21 @@ static void mount_root(char const* rdev) {
 	
 	mount_root_nonexist:
 	if(umount("/rootfs") == -1) {
-		eprintf("Can't unmount /rootfs: %s\n", strerror(errno));
-		inf_sleep();
+		fatal("Can't unmount /rootfs: %s", strerror(errno));
 	}
 }
 
 /* Mount any extra filesystems */
 static void mount_extra(void) {
 	if(!got_root) {
-		eprintf("mount_extra() called without mounting root\n");
-		inf_sleep();
+		fatal("mount_extra() called without mounting root, why?!");
 	}
 	
 	if(mount("proc", "/proc", "proc", 0, NULL) == -1) {
-		eprintf("Can't mount /proc filesystem: %s\n", strerror(errno));
-		inf_sleep();
+		fatal("Can't mount /proc filesystem: %s", strerror(errno));
 	}
 	if(mount("tmpfs", "/dev", "tmpfs", 0, "size=16M") == -1) {
-		eprintf("Can't mount /dev filesystem: %s\n", strerror(errno));
-		inf_sleep();
+		fatal("Can't mount /dev filesystem: %s", strerror(errno));
 	}
 }
 
@@ -137,8 +149,7 @@ int main(int argc, char** argv) {
 	mount_root("/dev/sda");
 	mount_root("/dev/sdb");
 	if(!got_root) {
-		eprintf("Could not find root filesystem\n");
-		inf_sleep();
+		fatal("Could not find root filesystem, sorry :(");
 	}
 	
 	mount_extra();
