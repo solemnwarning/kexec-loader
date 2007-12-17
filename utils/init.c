@@ -96,6 +96,9 @@ static void mount_root(char const* rdev) {
 	}
 	chdir("/");
 	
+	got_root = 1;
+	return;
+	
 	mount_root_nonexist:
 	if(umount("/rootfs") == -1) {
 		eprintf("Can't unmount /rootfs: %s\n", strerror(errno));
