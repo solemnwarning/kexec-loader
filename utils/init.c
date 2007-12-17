@@ -80,7 +80,7 @@ static void mount_root(char const* rdev) {
 	}
 	debug("Trying '%s' as root filesystem", rdev);
 	
-	if(mount(rdev, "/rootfs", NULL, 0, NULL) == -1) {
+	if(mount(rdev, "/rootfs", NULL, 0, "ro") == -1) {
 		debug("Mounting /rootfs failed: %s", strerror(errno));
 		return;
 	}
@@ -95,6 +95,10 @@ static void mount_root(char const* rdev) {
 		inf_sleep();
 	}
 	chdir("/");
+	
+	if(umount("/initrd") == -1) {
+		printf("%s: Can't unmount /initrd: %s\n", argv0, strerror(errno));
+	}
 	
 	got_root = 1;
 	return;
