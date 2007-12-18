@@ -31,41 +31,42 @@
 #ifndef KEXEC_LOADER_CONF_H
 #define KEXEC_LOADER_CONF_H
 #include <time.h>
+#include <string.h>
 
 #define MOUNT_DEFAULTS(ptr) \
-	(ptr)->device = NULL;\
-	(ptr)->mpoint = NULL;\
-	(ptr)->fstype = NULL;\
+	memset(ptr->device, '\0', 1024);\
+	memset(ptr->mpoint, '\0', 1024);\
+	memset(ptr->fstype, '\0', 64);\
 	(ptr)->next = NULL;
 
 #define MOUNT_DEFAULTS_DEFINE {NULL,NULL,NULL,NULL}
 
 struct kl_mount {
-	char* device;
-	char* mpoint;
-	char* fstype;
+	char device[1024];
+	char mpoint[1024];
+	char fstype[64];
 	
 	struct kl_mount* next;
 };
 
 #define TARGET_DEFAULTS(ptr) \
-	(ptr)->name = NULL;\
+	memset(ptr->name, '\0', 64);\
 	(ptr)->flags = 0;\
-	(ptr)->kernel = NULL;\
-	(ptr)->append = NULL;\
-	(ptr)->initrd = NULL;\
+	memset(ptr->kernel, '\0', 1024);\
+	memset(ptr->initrd, '\0', 1024);\
+	memset(ptr->append, '\0', 512);\
 	(ptr)->mounts = NULL;\
 	(ptr)->next = NULL;
 
 #define TARGET_DEFAULTS_DEFINE {NULL,0,NULL,NULL,NULL,NULL,NULL}
 
 struct kl_target {
-	char* name;
+	char name[64];
 	int flags;
 	
-	char* kernel;
-	char* append;
-	char* initrd;
+	char kernel[1024];
+	char initrd[1024];
+	char append[512];
 	
 	struct kl_mount* mounts;
 	struct kl_target* next;
