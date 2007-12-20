@@ -39,7 +39,7 @@
 	memset(ptr->fstype, '\0', 64);\
 	(ptr)->next = NULL;
 
-#define MOUNT_DEFAULTS_DEFINE {NULL,NULL,NULL,NULL}
+#define MOUNT_DEFAULTS_DEFINE {{'\0'},{'\0'},{'\0'},NULL}
 
 struct kl_mount {
 	char device[1024];
@@ -58,7 +58,7 @@ struct kl_mount {
 	(ptr)->mounts = NULL;\
 	(ptr)->next = NULL;
 
-#define TARGET_DEFAULTS_DEFINE {NULL,0,NULL,NULL,NULL,NULL,NULL}
+#define TARGET_DEFAULTS_DEFINE {{'\0'},0,{'\0'},{'\0'},{'\0'},NULL,NULL}
 
 struct kl_target {
 	char name[64];
