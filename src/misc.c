@@ -128,7 +128,7 @@ int str_compare(char const* str1, char const* str2, int flags, ...) {
 	}
 	va_end(arglist);
 	
-	for(; maxlen == 0 || compared < maxlen; compared++) {
+	for(; !(flags & STR_MAXLEN) || compared < maxlen; compared++) {
 		if(str1[0] == str2[0]) {
 			if(str1[0] == '\0') {
 				break;
