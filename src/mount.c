@@ -34,11 +34,63 @@
 #include <sys/mount.h>
 #include <errno.h>
 #include <string.h>
+#include <stdio.h>
 
 #include "mount.h"
 #include "misc.h"
 
 /* Unmount all filesystems */
 void unmount_all(void) {
+	FILE* mfile = NULL;
+	while(mfile == NULL) {
+		if((mfile = fopen("/proc/mounts", "r")) != NULL) {
+			break;
+		}
+		if(errno == EINTR) {
+			continue;
+		}
+		
+		nferror("Can't open /proc/mounts: %s", strerror(errno));
+		warn("Not umounting any filesystems!!");
+		return;
+	}
 	
+	char mounts[128][1024] = {{'\0'}};
+	char line[1024] = {'\0'};
+	size_t mcount = 0, mnum, mpos;
+	
+	while(fgets(line, 1024, mfile) != NULL && mcount < 128) {
+		char* token = strtok(line, " ");
+		if((token = strtok(NULL, " ")) == NULL) {
+			nferror("/proc/mounts is gobbledegook!");
+			return;
+		}
+		
+		strncpy(mounts[mcount], token, 1023);
+		mcount++;
+	}
+	
+	while(fclose(mfile) != 0) {
+		if(errno == EINTR) {
+			continue;
+		}
+		
+		nferror("Can't close /proc/mounts: %s", strerror(errno));
+	}
+	
+	while(mcount > 0) {
+		char* mount = "";
+		for(mpos = 0; mpos < 128; mpos++) {
+			if(str_compare(mount, mounts[mpos], STR_MAXLEN, strlen(mount))) {
+				mount = mounts[mpos];
+				mnum = mpos;
+			}
+		}
+		
+		if(umount(mount) == -1) {
+			nferror("Can't umount %s: %s", mount, strerror(errno));
+		}
+		mounts[mnum][0] = '\0';
+		mcount--;
+	}
 }

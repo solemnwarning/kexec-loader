@@ -66,6 +66,32 @@ void fatal_r(char const* file, unsigned int line, char const* fmt, ...) {
 	}
 }
 
+/* Handle a non-fatal error */
+void nferror_r(char const* file, unsigned int line, char const* fmt, ...) {
+	va_list argv;
+	va_start(argv, fmt);
+	
+	char buf[128] = {'\0'};
+	vsnprintf(buf, 127, fmt, argv);
+	
+	eprintf("%s:%u: %s\n", file, line, buf);
+	
+	va_end(argv);
+}
+
+/* Print a warning message */
+void warn_r(char const* file, unsigned int line, char const* fmt, ...) {
+	va_list argv;
+	va_start(argv, fmt);
+	
+	char buf[128] = {'\0'};
+	vsnprintf(buf, 127, fmt, argv);
+	
+	printf("%s:%u: %s\n", file, line, buf);
+	
+	va_end(argv);
+}
+
 /* Copy a string */
 char* strclone(char const* string, size_t maxlen) {
 	size_t len = 0;

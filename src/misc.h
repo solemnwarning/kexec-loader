@@ -38,11 +38,19 @@
 #define STR_WILDCARD1	8	/* Parse wildcard characters * and ? in str1 */
 #define STR_WILDCARD2	16	/* Parse wildcard characters * and ? in str2 */
 
+#define eprintf(...) fprintf(stderr, __VA_ARGS__)
+
 #define allocate(size) allocate_r(__FILE__, __LINE__, size)
 void* allocate_r(char const* file, unsigned int line, size_t size);
 
 #define fatal(...) fatal_r(__FILE__, __LINE__, __VA_ARGS__)
 void fatal_r(char const* file, unsigned int line, char const* fmt, ...);
+
+#define nferror(...) nferror_r(__FILE__, __LINE__, __VA_ARGS__)
+void nferror_r(char const* file, unsigned int line, char const* fmt, ...);
+
+#define warn(...) warn_r(__FILE__, __LINE__, __VA_ARGS__)
+void warn_r(char const* file, unsigned int line, char const* fmt, ...);
 
 char* strclone(char const* string, size_t maxlen);
 int str_compare(char const*, char const*, int, ...);
