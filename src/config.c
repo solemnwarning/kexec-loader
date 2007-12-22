@@ -36,7 +36,6 @@
 #include "config.h"
 #include "../config.h"
 #include "main.h"
-#include "debug.h"
 #include "misc.h"
 
 struct kl_config config = CONFIG_DEFAULTS_DEFINE;

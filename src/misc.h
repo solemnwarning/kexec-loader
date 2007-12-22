@@ -53,6 +53,13 @@ void nferror_r(char const* file, unsigned int line, char const* fmt, ...);
 #define warn(...) warn_r(__FILE__, __LINE__, __VA_ARGS__)
 void warn_r(char const* file, unsigned int line, char const* fmt, ...);
 
+#ifdef DEBUG
+#define debug(...) debug_r(__FILE__, __LINE__, __VA_ARGS__)
+#else
+#define debug(...)
+#endif
+void debug_r(char const* file, unsigned int line, char const* fmt, ...);
+
 char* strclone(char const* string, size_t maxlen);
 int str_compare(char const*, char const*, int, ...);
 

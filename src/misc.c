@@ -93,6 +93,21 @@ void warn_r(char const* file, unsigned int line, char const* fmt, ...) {
 	va_end(argv);
 }
 
+/* Print a debug message */
+void debug_r(char const* file, unsigned int line, char const* fmt, ...) {
+	#ifdef DEBUG
+	va_list argv;
+	va_start(argv, fmt);
+	
+	char buf[128] = {'\0'};
+	vsnprintf(buf, 127, fmt, argv);
+	
+	printf("%s:%u: %s\n", file, line, buf);
+	
+	va_end(argv);
+	#endif
+}
+
 /* Copy a string */
 char* strclone(char const* string, size_t maxlen) {
 	size_t len = 0;
