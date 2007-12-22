@@ -111,6 +111,7 @@ void config_load(void) {
 	char* value = NULL;
 	
 	int validcfg = 0;
+	kl_target target = TARGET_DEFAULTS_DEFINE;
 	
 	while((line = config_readline()) != NULL) {
 		lnum++;
@@ -164,11 +165,39 @@ void config_load(void) {
 			
 			validcfg = 1;
 		}
+		if(str_compare(name, "title", STR_NOCASE)) {
+			if(target.name[0] != '\0') {
+				if(target_add(&(config.targets), &target) == NULL) {
+					fatal("Can't load config: %s", strerror(errno));
+				}
+				
+				TARGET_DEFAULTS(&target);
+			}
+			
+			strncpy(target.name, value, 63);
+		}
+		if(str_compare(name, "kernel", STR_NOCASE)) {
+			strncpy(target.kernel, value, 1023);
+		}
+		if(str_compare(name, "initrd", STR_NOCASE)) {
+			strncpy(target.initrd, value, 1023);
+		}
+		if(str_compare(name, "append", STR_NOCASE)) {
+			strncpy(target.append, value, 511);
+		}
 		if(!validcfg) {
 			printf("Unknown configuration variable '%s' at line %u\n", name, lnum);
 		}
 		
 		free(name);
 		free(line);
+	}
+	
+	if(target.name[0] != '\0') {
+		if(target_add(&(config.targets), &target) == NULL) {
+			fatal("Can't load config: %s", strerror(errno));
+		}
+		
+		TARGET_DEFAULTS(&target);
 	}
 }
