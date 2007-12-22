@@ -38,6 +38,7 @@
 
 #include "misc.h"
 #include "main.h"
+#include "config.h"
 
 /* Error checking malloc() wrapper, also zeros memory */
 void* allocate_r(char const* file, unsigned int line, size_t size) {
@@ -181,4 +182,109 @@ int str_compare(char const* str1, char const* str2, int flags, ...) {
 		return(0);
 	}
 	return(1);
+}
+
+/* Insert a new target structure at the beginning of a target list
+ * Returns a pointer to the new list node on success, NULL if malloc() fails.
+ *
+ * If 'src' is non-NULL, the data in 'src' will be copied to the new structure
+ * in the list, it will not be modified.
+*/
+kl_target* target_add(kl_target** list, kl_target const* src) {
+	kl_target* nptr = malloc(sizeof(kl_target));
+	if(nptr == NULL) {
+		return(NULL);
+	}
+	TARGET_DEFAULTS(nptr);
+	
+	if(src != NULL) {
+		strncpy(nptr->name, src->name, 64);
+		strncpy(nptr->kernel, src->kernel, 1024);
+		strncpy(nptr->initrd, src->initrd, 1024);
+		strncpy(nptr->append, src->append, 512);
+		
+		nptr->flags = src->flags;
+		nptr->mounts = mount_copy(src->mounts);
+	}
+	
+	nptr->next = *list;
+	*list = nptr;
+	
+	return(nptr);
+}
+
+/* Free an entire target list */
+void target_free(kl_target** list) {
+	kl_target* dptr = NULL;
+	
+	while(*list != NULL) {
+		dptr = *list;
+		*list = (*list)->next;
+		
+		mount_free(&(dptr->mounts));
+		free(dptr);
+	}
+}
+
+/* Exactly the same as target_add(), except it handles mount lists instead of
+ * target lists.
+*/
+kl_mount* mount_add(kl_mount** list, kl_mount const* src) {
+	kl_mount* nptr = malloc(sizeof(kl_mount));
+	if(nptr == NULL) {
+		return(NULL);
+	}
+	MOUNT_DEFAULTS(nptr);
+	
+	if(src != NULL) {
+		strncpy(nptr->device, src->device, 1024);
+		strncpy(nptr->mpoint, src->mpoint, 1024);
+		strncpy(nptr->fstype, src->fstype, 64);
+	}
+	
+	nptr->next = *list;
+	*list = nptr;
+	
+	return(nptr);
+}
+
+/* Free an entire mount list */
+void mount_free(kl_mount** list) {
+	kl_mount* dptr = NULL;
+	
+	while(*list != NULL) {
+		dptr = *list;
+		*list = (*list)->next;
+		
+		free(dptr);
+	}
+}
+
+/* Copy a mount list
+ *
+ * Returns a pointer to the copied list upon success, or NULL if any malloc()
+ * calls fail.
+*/
+kl_mount* mount_copy(kl_mount const* src) {
+	kl_mount* nptr = NULL;
+	kl_mount* list = NULL;
+	
+	while(src != NULL) {
+		if((nptr = malloc(sizeof(kl_mount))) == NULL) {
+			mount_free(&list);
+			return(NULL);
+		}
+		MOUNT_DEFAULTS(nptr);
+		
+		strncpy(nptr->device, src->device, 1024);
+		strncpy(nptr->mpoint, src->mpoint, 1024);
+		strncpy(nptr->fstype, src->fstype, 64);
+		
+		nptr->next = list;
+		list = nptr;
+		
+		src = src->next;
+	}
+	
+	return(list);
 }

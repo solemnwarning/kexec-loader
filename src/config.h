@@ -33,6 +33,9 @@
 #include <time.h>
 #include <string.h>
 
+typedef struct kl_target kl_target;
+typedef struct kl_mount kl_mount;
+
 #define MOUNT_DEFAULTS(ptr) \
 	memset(ptr->device, '\0', 1024);\
 	memset(ptr->mpoint, '\0', 1024);\

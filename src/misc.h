@@ -30,6 +30,7 @@
 
 #ifndef KEXEC_LOADER_MISC_H
 #define KEXEC_LOADER_MISC_H
+#include "config.h"
 
 /* String comparison flags */
 #define STR_NOCASE	1	/* Do case-insensitive comparision */
@@ -54,5 +55,12 @@ void warn_r(char const* file, unsigned int line, char const* fmt, ...);
 
 char* strclone(char const* string, size_t maxlen);
 int str_compare(char const*, char const*, int, ...);
+
+kl_target* target_add(kl_target** list, kl_target const* src);
+void target_free(kl_target** list);
+
+kl_mount* mount_add(kl_mount** list, kl_mount const* src);
+void mount_free(kl_mount** list);
+kl_mount* mount_copy(kl_mount const* src);
 
 #endif /* !KEXEC_LOADER_MISC_H */
