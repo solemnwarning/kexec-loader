@@ -33,6 +33,8 @@
 #include <time.h>
 #include <string.h>
 
+#define TARGET_DEFAULT (1<<0)
+
 typedef struct kl_target kl_target;
 typedef struct kl_mount kl_mount;
 

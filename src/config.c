@@ -185,6 +185,9 @@ void config_load(void) {
 		if(str_compare(name, "append", STR_NOCASE)) {
 			strncpy(target.append, value, 511);
 		}
+		if(str_compare(name, "default", STR_NOCASE)) {
+			target.flags |= TARGET_DEFAULT;
+		}
 		if(!validcfg) {
 			printf("Unknown configuration variable '%s' at line %u\n", name, lnum);
 		}
