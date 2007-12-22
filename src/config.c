@@ -193,21 +193,27 @@ void config_load(void) {
 			}
 			
 			strncpy(target.name, value, 63);
+			validcfg = 1;
 		}
 		if(str_compare(name, "kernel", STR_NOCASE)) {
 			strncpy(target.kernel, value, 1023);
+			validcfg = 1;
 		}
 		if(str_compare(name, "initrd", STR_NOCASE)) {
 			strncpy(target.initrd, value, 1023);
+			validcfg = 1;
 		}
 		if(str_compare(name, "append", STR_NOCASE)) {
 			strncpy(target.append, value, 511);
+			validcfg = 1;
 		}
 		if(str_compare(name, "default", STR_NOCASE)) {
 			target.flags |= TARGET_DEFAULT;
+			validcfg = 1;
 		}
 		if(str_compare(name, "rootfs", STR_NOCASE)) {
 			config_add_mount(&(target.mounts), value, "/target");
+			validcfg = 1;
 		}
 		if(str_compare(name, "mount", STR_NOCASE)) {
 			char* tmp = strchr(value, ' ');
@@ -223,6 +229,7 @@ void config_load(void) {
 			snprintf(mpoint, 1023, "/target/%s", tmp);
 			
 			config_add_mount(&(target.mounts), value, mpoint);
+			validcfg = 1;
 		}
 		if(!validcfg) {
 			printf("Unknown configuration variable '%s' at line %u\n", name, lnum);
