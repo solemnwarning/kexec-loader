@@ -100,6 +100,25 @@ static char* config_readline(void) {
 	return(line);
 }
 
+/* Add a mount */
+static void config_add_mount(kl_mount** mounts, char* device, char* mpoint) {
+	char* fstype = "auto";
+	
+	if(strchr(device, ':') != NULL) {
+		fstype = device;
+		device = strchr(device, ':');
+		device[0] = '\0';
+		device++;
+	}
+	
+	kl_mount nmount = MOUNT_DEFAULTS_DEFINE;
+	strncpy(nmount.device, device, 1023);
+	strncpy(nmount.mpoint, mpoint, 1023);
+	strncpy(nmount.fstype, fstype, 63);
+	
+	mount_add(mounts, &nmount);
+}
+
 /* Load configuration from file */
 void config_load(void) {
 	char* line = NULL;
@@ -187,6 +206,24 @@ void config_load(void) {
 		}
 		if(str_compare(name, "default", STR_NOCASE)) {
 			target.flags |= TARGET_DEFAULT;
+		}
+		if(str_compare(name, "rootfs", STR_NOCASE)) {
+			config_add_mount(&(target.mounts), value, "/target");
+		}
+		if(str_compare(name, "mount", STR_NOCASE)) {
+			char* tmp = strchr(value, ' ');
+			if(tmp == NULL) {
+				fatal("Invalid mount at line %u", lnum);
+			}
+			while(tmp[0] == ' ') {
+				tmp[0] = '\0';
+				tmp++;
+			}
+			
+			char mpoint[1024] = {'\0'};
+			snprintf(mpoint, 1023, "/target/%s", tmp);
+			
+			config_add_mount(&(target.mounts), value, mpoint);
 		}
 		if(!validcfg) {
 			printf("Unknown configuration variable '%s' at line %u\n", name, lnum);
