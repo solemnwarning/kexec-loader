@@ -27,7 +27,7 @@
 # NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE,
 # EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-all: init
+all: init klinit
 
 clean:
 	rm -f *.o init
@@ -35,3 +35,6 @@ clean:
 init: init.c
 	$(CC) $(CFLAGS) $(INCLUDES) -c -o init.o init.c
 	$(CC) $(CFLAGS) $(LIBS) -static -o init init.o
+
+klinit: klinit.c
+	$(CC) $(CFLAGS) $(INCLUDES) $(LIBS) -static -o klinit klinit.c
