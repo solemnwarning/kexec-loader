@@ -116,6 +116,11 @@ static void cfg_load(void) {
 	}
 	
 	while(fgets(buf, 1024, cfg_handle) != NULL) {
+		size_t end = strlen(buf)-1;
+		while(buf[end] == '\r' || buf[end] == '\n') {
+			buf[end--] = '\0';
+		}
+		
 		cfg_parse(buf, line++);
 	}
 	
@@ -126,6 +131,16 @@ static void cfg_load(void) {
 		
 		printl("Can't close config file: %s", strerror(errno));
 		break;
+	}
+}
+
+/* Parse a single configuration line */
+static void cfg_parse(char const* line, unsigned int lnum) {
+	while(line[0] == ' ' || line[0] == '\t' || line[0] == '\r') {
+		line++;
+	}
+	if(line[0] == '#' || line == '\0') {
+		return;
 	}
 }
 
