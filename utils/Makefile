@@ -30,7 +30,7 @@
 all: init klinit
 
 clean:
-	rm -f *.o init
+	rm -f *.o init klinit
 
 init: init.c
 	$(CC) $(CFLAGS) $(INCLUDES) -c -o init.o init.c

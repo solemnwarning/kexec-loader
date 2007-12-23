@@ -56,6 +56,8 @@ static int got_root = 0;
 
 static void try_rootfs(char const* device);
 static void printl_r(unsigned int line, char const* fmt, ...);
+static void cfg_load(void);
+static void cfg_parse(char const* line, unsigned int lnum);
 
 /* Try to mount 'device' as the root filesystem and check it contains a file
  * named ROOTFS_FILE, if ROOTFS_FILE does not exist unmount it again.
@@ -94,16 +96,49 @@ static void printl_r(unsigned int line, char const* fmt, ...) {
 	va_end(argv);
 }
 
-int main(int argc, char** argv) {
-	printl("Version " VERSION " starting...\n");
+/* Load init configuration from CONFIG_FILE, if it exists. */
+static void cfg_load(void) {
+	FILE* cfg_handle = NULL;
+	char buf[1024] = {'\0'};
+	unsigned int line = 1;
 	
+	while(cfg_handle == NULL) {
+		if((cfg_handle = fopen(CONFIG_FILE, "r")) != NULL) {
+			break;
+		}
+		if(errno == EINTR) {
+			continue;
+		}
+		if(errno != ENOENT) {
+			printl("Can't open config file: %s", strerror(errno));
+		}
+		return;
+	}
+	
+	while(fgets(buf, 1024, cfg_handle) != NULL) {
+		cfg_parse(buf, line++);
+	}
+	
+	while(fclose(cfg_handle) != 0) {
+		if(errno == EINTR) {
+			continue;
+		}
+		
+		printl("Can't close config file: %s", strerror(errno));
+		break;
+	}
+}
+
+int main(int argc, char** argv) {
 	try_rootfs("/dev/fd0");
 	try_rootfs("/dev/fd1");
 	try_rootfs("/dev/sda");
 	try_rootfs("/dev/sdb");
 	if(!got_root) {
-		fatal("Could not find root filesystem");
+		fatal("Could not find root filesystem!");
 	}
+	
+	cfg_load();
 	
 	infsleep();
 	return(1);
