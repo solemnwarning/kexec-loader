@@ -61,13 +61,15 @@ void unmount_all(void) {
 	
 	while(fgets(line, 1024, mfile) != NULL && mcount < 128) {
 		char* token = strtok(line, " ");
+		if(str_compare(token, "rootfs", 0)) {
+			continue;
+		}
 		if((token = strtok(NULL, " ")) == NULL) {
 			nferror("/proc/mounts is gobbledegook!");
 			return;
 		}
 		
-		strncpy(mounts[mcount], token, 1023);
-		mcount++;
+		strncpy(mounts[mcount++], token, 1023);
 	}
 	
 	while(fclose(mfile) != 0) {
