@@ -39,8 +39,13 @@
 #include "mount.h"
 #include "misc.h"
 
-/* Unmount all filesystems */
-void unmount_all(void) {
+/* Unmount all mounts under a certain directory, including the directory if it
+ * is a mount itself.
+ *
+ * Filesystems with a device of 'rootfs' are ignored since rootfs can never be
+ * unmounted and it's harmless to leave mounted anyway.
+*/
+void unmount_tree(char const* dir) {
 	FILE* mfile = NULL;
 	while(mfile == NULL) {
 		if((mfile = fopen("/proc/mounts", "r")) != NULL) {
@@ -59,6 +64,9 @@ void unmount_all(void) {
 	char line[1024] = {'\0'};
 	size_t mcount = 0, mnum, mpos;
 	
+	char cmp2[1024] = {'\0'};
+	snprintf(cmp2, 1023, "%s*", dir);
+	
 	while(fgets(line, 1024, mfile) != NULL && mcount < 128) {
 		char* token = strtok(line, " ");
 		if(str_compare(token, "rootfs", 0)) {
@@ -67,6 +75,9 @@ void unmount_all(void) {
 		if((token = strtok(NULL, " ")) == NULL) {
 			nferror("/proc/mounts is gobbledegook!");
 			return;
+		}
+		if(!str_compare(token, cmp2, STR_WILDCARD2)) {
+			continue;
 		}
 		
 		strncpy(mounts[mcount++], token, 1023);
@@ -107,3 +118,5 @@ void mount_virt(void) {
 		fatal("Can't mount /dev filesystem: %s", strerror(errno));
 	}
 }
+
+/* Unmount the /target tree */

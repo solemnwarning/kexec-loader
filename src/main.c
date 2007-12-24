@@ -50,7 +50,7 @@ int main(int argc, char** argv) {
 	
 	config_load();
 	
-	unmount_all();
+	unmount_tree("/");
 	
 	while(1) {
 		sleep(9999);

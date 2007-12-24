@@ -31,7 +31,7 @@
 #ifndef KEXEC_LOADER_MOUNT_H
 #define KEXEC_LOADER_MOUNT_H
 
-void unmount_all(void);
+void unmount_tree(char const* dir);
 void mount_virt(void);
 
 #endif /* !KEXEC_LOADER_MOUNT_H */
