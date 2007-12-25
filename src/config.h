@@ -60,7 +60,7 @@ struct kl_mount {
 	memset((ptr)->kernel, '\0', 1024);\
 	memset((ptr)->initrd, '\0', 1024);\
 	memset((ptr)->append, '\0', 512);\
-	(ptr)->mounts = NULL;\
+	mount_free(&((ptr)->mounts));\
 	(ptr)->next = NULL;
 
 #define TARGET_DEFAULTS_DEFINE {{'\0'},0,{'\0'},{'\0'},{'\0'},NULL,NULL}
@@ -88,5 +88,6 @@ struct kl_config {
 extern struct kl_config config;
 
 void config_load(void);
+void config_parse(char* line, unsigned int lnum);
 
 #endif /* !KEXEC_LOADER_CONF_H */

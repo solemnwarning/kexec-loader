@@ -39,6 +39,7 @@
 #include "misc.h"
 
 struct kl_config config = CONFIG_DEFAULTS_DEFINE;
+struct kl_target target = TARGET_DEFAULTS_DEFINE;
 
 /* Add a mount */
 static void config_add_mount(kl_mount** mounts, char* device, char* mpoint) {
@@ -80,7 +81,7 @@ void config_load(void) {
 	unsigned int lnum = 1;
 	char line[1024] = {'\0'};
 	while(fgets(line, 1024, cfg_handle) != NULL) {
-		
+		config_parse(line, lnum++);
 	}
 	
 	while(fclose(cfg_handle) != 0) {
@@ -94,126 +95,84 @@ void config_load(void) {
 	}
 }
 
+/* Parse a single line from the configuration file, handles newlines, spaces,
+ * tabs and carridge-return characters.
+*/
+void config_parse(char* line, unsigned int lnum) {
+	/* Remove leading whitespace from line */
+	while(IS_WHITESPACE(line[0])) {
+		line++;
+	}
+	
+	/* Skip line if it's a comment, or empty */
+	if(line[0] == '#' || line[0] == '\0') {
+		return;
+	}
+	
+	/* Remove trailing whitespace from line */
+	size_t count = strlen(line)-1;
+	while(IS_WHITESPACE(line[count])) {
+		line[count--] = '\0';
+	}
+	
 #if 0
-/* Load configuration from file */
-void config_load(void) {
-	char* line = NULL;
-	size_t len = 0;
-	size_t count = 0;
-	size_t lnum = 0;
-	
-	char* name = NULL;
-	char* value = NULL;
-	
-	int validcfg = 0;
-	kl_target target = TARGET_DEFAULTS_DEFINE;
-	
-	while((line = config_readline()) != NULL) {
-		lnum++;
-		len = strlen(line);
-		value = NULL;
+	validcfg = 0;
+	if(str_compare(name, "timeout", STR_NOCASE)) {
+		config.timeout = strtoul(value, NULL, 10);
+		debug("timeout='%s' (%u)", value, config.timeout);
 		
-		/* Remove leading spaces/tabs from line */
-		count = 0;
-		while(line[count] == ' ' || line[count] == '\t') {
-			count++;
-		}
-		if(count > 0) {
-			memmove(line, line+count, (len+1)-count);
-			len -= count;
-		}
-		
-		/* Skip line if it's a comment, or empty */
-		if(line[0] == '#' || line[0] == '\0') {
-			free(line);
-			continue;
-		}
-		
-		/* Copy name from line and set value pointer to line */
-		count = 0;
-		while(line[count] != ' ' && line[count] != '\t') {
-			count++;
-		}
-		name = strclone(line, count);
-		value = line+count;
-		
-		/* Remove leading spaces/tabs from value */
-		count = 0;
-		while(value[count] == ' ' || value[count] == '\t') {
-			count++;
-		}
-		if(count > 0) {
-			memmove(value, value+count, (strlen(value)+1)-count);
-		}
-		
-		/* Remove trailing spaces/tabs from value */
-		count = strlen(value)-1;
-		while(value[count] == ' ' || value[count] == '\t') {
-			value[count] = '\0';
-			count--;
-		}
-		
-		validcfg = 0;
-		if(str_compare(name, "timeout", STR_NOCASE)) {
-			config.timeout = strtoul(value, NULL, 10);
-			debug("timeout='%s' (%u)", value, config.timeout);
-			
-			validcfg = 1;
-		}
-		if(str_compare(name, "title", STR_NOCASE)) {
-			if(target.name[0] != '\0') {
-				if(target_add(&(config.targets), &target) == NULL) {
-					fatal("Can't load config: %s", strerror(errno));
-				}
-				
-				TARGET_DEFAULTS(&target);
+		validcfg = 1;
+	}
+	if(str_compare(name, "title", STR_NOCASE)) {
+		if(target.name[0] != '\0') {
+			if(target_add(&(config.targets), &target) == NULL) {
+				fatal("Can't load config: %s", strerror(errno));
 			}
 			
-			strncpy(target.name, value, 63);
-			validcfg = 1;
-		}
-		if(str_compare(name, "kernel", STR_NOCASE)) {
-			strncpy(target.kernel, value, 1023);
-			validcfg = 1;
-		}
-		if(str_compare(name, "initrd", STR_NOCASE)) {
-			strncpy(target.initrd, value, 1023);
-			validcfg = 1;
-		}
-		if(str_compare(name, "append", STR_NOCASE)) {
-			strncpy(target.append, value, 511);
-			validcfg = 1;
-		}
-		if(str_compare(name, "default", STR_NOCASE)) {
-			target.flags |= TARGET_DEFAULT;
-			validcfg = 1;
-		}
-		if(str_compare(name, "rootfs", STR_NOCASE)) {
-			config_add_mount(&(target.mounts), value, "/target");
-			validcfg = 1;
-		}
-		if(str_compare(name, "mount", STR_NOCASE)) {
-			char* tmp = strchr(value, ' ');
-			if(tmp == NULL) {
-				fatal("Invalid mount at line %u", lnum);
-			}
-			while(tmp[0] == ' ') {
-				tmp[0] = '\0';
-				tmp++;
-			}
-			
-			char mpoint[1024] = {'\0'};
-			snprintf(mpoint, 1023, "/target/%s", tmp);
-			
-			config_add_mount(&(target.mounts), value, mpoint);
-			validcfg = 1;
-		}
-		if(!validcfg) {
-			printf("Unknown configuration variable '%s' at line %u\n", name, lnum);
+			TARGET_DEFAULTS(&target);
 		}
 		
-		free(name);
-		free(line);
+		strncpy(target.name, value, 63);
+		validcfg = 1;
+	}
+	if(str_compare(name, "kernel", STR_NOCASE)) {
+		strncpy(target.kernel, value, 1023);
+		validcfg = 1;
+	}
+	if(str_compare(name, "initrd", STR_NOCASE)) {
+		strncpy(target.initrd, value, 1023);
+		validcfg = 1;
+	}
+	if(str_compare(name, "append", STR_NOCASE)) {
+		strncpy(target.append, value, 511);
+		validcfg = 1;
+	}
+	if(str_compare(name, "default", STR_NOCASE)) {
+		target.flags |= TARGET_DEFAULT;
+		validcfg = 1;
+	}
+	if(str_compare(name, "rootfs", STR_NOCASE)) {
+		config_add_mount(&(target.mounts), value, "/target");
+		validcfg = 1;
+	}
+	if(str_compare(name, "mount", STR_NOCASE)) {
+		char* tmp = strchr(value, ' ');
+		if(tmp == NULL) {
+			fatal("Invalid mount at line %u", lnum);
+		}
+		while(tmp[0] == ' ') {
+			tmp[0] = '\0';
+			tmp++;
+		}
+		
+		char mpoint[1024] = {'\0'};
+		snprintf(mpoint, 1023, "/target/%s", tmp);
+		
+		config_add_mount(&(target.mounts), value, mpoint);
+		validcfg = 1;
+	}
+	if(!validcfg) {
+		printf("Unknown configuration variable '%s' at line %u\n", name, lnum);
 	}
 	
 	if(target.name[0] != '\0') {
@@ -223,5 +182,5 @@ void config_load(void) {
 		
 		TARGET_DEFAULTS(&target);
 	}
-}
 #endif
+}

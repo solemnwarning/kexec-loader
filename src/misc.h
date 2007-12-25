@@ -41,6 +41,8 @@
 
 #define eprintf(...) fprintf(stderr, __VA_ARGS__)
 
+#define IS_WHITESPACE(x) (x == ' ' || x == '\t' || x == '\n' || x == '\r')
+
 #define allocate(size) allocate_r(__FILE__, __LINE__, size)
 void* allocate_r(char const* file, unsigned int line, size_t size);
 
