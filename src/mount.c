@@ -38,6 +38,9 @@
 
 #include "mount.h"
 #include "misc.h"
+#include "../config.h"
+
+int got_boot = 0; /* Is /boot mounted? */
 
 /* Unmount all mounts under a certain directory, including the directory if it
  * is a mount itself.
@@ -119,4 +122,37 @@ void mount_virt(void) {
 	}
 }
 
-/* Unmount the /target tree */
+/* Mount kexec-loader bootdisk on /boot */
+void mount_boot(void) {
+	char const* devices[] = {
+		"/dev/fd0",
+		"/dev/fd1",
+		"/dev/sda",
+		"/dev/sdb",
+		"/dev/sdc",
+		"/dev/sdd",
+		NULL
+	};
+	
+	unsigned int devnum = 0;
+	char const* devname = devices[0];
+	
+	while(devname != NULL) {
+		if(mount(devname, "/boot", BOOTFS_TYPE, MS_RDONLY, NULL) == -1) {
+			debug("Can't mount %s at /boot: %s", devname, strerror(errno));
+			return;
+		}
+		if(access("/boot" CONFIG_FILE, F_OK) == 0) {
+			debug("Found " CONFIG_FILE " on %s", devname);
+			
+			got_boot = 1;
+			return;
+		}
+		
+		if(umount("/boot") == -1) {
+			fatal("Can't unmount /boot: %s", strerror(errno));
+		}
+		
+		devname = devices[++devnum];
+	}
+}

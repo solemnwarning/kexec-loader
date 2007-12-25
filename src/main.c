@@ -46,8 +46,8 @@ int main(int argc, char** argv) {
 	printf("\nWelcome to kexec-loader " VERSION "!\n");
 	printf("Copyright (C) 2007 Daniel Collins\n");
 	
+	mount_boot();
 	mount_virt();
-	
 	config_load();
 	
 	unmount_tree("/");

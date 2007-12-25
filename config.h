@@ -33,13 +33,9 @@
 
 #define VERSION "v1.0 alpha"
 
-#define CONFIG_FILE "/etc/kexec-loader.conf"
-#define DEVICES_FILE "/etc/devices.conf"
+#define CONFIG_FILE "kexec-loader.conf"
+#define BOOTFS_TYPE "vfat"
 
-#define DEBUG_CONSOLE "/dev/tty2"
-#define DEBUG_FILE "/kexec-loader.log"
-
-#define BINPREFIX "/sbin"
 #define DEBUG
 
 #endif /* !KEXEC_LOADER_CTCONFIG_H */
