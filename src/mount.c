@@ -142,7 +142,7 @@ void mount_boot(void) {
 			debug("Can't mount %s at /boot: %s", devname, strerror(errno));
 			return;
 		}
-		if(access("/boot" CONFIG_FILE, F_OK) == 0) {
+		if(access("/boot/" CONFIG_FILE, F_OK) == 0) {
 			debug("Found " CONFIG_FILE " on %s", devname);
 			
 			got_boot = 1;

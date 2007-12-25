@@ -40,65 +40,6 @@
 
 struct kl_config config = CONFIG_DEFAULTS_DEFINE;
 
-static FILE* cfg_handle = NULL;
-
-/* Open configuration file */
-static void config_open(void) {
-	while(cfg_handle == NULL) {
-		cfg_handle = fopen(CONFIG_FILE, "r");
-		
-		if(cfg_handle == NULL && errno != EINTR) {
-			fatal("Can't open configuration file: %s", strerror(errno));
-		}
-	}
-}
-
-/* Close configuration file */
-static void config_close(void) {
-	if(cfg_handle == NULL) {
-		return;
-	}
-	
-	while(fclose(cfg_handle) != 0) {
-		if(errno == EINTR) {
-			continue;
-		}
-		
-		debug("Can't close config file: %s", strerror(errno));
-		debug("Dropping handle %p!", cfg_handle);
-		break;
-	}
-	cfg_handle = NULL;
-}
-
-/* Read next line from configuration file */
-static char* config_readline(void) {
-	config_open();
-	
-	char* line = allocate(1024);
-	if(fgets(line, 1024, cfg_handle) == NULL) {
-		if(feof(cfg_handle)) {
-			config_close();
-			
-			free(line);
-			return(NULL);
-		}
-		
-		fatal("Can't read config file: %s", strerror(errno));
-	}
-	
-	/* Remove newline and carridge return characters from the end of the
-	 * line.
-	*/
-	size_t end = strlen(line)-1;
-	while(line[end] == '\n' || line[end] == '\r') {
-		line[end] = '\0';
-		end--;
-	}
-	
-	return(line);
-}
-
 /* Add a mount */
 static void config_add_mount(kl_mount** mounts, char* device, char* mpoint) {
 	char* fstype = "auto";
@@ -118,6 +59,42 @@ static void config_add_mount(kl_mount** mounts, char* device, char* mpoint) {
 	mount_add(mounts, &nmount);
 }
 
+/* Read configuration file, one line at a time and call config_parse() for each
+ * individual line, in the event of an error an incomplete configuration may,
+ * or may not be loaded.
+*/
+void config_load(void) {
+	FILE* cfg_handle = NULL;
+	while(cfg_handle == NULL) {
+		if((cfg_handle = fopen("/boot/" CONFIG_FILE, "r")) != NULL) {
+			break;
+		}
+		if(errno == EINTR) {
+			continue;
+		}
+		
+		eprintf("Can't open " CONFIG_FILE ": %s\n", strerror(errno));
+		return;
+	}
+	
+	unsigned int lnum = 1;
+	char line[1024] = {'\0'};
+	while(fgets(line, 1024, cfg_handle) != NULL) {
+		
+	}
+	
+	while(fclose(cfg_handle) != 0) {
+		if(errno == EINTR) {
+			continue;
+		}
+		
+		eprintf("Can't close " CONFIG_FILE ": %s\n", strerror(errno));
+		eprintf("Discarding cfg_handle!\n");
+		return;
+	}
+}
+
+#if 0
 /* Load configuration from file */
 void config_load(void) {
 	char* line = NULL;
@@ -247,3 +224,4 @@ void config_load(void) {
 		TARGET_DEFAULTS(&target);
 	}
 }
+#endif
