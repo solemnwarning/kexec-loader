@@ -32,6 +32,10 @@
 #include <stdlib.h>
 #include <errno.h>
 #include <string.h>
+#include <sys/types.h>
+#include <sys/stat.h>
+#include <fcntl.h>
+#include <unistd.h>
 
 #include "config.h"
 #include "../config.h"
@@ -58,6 +62,11 @@ static void config_add_mount(kl_mount** mounts, char* device, char* mpoint) {
 	strncpy(nmount.fstype, fstype, 63);
 	
 	mount_add(mounts, &nmount);
+}
+
+/* Create a device */
+static void config_create_device(mode_t type, char* value, unsigned int lnum) {
+	
 }
 
 /* Read configuration file, one line at a time and call config_parse() for each
@@ -140,12 +149,11 @@ void config_parse(char* line, unsigned int lnum) {
 		}
 	}
 	
-	int validcfg = 0;
 	if(str_compare(name, "timeout", STR_NOCASE)) {
 		config.timeout = strtoul(value, NULL, 10);
 		debug("timeout='%s' (%u)", value, config.timeout);
 		
-		validcfg = 1;
+		return;
 	}
 	if(str_compare(name, "title", STR_NOCASE)) {
 		if(target.name[0] != '\0') {
@@ -157,27 +165,27 @@ void config_parse(char* line, unsigned int lnum) {
 		}
 		
 		strncpy(target.name, value, 63);
-		validcfg = 1;
+		return;
 	}
 	if(str_compare(name, "kernel", STR_NOCASE)) {
 		strncpy(target.kernel, value, 1023);
-		validcfg = 1;
+		return;
 	}
 	if(str_compare(name, "initrd", STR_NOCASE)) {
 		strncpy(target.initrd, value, 1023);
-		validcfg = 1;
+		return;
 	}
 	if(str_compare(name, "append", STR_NOCASE)) {
 		strncpy(target.append, value, 511);
-		validcfg = 1;
+		return;
 	}
 	if(str_compare(name, "default", STR_NOCASE)) {
 		target.flags |= TARGET_DEFAULT;
-		validcfg = 1;
+		return;
 	}
 	if(str_compare(name, "rootfs", STR_NOCASE)) {
 		config_add_mount(&(target.mounts), value, "/target");
-		validcfg = 1;
+		return;
 	}
 	if(str_compare(name, "mount", STR_NOCASE)) {
 		char* tmp = strchr(value, ' ');
@@ -193,11 +201,18 @@ void config_parse(char* line, unsigned int lnum) {
 		snprintf(mpoint, 1023, "/target/%s", tmp);
 		
 		config_add_mount(&(target.mounts), value, mpoint);
-		validcfg = 1;
+		return;
 	}
-	if(!validcfg) {
-		printf("Unknown configuration variable '%s' at line %u\n", name, lnum);
+	if(str_compare(name, "chardev", STR_NOCASE)) {
+		config_create_device(S_IFCHR, value, lnum);
+		return;
 	}
+	if(str_compare(name, "blkdev", STR_NOCASE)) {
+		config_create_device(S_IFBLK, value, lnum);
+		return;
+	}
+	
+	printf("Unknown configuration variable '%s' at line %u\n", name, lnum);
 }
 
 /* Add the remaining target, if it exists */
