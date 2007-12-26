@@ -31,8 +31,30 @@
 #ifndef KEXEC_LOADER_CONSOLE_H
 #define KEXEC_LOADER_CONSOLE_H
 
+/* Console colours */
+#define CONS_BLACK	30
+#define CONS_RED	31
+#define CONS_GREEN	32
+#define CONS_YELLOW	33
+#define CONS_BLUE	34
+#define CONS_MAGENTA	35
+#define CONS_CYAN	36
+#define CONS_WHITE	37
+
+/* Console attributes */
+#define CONS_RESET	0
+#define CONS_BRIGHT	1
+#define CONS_DIM	2
+#define CONS_UNDERLINE	4
+#define CONS_BLINK	5
+#define CONS_INVERT	7
+#define CONS_HIDDEN	8
+
 void console_init(void);
 void console_setpos(int line, int column);
 void console_clear(void);
+void console_fgcolour(int colour);
+void console_bgcolour(int colour);
+void console_attrib(int attrib);
 
 #endif /* !KEXEC_LOADER_CONSOLE_H */

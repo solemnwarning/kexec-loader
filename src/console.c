@@ -76,3 +76,18 @@ void console_setpos(int line, int column) {
 void console_clear(void) {
 	printf("%c[2J", 0x1B);
 }
+
+/* Set foreground (text) colour */
+void console_fgcolour(int colour) {
+	printf("%c[;%dm", 0x1B, colour);
+}
+
+/* Set background colour */
+void console_bgcolour(int colour) {
+	printf("%c[;;%dm", 0x1B, colour+10);
+}
+
+/* Set console attributes */
+void console_attrib(int attrib) {
+	printf("%c[%dm", 0x1B, attrib);
+}
