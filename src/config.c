@@ -66,7 +66,20 @@ static void config_add_mount(kl_mount** mounts, char* device, char* mpoint) {
 
 /* Create a device */
 static void config_create_device(mode_t type, char* value, unsigned int lnum) {
+	int major = -1;
+	int minor = -1;
 	
+	major = atoi(value);
+	while(!IS_WHITESPACE(value[0]) && value[0] != '\0') { value++; }
+	while(IS_WHITESPACE(value[0])) { value++; }
+	
+	minor = atoi(value);
+	while(!IS_WHITESPACE(value[0]) && value[0] != '\0') { value++; }
+	while(IS_WHITESPACE(value[0])) { value++; }
+	
+	if(mknod(value, 0600 | type, makedev(major,minor)) == -1) {
+		eprintf("Can't create device %s: %s\n", value, strerror(errno));
+	}
 }
 
 /* Read configuration file, one line at a time and call config_parse() for each
