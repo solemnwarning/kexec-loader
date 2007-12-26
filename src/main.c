@@ -35,7 +35,6 @@
 #include <unistd.h>
 
 #include "mount.h"
-#include "main.h"
 #include "../config.h"
 #include "console.h"
 #include "config.h"

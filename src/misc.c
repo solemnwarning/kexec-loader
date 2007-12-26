@@ -37,7 +37,6 @@
 #include <ctype.h>
 
 #include "misc.h"
-#include "main.h"
 #include "config.h"
 
 /* Error checking malloc() wrapper, also zeros memory */

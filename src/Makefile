@@ -36,7 +36,7 @@ kexec-loader: main.o mount.o config.o console.o misc.o
 	$(CC) $(CFLAGS) $(LIBS) -o kexec-loader main.o mount.o config.o \
 		console.o misc.o
 
-main.o: main.c main.h
+main.o: main.c
 	$(CC) $(CFLAGS) $(INCLUDES) -c -o main.o main.c
 
 mount.o: mount.c mount.h misc.o
