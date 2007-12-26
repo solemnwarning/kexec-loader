@@ -32,6 +32,7 @@
 #define KEXEC_LOADER_CTCONFIG_H
 
 #define VERSION "v1.0 alpha"
+#define COPYRIGHT "Copyright (C) 2007 Daniel Collins"
 
 #define CONFIG_FILE "kexec-loader.conf"
 #define BOOTFS_TYPE "vfat"

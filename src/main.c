@@ -44,8 +44,9 @@ int main(int argc, char** argv) {
 	console_clear();
 	console_setpos(0,0);
 	
-	printf("Welcome to kexec-loader " VERSION "!\n");
-	printf("Copyright (C) 2007 Daniel Collins\n");
+	console_attrib(CONS_INVERT);
+	printf("kexec-loader " VERSION " - " COPYRIGHT "\n\n");
+	console_attrib(CONS_RESET);
 	
 	mount_boot();
 	mount_virt();
