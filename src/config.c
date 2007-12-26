@@ -115,6 +115,27 @@ void config_parse(char* line, unsigned int lnum) {
 		line[count--] = '\0';
 	}
 	
+	char* name = line;
+	char* value = line;
+	
+	/* If there are any whitespace characters remaining in the string treat
+	 * them as name/value seperators, replace the first one with nil to
+	 * terminate the string pointed to by name, also offset value to the
+	 * first non-whitespace character after the whitespace which should be
+	 * the beginning of the value.
+	*/
+	while(!IS_WHITESPACE(value[0]) && value[0] != '\0') {
+		value++;
+	}
+	if(value[0] != '\0') {
+		value[0] = '\0';
+		value++;
+		
+		while(IS_WHITESPACE(value[0])) {
+			value++;
+		}
+	}
+	
 #if 0
 	validcfg = 0;
 	if(str_compare(name, "timeout", STR_NOCASE)) {
