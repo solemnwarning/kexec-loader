@@ -66,3 +66,13 @@ void console_init(void) {
 		fatal("Can't set stderr buffer: %s", strerror(errno));
 	}
 }
+
+/* Set cursor position */
+void console_setpos(int line, int column) {
+	printf("%c[%d;%dH", 0x1B, line, column);
+}
+
+/* Clear the console */
+void console_clear(void) {
+	printf("%c[2J", 0x1B);
+}

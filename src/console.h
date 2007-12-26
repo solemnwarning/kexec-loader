@@ -32,5 +32,7 @@
 #define KEXEC_LOADER_CONSOLE_H
 
 void console_init(void);
+void console_setpos(int line, int column);
+void console_clear(void);
 
 #endif /* !KEXEC_LOADER_CONSOLE_H */
