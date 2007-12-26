@@ -39,7 +39,7 @@
 #include "misc.h"
 
 struct kl_config config = CONFIG_DEFAULTS_DEFINE;
-struct kl_target target = TARGET_DEFAULTS_DEFINE;
+static struct kl_target target = TARGET_DEFAULTS_DEFINE;
 
 /* Add a mount */
 static void config_add_mount(kl_mount** mounts, char* device, char* mpoint) {
@@ -65,6 +65,8 @@ static void config_add_mount(kl_mount** mounts, char* device, char* mpoint) {
  * or may not be loaded.
 */
 void config_load(void) {
+	TARGET_DEFAULTS(&target);
+	
 	FILE* cfg_handle = NULL;
 	while(cfg_handle == NULL) {
 		if((cfg_handle = fopen("/boot/" CONFIG_FILE, "r")) != NULL) {
@@ -83,6 +85,8 @@ void config_load(void) {
 	while(fgets(line, 1024, cfg_handle) != NULL) {
 		config_parse(line, lnum++);
 	}
+	
+	config_finish();
 	
 	while(fclose(cfg_handle) != 0) {
 		if(errno == EINTR) {
@@ -136,8 +140,7 @@ void config_parse(char* line, unsigned int lnum) {
 		}
 	}
 	
-#if 0
-	validcfg = 0;
+	int validcfg = 0;
 	if(str_compare(name, "timeout", STR_NOCASE)) {
 		config.timeout = strtoul(value, NULL, 10);
 		debug("timeout='%s' (%u)", value, config.timeout);
@@ -195,7 +198,10 @@ void config_parse(char* line, unsigned int lnum) {
 	if(!validcfg) {
 		printf("Unknown configuration variable '%s' at line %u\n", name, lnum);
 	}
-	
+}
+
+/* Add the remaining target, if it exists */
+void config_finish(void) {
 	if(target.name[0] != '\0') {
 		if(target_add(&(config.targets), &target) == NULL) {
 			fatal("Can't load config: %s", strerror(errno));
@@ -203,5 +209,4 @@ void config_parse(char* line, unsigned int lnum) {
 		
 		TARGET_DEFAULTS(&target);
 	}
-#endif
 }

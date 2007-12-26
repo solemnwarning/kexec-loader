@@ -89,5 +89,6 @@ extern struct kl_config config;
 
 void config_load(void);
 void config_parse(char* line, unsigned int lnum);
+void config_finish(void);
 
 #endif /* !KEXEC_LOADER_CONF_H */
