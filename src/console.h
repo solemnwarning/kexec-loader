@@ -51,10 +51,11 @@
 #define CONS_HIDDEN	8
 
 void console_init(void);
-void console_setpos(int line, int column);
+void console_setpos(int row, int column);
 void console_clear(void);
 void console_fgcolour(int colour);
 void console_bgcolour(int colour);
 void console_attrib(int attrib);
+void console_getsize(unsigned int* rows, unsigned int* cols);
 
 #endif /* !KEXEC_LOADER_CONSOLE_H */

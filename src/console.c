@@ -68,8 +68,8 @@ void console_init(void) {
 }
 
 /* Set cursor position */
-void console_setpos(int line, int column) {
-	printf("%c[%d;%dH", 0x1B, line, column);
+void console_setpos(int row, int column) {
+	printf("%c[%d;%dH", 0x1B, row, column);
 }
 
 /* Clear the console */
@@ -90,4 +90,15 @@ void console_bgcolour(int colour) {
 /* Set console attributes */
 void console_attrib(int attrib) {
 	printf("%c[%dm", 0x1B, attrib);
+}
+
+/* Get size of console */
+void console_getsize(unsigned int* rows, unsigned int* cols) {
+	struct winsize cons_size;
+	if(ioctl(fileno(stdout), TIOCGWINSZ, &cons_size) == -1) {
+		eprintf("Can't ioctl: %s\n", strerror(errno));
+	}
+	
+	*rows = cons_size.row;
+	*cols = cons_size.col;
 }
