@@ -53,8 +53,8 @@ int main(int argc, char** argv) {
 	console_setpos(1,2);
 	printf("kexec-loader " VERSION);
 	
-	console_setpos(1, cols - (strlen(COPYRIGHT " ")-1));
-	printf(COPYRIGHT " ");
+	console_setpos(1, cols - strlen(COPYRIGHT));
+	printf(COPYRIGHT);
 	
 	console_attrib(CONS_RESET);
 	console_setpos(3,1);
