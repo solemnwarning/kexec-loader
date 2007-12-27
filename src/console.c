@@ -34,6 +34,7 @@
 #include <string.h>
 #include <termios.h>
 #include <unistd.h>
+#include <sys/ioctl.h>
 
 #include "../config.h"
 #include "misc.h"
@@ -99,6 +100,6 @@ void console_getsize(unsigned int* rows, unsigned int* cols) {
 		eprintf("Can't ioctl: %s\n", strerror(errno));
 	}
 	
-	*rows = cons_size.row;
-	*cols = cons_size.col;
+	*rows = cons_size.ws_row;
+	*cols = cons_size.ws_col;
 }

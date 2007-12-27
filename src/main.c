@@ -42,11 +42,22 @@
 int main(int argc, char** argv) {
 	console_init();
 	console_clear();
-	console_setpos(0,0);
+	
+	unsigned int rows, cols, n;
+	console_getsize(&rows, &cols);
 	
 	console_attrib(CONS_INVERT);
-	printf("kexec-loader " VERSION " - " COPYRIGHT "\n\n");
+	console_setpos(1,1);
+	for(n = 0; n < cols; n++) { printf(" "); }
+	
+	console_setpos(1,2);
+	printf("kexec-loader " VERSION);
+	
+	console_setpos(1, cols - (strlen(COPYRIGHT " ")-1));
+	printf(COPYRIGHT " ");
+	
 	console_attrib(CONS_RESET);
+	console_setpos(3,1);
 	
 	mount_boot();
 	mount_virt();
