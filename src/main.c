@@ -105,7 +105,13 @@ static kl_target* target_menu(void) {
 		
 		console_attrib(CONS_RESET);
 		
-		for(wpos = 1; wpos < mmpos; wpos++) {
+		ctarget = starget;
+		
+		for(wpos = 1; wpos <= mmpos; wpos++) {
+			if(ctarget == NULL) {
+				break;
+			}
+			
 			console_setpos(wpos+2, 2);
 			
 			if(wpos == mpos) {
@@ -123,6 +129,7 @@ static kl_target* target_menu(void) {
 			if(wpos == mpos) {
 				console_attrib(CONS_RESET);
 			}
+			ctarget = ctarget->next;
 		}
 		
 		while(1) { sleep(999); }

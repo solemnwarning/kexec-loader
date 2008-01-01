@@ -51,6 +51,7 @@ void console_init(void) {
 	}
 	
 	attribs.c_lflag &= ~ICANON;
+	attribs.c_lflag &= ~ECHO;
 	
 	while(tcsetattr(fileno(stdin), TCSANOW, &attribs) == -1) {
 		if(errno == EINTR) {

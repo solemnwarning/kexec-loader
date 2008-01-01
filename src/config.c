@@ -168,6 +168,9 @@ void config_parse(char* line, unsigned int lnum) {
 		return;
 	}
 	if(str_compare(name, "title", STR_NOCASE)) {
+		if(value[0] == '\0') {
+			value = "Untitled";
+		}
 		if(target.name[0] != '\0') {
 			if(target_add(&(config.targets), &target) == NULL) {
 				fatal("Can't load config: %s", strerror(errno));

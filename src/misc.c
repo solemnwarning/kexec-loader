@@ -221,8 +221,17 @@ kl_target* target_add(kl_target** list, kl_target const* src) {
 		nptr->mounts = mount_copy(src->mounts);
 	}
 	
-	nptr->next = *list;
-	*list = nptr;
+	kl_target* eptr = *list;
+	while(eptr != NULL && eptr->next != NULL) {
+		eptr = eptr->next;
+	}
+	if(eptr == NULL) {
+		nptr->next = *list;
+		*list = nptr;
+	}else{
+		eptr->next = nptr;
+		nptr->next = NULL;
+	}
 	
 	return(nptr);
 }
