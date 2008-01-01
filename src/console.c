@@ -81,8 +81,9 @@ void console_clear(void) {
 		unsigned int tremain = 10;
 		struct pollfd poll_stdin = {fileno(stdin), POLLIN, 0};
 		
+		putchar('\n');
 		while(tremain > 0) {
-			printf("\n\rPress any key or wait %u seconds...", tremain);
+			printf("\rPress any key or wait %u seconds...", tremain);
 			
 			if(poll(&poll_stdin, 1, 1000) > 0) {
 				getchar();
