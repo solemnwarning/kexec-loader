@@ -148,6 +148,13 @@ static kl_target* target_menu(void) {
 		
 		console_attrib(CONS_RESET);
 		
+		if(starget == NULL) {
+			console_setpos(3, 2);
+			printf("No targets defined!");
+			
+			while(1) { sleep(999); }
+		}
+		
 		ctarget = starget;
 		
 		for(wpos = 1; wpos <= mmpos; wpos++) {
