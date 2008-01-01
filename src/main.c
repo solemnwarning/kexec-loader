@@ -75,7 +75,7 @@ static kl_target* target_menu(void) {
 	unsigned int tremain = config.timeout;
 	struct timeval timeout = {0,0};
 	struct timeval* timeptr = NULL;
-	if(first_call) {
+	if(first_call && config.timeout > 0) {
 		timeptr = &timeout;
 	}
 	
