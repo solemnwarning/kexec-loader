@@ -83,7 +83,6 @@ int kexec_load(char const* kernel, char const* append, char const* initrd) {
 	
 	argv_append("-l");
 	argv_append((char*)kernel);
-	argv_append((char*)append);
 	
 	if(append != NULL) {
 		snprintf(append_arg, 1023, "--append=%s", append);
