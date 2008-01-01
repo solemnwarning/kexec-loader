@@ -32,9 +32,9 @@ all: kexec-loader
 clean:
 	rm -f *.o kexec-loader
 
-kexec-loader: main.o mount.o config.o console.o misc.o
+kexec-loader: main.o mount.o config.o console.o misc.o elf.o
 	$(CC) $(CFLAGS) $(LIBS) -o kexec-loader main.o mount.o config.o \
-		console.o misc.o
+		console.o misc.o elf.o
 
 main.o: main.c
 	$(CC) $(CFLAGS) $(INCLUDES) -c -o main.o main.c
@@ -50,3 +50,6 @@ console.o: console.c console.h misc.o
 
 misc.o: misc.c misc.h
 	$(CC) $(CFLAGS) $(INCLUDES) -c -o misc.o misc.c
+
+elf.o: elf.c elf.h misc.o
+	$(CC) $(CFLAGS) $(INCLUDES) -c -o elf.o elf.c
