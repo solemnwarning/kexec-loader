@@ -39,6 +39,7 @@
 #include "../config.h"
 #include "console.h"
 #include "config.h"
+#include "kexec.h"
 
 static kl_target* target_menu(void);
 
@@ -49,9 +50,37 @@ int main(int argc, char** argv) {
 	mount_virt();
 	config_load();
 	
-	target_menu();
+	while(1) {
+		unmount_tree("/target");
+		
+		kl_target* target = target_menu();
+		
+		console_clear();
+		console_setpos(1,1);
+		
+		if(!mount_list(target->mounts)) {
+			continue;
+		}
+		
+		char* append = NULL;
+		char* initrd = NULL;
+		
+		if(target->append[0] != '\0') {
+			append = target->append;
+		}
+		if(target->initrd[0] != '\0') {
+			initrd = target->initrd;
+		}
+		
+		if(!kexec_load(target->kernel, append, initrd)) {
+			continue;
+		}
+		
+		break;
+	}
 	
 	unmount_tree("/");
+	kexec_boot();
 	
 	while(1) {
 		sleep(9999);
