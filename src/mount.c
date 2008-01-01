@@ -48,6 +48,9 @@ int got_boot = 0; /* Is /boot mounted? */
  *
  * Filesystems with a device of 'rootfs' are ignored since rootfs can never be
  * unmounted and it's harmless to leave mounted anyway.
+ *
+ * Filesystems mounted on /proc are also ignored since the /sbin/kexec program
+ * needs /proc/iomem.
 */
 void unmount_tree(char const* dir) {
 	FILE* mfile = NULL;
@@ -81,6 +84,9 @@ void unmount_tree(char const* dir) {
 			return;
 		}
 		if(!str_compare(token, cmp2, STR_WILDCARD2)) {
+			continue;
+		}
+		if(str_compare(token, "/proc", STR_WILDCARD2)) {
 			continue;
 		}
 		
