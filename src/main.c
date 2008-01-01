@@ -39,29 +39,16 @@
 #include "console.h"
 #include "config.h"
 
+static kl_target* target_menu(void);
+
 int main(int argc, char** argv) {
 	console_init();
-	console_clear();
-	
-	unsigned int rows, cols, n;
-	console_getsize(&rows, &cols);
-	
-	console_attrib(CONS_INVERT);
-	console_setpos(1,1);
-	for(n = 0; n < cols; n++) { printf(" "); }
-	
-	console_setpos(1,2);
-	printf("kexec-loader " VERSION);
-	
-	console_setpos(1, cols - strlen(COPYRIGHT));
-	printf(COPYRIGHT);
-	
-	console_attrib(CONS_RESET);
-	console_setpos(3,1);
 	
 	mount_boot();
 	mount_virt();
 	config_load();
+	
+	target_menu();
 	
 	unmount_tree("/");
 	
@@ -69,4 +56,77 @@ int main(int argc, char** argv) {
 		sleep(9999);
 	}
 	return(1);
+}
+
+/* Display the target list and return the selected target */
+static kl_target* target_menu(void) {
+	static int first_call = 1;
+	
+	unsigned int rows, cols, n;
+	console_getsize(&rows, &cols);
+	
+	unsigned int mpos = 1, mmpos = (rows-3), ddefault = 0, wpos;
+	
+	kl_target* ctarget = config.targets;
+	kl_target* starget = config.targets;
+	
+	while(ctarget != NULL) {
+		if(ctarget->flags & TARGET_DEFAULT) {
+			ddefault = 1;
+			break;
+		}
+		ctarget = ctarget->next;
+		
+		if(mpos < mmpos) {
+			mpos++;
+		}else{
+			starget = starget->next;
+		}
+	}
+	if(!ddefault) {
+		ctarget = config.targets;
+		starget = config.targets;
+		mpos = 1;
+		
+		ddefault = 1;
+	}
+	while(1) {
+		console_clear();
+		
+		console_attrib(CONS_INVERT);
+		console_setpos(1,1);
+		for(n = 0; n < cols; n++) { putchar(' '); }
+		
+		console_setpos(1,2);
+		printf("kexec-loader " VERSION);
+		
+		console_setpos(1, cols - strlen(COPYRIGHT));
+		printf(COPYRIGHT);
+		
+		console_attrib(CONS_RESET);
+		
+		for(wpos = 1; wpos < mmpos; wpos++) {
+			console_setpos(wpos+2, 2);
+			
+			if(wpos == mpos) {
+				console_attrib(CONS_INVERT);
+			}
+			
+			for(n = 0; n < (cols-2); n++) {
+				if(ctarget->name[n] == '\0') {
+					break;
+				}
+				
+				putchar(ctarget->name[n]);
+			}
+			
+			if(wpos == mpos) {
+				console_attrib(CONS_RESET);
+			}
+		}
+		
+		while(1) { sleep(999); }
+	}
+	
+	first_call = 0;
 }
