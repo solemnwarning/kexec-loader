@@ -63,7 +63,7 @@ static int run_kexec(char** kexec_argv) {
 	int status = 0;
 	wait(&status);
 	
-	if(WIFEXITED(status)) {
+	if(!WIFEXITED(status)) {
 		return(-1);
 	}
 	
