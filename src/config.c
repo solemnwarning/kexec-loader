@@ -77,7 +77,7 @@ static void config_create_device(mode_t type, char* value, unsigned int lnum) {
 	while(IS_WHITESPACE(value[0])) { value++; }
 	
 	if(mknod(value, 0600 | type, makedev(major,minor)) == -1) {
-		eprintf("Can't create device %s: %s\n", value, strerror(errno));
+		printm("Can't create device %s: %s", value, strerror(errno));
 	}
 }
 
@@ -97,7 +97,7 @@ void config_load(void) {
 			continue;
 		}
 		
-		eprintf("Can't open " CONFIG_FILE ": %s\n", strerror(errno));
+		printm("Can't open " CONFIG_FILE ": %s", strerror(errno));
 		return;
 	}
 	
@@ -114,8 +114,8 @@ void config_load(void) {
 			continue;
 		}
 		
-		eprintf("Can't close " CONFIG_FILE ": %s\n", strerror(errno));
-		eprintf("Discarding cfg_handle!\n");
+		printm("Can't close " CONFIG_FILE ": %s", strerror(errno));
+		printm("Discarding cfg_handle!");
 		return;
 	}
 }
@@ -227,7 +227,7 @@ void config_parse(char* line, unsigned int lnum) {
 		return;
 	}
 	
-	printf("Unknown configuration variable '%s' at line %u\n", name, lnum);
+	printm("Unknown configuration variable '%s' at line %u", name, lnum);
 }
 
 /* Add the remaining target, if it exists */

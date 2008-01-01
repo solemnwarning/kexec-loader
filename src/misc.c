@@ -39,6 +39,8 @@
 #include "misc.h"
 #include "config.h"
 
+int printm_called = 0;
+
 /* Error checking malloc() wrapper, also zeros memory */
 void* allocate_r(char const* file, unsigned int line, size_t size) {
 	void* ptr = malloc(size);
@@ -49,7 +51,6 @@ void* allocate_r(char const* file, unsigned int line, size_t size) {
 	memset(ptr, 0, size);
 	return(ptr);
 }
-
 
 /* Fatal error encountered, abort! */
 void fatal_r(char const* file, unsigned int line, char const* fmt, ...) {
@@ -66,21 +67,8 @@ void fatal_r(char const* file, unsigned int line, char const* fmt, ...) {
 	}
 }
 
-/* Handle a non-fatal error */
-void nferror_r(char const* file, unsigned int line, char const* fmt, ...) {
-	va_list argv;
-	va_start(argv, fmt);
-	
-	char buf[128] = {'\0'};
-	vsnprintf(buf, 127, fmt, argv);
-	
-	eprintf("%s:%u: %s\n", file, line, buf);
-	
-	va_end(argv);
-}
-
-/* Print a warning message */
-void warn_r(char const* file, unsigned int line, char const* fmt, ...) {
+/* Print a message to the console */
+void printm_r(char const* file, unsigned int line, char const* fmt, ...) {
 	va_list argv;
 	va_start(argv, fmt);
 	
@@ -90,6 +78,8 @@ void warn_r(char const* file, unsigned int line, char const* fmt, ...) {
 	printf("%s:%u: %s\n", file, line, buf);
 	
 	va_end(argv);
+	
+	printm_called = 1;
 }
 
 /* Print a debug message */

@@ -58,8 +58,8 @@ void unmount_tree(char const* dir) {
 			continue;
 		}
 		
-		nferror("Can't open /proc/mounts: %s", strerror(errno));
-		warn("Not umounting any filesystems!!");
+		printm("Can't open /proc/mounts: %s", strerror(errno));
+		printm("Not umounting any filesystems!!");
 		return;
 	}
 	
@@ -76,7 +76,7 @@ void unmount_tree(char const* dir) {
 			continue;
 		}
 		if((token = strtok(NULL, " ")) == NULL) {
-			nferror("/proc/mounts is gobbledegook!");
+			printm("/proc/mounts is gobbledegook!");
 			return;
 		}
 		if(!str_compare(token, cmp2, STR_WILDCARD2)) {
@@ -91,7 +91,7 @@ void unmount_tree(char const* dir) {
 			continue;
 		}
 		
-		nferror("Can't close /proc/mounts: %s", strerror(errno));
+		printm("Can't close /proc/mounts: %s", strerror(errno));
 	}
 	
 	while(mcount > 0) {
@@ -104,7 +104,7 @@ void unmount_tree(char const* dir) {
 		}
 		
 		if(umount(mount) == -1) {
-			nferror("Can't umount %s: %s", mount, strerror(errno));
+			printm("Can't umount %s: %s", mount, strerror(errno));
 		}
 		mounts[mnum][0] = '\0';
 		mcount--;

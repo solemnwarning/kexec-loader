@@ -35,6 +35,7 @@
 #include <termios.h>
 #include <unistd.h>
 #include <sys/ioctl.h>
+#include <poll.h>
 
 #include "../config.h"
 #include "misc.h"
@@ -76,6 +77,20 @@ void console_setpos(int row, int column) {
 
 /* Clear the console */
 void console_clear(void) {
+	if(printm_called) {
+		unsigned int tremain = 10;
+		struct pollfd poll_stdin = {fileno(stdin), POLLIN, 0};
+		
+		while(tremain > 0) {
+			printf("\n\rPress any key or wait %u seconds...", tremain);
+			
+			if(poll(&poll_stdin, 1, 1000) > 0) {
+				getchar();
+			}
+			tremain--;
+		}
+	}
+	
 	printf("%c[2J", 0x1B);
 }
 
@@ -98,7 +113,7 @@ void console_attrib(int attrib) {
 void console_getsize(unsigned int* rows, unsigned int* cols) {
 	struct winsize cons_size;
 	if(ioctl(fileno(stdout), TIOCGWINSZ, &cons_size) == -1) {
-		eprintf("Can't ioctl: %s\n", strerror(errno));
+		printm("Can't ioctl: %s", strerror(errno));
 	}
 	
 	*rows = cons_size.ws_row;
