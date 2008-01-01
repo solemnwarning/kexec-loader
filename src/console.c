@@ -89,6 +89,8 @@ void console_clear(void) {
 			}
 			tremain--;
 		}
+		
+		printm_called = 0;
 	}
 	
 	printf("%c[2J", 0x1B);
