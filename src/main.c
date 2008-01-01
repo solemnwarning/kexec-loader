@@ -155,8 +155,8 @@ static kl_target* target_menu(void) {
 					goto MENU_INPUT;
 				}
 				
-				if(mpos < mmpos) {
-					mpos++;
+				if(mpos > 1) {
+					mpos--;
 				}else{
 					starget = config.targets;
 					while(starget != NULL && starget->next != ctarget) {
@@ -169,6 +169,12 @@ static kl_target* target_menu(void) {
 			if(gotchar == 66) {
 				if(ctarget->next == NULL) {
 					goto MENU_INPUT;
+				}
+				
+				if(mpos < mmpos) {
+					mpos++;
+				}else{
+					starget = starget->next;
 				}
 			}
 		}
