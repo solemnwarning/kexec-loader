@@ -39,6 +39,7 @@
 #include "mount.h"
 #include "misc.h"
 #include "../config.h"
+#include "config.h"
 
 int got_boot = 0; /* Is /boot mounted? */
 
@@ -155,4 +156,57 @@ void mount_boot(void) {
 		
 		devname = devices[++devnum];
 	}
+}
+
+/* Mount all mounts in a kl_mount list
+ *
+ * If all mounts are sucessfully mounted 1 is returned, if any mounts fail zero
+ * is returned any any already-completed mounts will not be unmounted
+*/
+int mount_list(kl_mount* mount_src) {
+	kl_mount* mounts = NULL;
+	kl_mount* cmount = NULL;
+	kl_mount* mptr = NULL;
+	char cmp1[1024] = {'\0'};
+	
+	if((mounts = mount_copy(mount_src)) == NULL) {
+		printm("Copying mount list failed: %s", strerror(errno));
+		return(0);
+	}
+	
+	unsigned int count = 0;
+	for(mptr = mounts; mptr != NULL; mptr = mptr->next) {
+		count++;
+	}
+	
+	while(count > 0) {
+		cmount = mounts;
+		mptr = mounts;
+		
+		while(cmount != NULL) {
+			snprintf(cmp1, 1023, "%s*", cmount->mpoint);
+			
+			if(str_compare(cmp1, mptr->mpoint, STR_WILDCARD1)) {
+				mptr = cmount;
+			}
+			cmount = cmount->next;
+		}
+		
+		if(str_compare(mptr->fstype, "auto", 0)) {
+			printm("Filesystem type 'auto' is unsupported!");
+			mount_free(&mounts);
+			return(0);
+		}
+		
+		if(mount(mptr->device, mptr->mpoint, mptr->fstype, MS_RDONLY, NULL) == -1) {
+			printm("Can't mount %s: %s", mptr->mpoint, strerror(errno));
+			mount_free(&mounts);
+			return(0);
+		}
+		
+		mptr->mpoint[0] = '\0';
+		count--;
+	}
+	
+	return(1);
 }
