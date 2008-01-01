@@ -87,6 +87,7 @@ void console_clear(void) {
 			
 			if(poll(&poll_stdin, 1, 1000) > 0) {
 				getchar();
+				break;
 			}
 			tremain--;
 		}
