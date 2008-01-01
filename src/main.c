@@ -66,6 +66,7 @@ static kl_target* target_menu(void) {
 	console_getsize(&rows, &cols);
 	
 	unsigned int mpos = 1, mmpos = (rows-3), ddefault = 0, wpos;
+	int gotchar;
 	
 	kl_target* ctarget = config.targets;
 	kl_target* starget = config.targets;
@@ -132,8 +133,48 @@ static kl_target* target_menu(void) {
 			ctarget = ctarget->next;
 		}
 		
-		while(1) { sleep(999); }
+		MENU_INPUT:
+		gotchar = getchar();
+		if(gotchar == '\n') {
+			ctarget = starget;
+			for(n = 1; n < mpos; n++) { ctarget = ctarget->next; }
+			
+			goto ENDMENU;
+		}
+		if(gotchar == 0x1B && getchar() == '[') {
+			gotchar = getchar();
+			
+			if(gotchar == 65 || gotchar == 66) {
+				ctarget = starget;
+				for(n = 1; n < mpos; n++) {
+					ctarget = ctarget->next;
+				}
+			}
+			if(gotchar == 65) {
+				if(ctarget == config.targets) {
+					goto MENU_INPUT;
+				}
+				
+				if(mpos < mmpos) {
+					mpos++;
+				}else{
+					starget = config.targets;
+					while(starget != NULL && starget->next != ctarget) {
+						starget = starget->next;
+					}
+				}
+				
+				continue;
+			}
+			if(gotchar == 66) {
+				if(ctarget->next == NULL) {
+					goto MENU_INPUT;
+				}
+			}
+		}
 	}
 	
+	ENDMENU:
 	first_call = 0;
+	return(ctarget);
 }
