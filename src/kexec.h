@@ -1,4 +1,4 @@
-/* kexec-loader - Compile-time configuration
+/* kexec-loader - kexec header
  * Copyright (C) 2007, Daniel Collins <solemnwarning@solemnwarning.net>
  * All rights reserved.
  *
@@ -28,17 +28,10 @@
  * EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
-#ifndef KEXEC_LOADER_CTCONFIG_H
-#define KEXEC_LOADER_CTCONFIG_H
+#ifndef KEXEC_LOADER_KEXEC_H
+#define KEXEC_LOADER_KEXEC_H
 
-#define VERSION "v1.0 alpha"
-#define COPYRIGHT "Copyright (C) 2007 Daniel Collins"
+int kexec_load(char const* kernel, char const* append, char const* initrd);
+int kexec_boot(void);
 
-#define CONFIG_FILE "kexec-loader.conf"
-#define BOOTFS_TYPE "vfat"
-
-#define KEXEC_PATH "/sbin/kexec"
-
-#define DEBUG
-
-#endif /* !KEXEC_LOADER_CTCONFIG_H */
+#endif /* !KEXEC_LOADER_KEXEC_H */
