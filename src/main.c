@@ -33,6 +33,7 @@
 #include <errno.h>
 #include <string.h>
 #include <unistd.h>
+#include <sys/select.h>
 
 #include "mount.h"
 #include "../config.h"
@@ -62,14 +63,25 @@ int main(int argc, char** argv) {
 static kl_target* target_menu(void) {
 	static int first_call = 1;
 	
-	unsigned int rows, cols, n;
+	unsigned int rows, cols;
 	console_getsize(&rows, &cols);
 	
-	unsigned int mpos = 1, mmpos = (rows-3), ddefault = 0, wpos;
-	int gotchar;
+	unsigned int mpos = 1, mmpos = (rows-3), ddefault = 0, wpos, n;
+	int gotchar, i;
 	
 	kl_target* ctarget = config.targets;
 	kl_target* starget = config.targets;
+	
+	unsigned int tremain = config.timeout;
+	struct timeval timeout = {0,0};
+	struct timeval* timeptr = NULL;
+	if(first_call) {
+		timeptr = &timeout;
+	}
+	
+	char timestr[8] = {'\0'};
+	
+	fd_set read_fds;
 	
 	while(ctarget != NULL) {
 		if(ctarget->flags & TARGET_DEFAULT) {
@@ -91,6 +103,7 @@ static kl_target* target_menu(void) {
 		
 		ddefault = 1;
 	}
+	
 	while(1) {
 		console_clear();
 		
@@ -128,12 +141,36 @@ static kl_target* target_menu(void) {
 			}
 			
 			if(wpos == mpos) {
+				if(timeptr != NULL) {
+					snprintf(timestr, 7, " (%u)", tremain);
+					console_setpos(wpos+2, cols - strlen(timestr));
+					
+					printf("%s", timestr);
+				}
+				
 				console_attrib(CONS_RESET);
 			}
 			ctarget = ctarget->next;
 		}
 		
 		MENU_INPUT:
+		FD_ZERO(&read_fds);
+		FD_SET(fileno(stdin), &read_fds);
+		timeout.tv_sec = 1;
+		
+		i = select(fileno(stdin)+1, &read_fds, NULL, NULL, timeptr);
+		if(i <= 0) {
+			if(--tremain == 0) {
+				ctarget = starget;
+				for(n = 1; n < mpos; n++) { ctarget = ctarget->next; }
+				
+				goto ENDMENU;
+			}else{
+				continue;
+			}
+		}
+		timeptr = NULL;
+		
 		gotchar = getchar();
 		if(gotchar == '\n') {
 			ctarget = starget;
