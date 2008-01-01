@@ -79,7 +79,7 @@ static kl_target* target_menu(void) {
 		timeptr = &timeout;
 	}
 	
-	char timestr[8] = {'\0'};
+	char timestr[16] = {'\0'};
 	
 	fd_set read_fds;
 	
@@ -142,8 +142,8 @@ static kl_target* target_menu(void) {
 			
 			if(wpos == mpos) {
 				if(timeptr != NULL) {
-					snprintf(timestr, 7, " (%u)", tremain);
-					console_setpos(wpos+2, cols - strlen(timestr));
+					snprintf(timestr, 15, " Timeout: %u", tremain);
+					console_setpos(rows-1, cols - strlen(timestr));
 					
 					printf("%s", timestr);
 				}
