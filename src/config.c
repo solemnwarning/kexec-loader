@@ -183,11 +183,11 @@ void config_parse(char* line, unsigned int lnum) {
 		return;
 	}
 	if(str_compare(name, "kernel", STR_NOCASE)) {
-		strncpy(target.kernel, value, 1023);
+		snprintf(target.kernel, 1023, "/target/%s", value);
 		return;
 	}
 	if(str_compare(name, "initrd", STR_NOCASE)) {
-		strncpy(target.initrd, value, 1023);
+		snprintf(target.initrd, 1023, "/target/%s", value);
 		return;
 	}
 	if(str_compare(name, "append", STR_NOCASE)) {
