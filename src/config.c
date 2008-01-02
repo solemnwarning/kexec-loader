@@ -39,7 +39,6 @@
 
 #include "config.h"
 #include "../config.h"
-#include "main.h"
 #include "misc.h"
 
 struct kl_config config = CONFIG_DEFAULTS_DEFINE;
@@ -78,7 +77,7 @@ static void config_create_device(mode_t type, char* value, unsigned int lnum) {
 	while(IS_WHITESPACE(value[0])) { value++; }
 	
 	if(mknod(value, 0600 | type, makedev(major,minor)) == -1) {
-		eprintf("Can't create device %s: %s\n", value, strerror(errno));
+		printm("Can't create device %s: %s", value, strerror(errno));
 	}
 }
 
@@ -98,7 +97,7 @@ void config_load(void) {
 			continue;
 		}
 		
-		eprintf("Can't open " CONFIG_FILE ": %s\n", strerror(errno));
+		printm("Can't open " CONFIG_FILE ": %s", strerror(errno));
 		return;
 	}
 	
@@ -115,8 +114,8 @@ void config_load(void) {
 			continue;
 		}
 		
-		eprintf("Can't close " CONFIG_FILE ": %s\n", strerror(errno));
-		eprintf("Discarding cfg_handle!\n");
+		printm("Can't close " CONFIG_FILE ": %s", strerror(errno));
+		printm("Discarding cfg_handle!");
 		return;
 	}
 }
@@ -169,6 +168,9 @@ void config_parse(char* line, unsigned int lnum) {
 		return;
 	}
 	if(str_compare(name, "title", STR_NOCASE)) {
+		if(value[0] == '\0') {
+			value = "Untitled";
+		}
 		if(target.name[0] != '\0') {
 			if(target_add(&(config.targets), &target) == NULL) {
 				fatal("Can't load config: %s", strerror(errno));
@@ -181,11 +183,11 @@ void config_parse(char* line, unsigned int lnum) {
 		return;
 	}
 	if(str_compare(name, "kernel", STR_NOCASE)) {
-		strncpy(target.kernel, value, 1023);
+		snprintf(target.kernel, 1023, "/target/%s", value);
 		return;
 	}
 	if(str_compare(name, "initrd", STR_NOCASE)) {
-		strncpy(target.initrd, value, 1023);
+		snprintf(target.initrd, 1023, "/target/%s", value);
 		return;
 	}
 	if(str_compare(name, "append", STR_NOCASE)) {
@@ -225,7 +227,7 @@ void config_parse(char* line, unsigned int lnum) {
 		return;
 	}
 	
-	printf("Unknown configuration variable '%s' at line %u\n", name, lnum);
+	printm("Unknown configuration variable '%s' at line %u", name, lnum);
 }
 
 /* Add the remaining target, if it exists */

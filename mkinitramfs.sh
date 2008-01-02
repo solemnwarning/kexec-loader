@@ -34,7 +34,8 @@ if [ -z "$1" ]; then
 fi
 
 install -m 0755 -d "$1"/{dev,boot,proc} || exit 1
-install -m 0755 src/kexec-loader "$1/init"
+install -m 0755 src/kexec-loader "$1/sbin/kexec-loader"
+ln -sf "sbin/kexec-loader" "$1/init"
 
 if [ ! -e "$1/dev/console" ]; then
 	mknod -m 0600 "$1/dev/console" c 5 1 || exit 1

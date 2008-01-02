@@ -1,4 +1,4 @@
-/* kexec-loader - Main header
+/* kexec-loader - kexec header
  * Copyright (C) 2007, Daniel Collins <solemnwarning@solemnwarning.net>
  * All rights reserved.
  *
@@ -28,7 +28,10 @@
  * EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
-#ifndef KEXEC_LOADER_MAIN_H
-#define KEXEC_LOADER_MAIN_H
+#ifndef KEXEC_LOADER_KEXEC_H
+#define KEXEC_LOADER_KEXEC_H
 
-#endif /* !KEXEC_LOADER_MAIN_H */
+int kexec_load(char const* kernel, char const* append, char const* initrd);
+int kexec_boot(void);
+
+#endif /* !KEXEC_LOADER_KEXEC_H */

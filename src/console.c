@@ -34,6 +34,8 @@
 #include <string.h>
 #include <termios.h>
 #include <unistd.h>
+#include <sys/ioctl.h>
+#include <poll.h>
 
 #include "../config.h"
 #include "misc.h"
@@ -50,6 +52,7 @@ void console_init(void) {
 	}
 	
 	attribs.c_lflag &= ~ICANON;
+	attribs.c_lflag &= ~ECHO;
 	
 	while(tcsetattr(fileno(stdin), TCSANOW, &attribs) == -1) {
 		if(errno == EINTR) {
@@ -65,4 +68,58 @@ void console_init(void) {
 	if(setvbuf(stderr, NULL, _IONBF, 0) != 0) {
 		fatal("Can't set stderr buffer: %s", strerror(errno));
 	}
+}
+
+/* Set cursor position */
+void console_setpos(int row, int column) {
+	printf("%c[%d;%dH", 0x1B, row, column);
+}
+
+/* Clear the console */
+void console_clear(void) {
+	if(printm_called) {
+		unsigned int tremain = 10;
+		struct pollfd poll_stdin = {fileno(stdin), POLLIN, 0};
+		
+		putchar('\n');
+		while(tremain > 0) {
+			printf("\rPress any key or wait %u seconds...", tremain);
+			
+			if(poll(&poll_stdin, 1, 1000) > 0) {
+				getchar();
+				break;
+			}
+			tremain--;
+		}
+		
+		printm_called = 0;
+	}
+	
+	printf("%c[2J", 0x1B);
+}
+
+/* Set foreground (text) colour */
+void console_fgcolour(int colour) {
+	printf("%c[;%dm", 0x1B, colour);
+}
+
+/* Set background colour */
+void console_bgcolour(int colour) {
+	printf("%c[;;%dm", 0x1B, colour+10);
+}
+
+/* Set console attributes */
+void console_attrib(int attrib) {
+	printf("%c[%dm", 0x1B, attrib);
+}
+
+/* Get size of console */
+void console_getsize(unsigned int* rows, unsigned int* cols) {
+	struct winsize cons_size;
+	if(ioctl(fileno(stdout), TIOCGWINSZ, &cons_size) == -1) {
+		printm("Can't ioctl: %s", strerror(errno));
+	}
+	
+	*rows = cons_size.ws_row;
+	*cols = cons_size.ws_col;
 }
