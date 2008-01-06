@@ -31,6 +31,7 @@
 #ifndef KEXEC_LOADER_MISC_H
 #define KEXEC_LOADER_MISC_H
 #include "config.h"
+#include "../config.h"
 
 /* String comparison flags */
 #define STR_NOCASE	1	/* Do case-insensitive comparision */
@@ -52,7 +53,7 @@ void fatal_r(char const* file, unsigned int line, char const* fmt, ...);
 #define printm(...) printm_r(__FILE__, __LINE__, __VA_ARGS__)
 void printm_r(char const* file, unsigned int line, char const* fmt, ...);
 
-#ifdef DEBUG
+#ifdef DEBUG_FILE
 #define debug(...) debug_r(__FILE__, __LINE__, __VA_ARGS__)
 #else
 #define debug(...)

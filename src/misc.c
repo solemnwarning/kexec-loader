@@ -38,6 +38,7 @@
 
 #include "misc.h"
 #include "config.h"
+#include "../config.h"
 
 int printm_called = 0;
 
@@ -84,14 +85,26 @@ void printm_r(char const* file, unsigned int line, char const* fmt, ...) {
 
 /* Print a debug message */
 void debug_r(char const* file, unsigned int line, char const* fmt, ...) {
-	#ifdef DEBUG
+	#ifdef DEBUG_FILE
+	static FILE* debug_fh = NULL;
+	
+	while((debug_fh = fopen(DEBUG_FILE, "a")) == NULL) {
+		if(errno == EINTR) {
+			continue;
+		}
+		
+		printm("Can't open debug file: %s", strerror(errno));
+		return;
+	}
+	
 	va_list argv;
 	va_start(argv, fmt);
 	
-	char buf[128] = {'\0'};
-	vsnprintf(buf, 127, fmt, argv);
-	
-	printf("%s:%u: %s\n", file, line, buf);
+	fprintf(debug_fh, "%s:%u: ", file, line);
+	vfprintf(debug_fh, fmt, argv);
+	fprintf(debug_fh, "\n");
+	fflush(debug_fh);
+	fsync(fileno(debug_fh));
 	
 	va_end(argv);
 	#endif
