@@ -31,7 +31,7 @@
 #ifndef KEXEC_LOADER_CTCONFIG_H
 #define KEXEC_LOADER_CTCONFIG_H
 
-#define VERSION "v1.0 release"
+#define VERSION "trunk (Development branch)"
 #define COPYRIGHT "Copyright (C) 2007 Daniel Collins"
 
 #define CONFIG_FILE "kexec-loader.conf"
