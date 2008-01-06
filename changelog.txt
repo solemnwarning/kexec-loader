@@ -1,10 +1,2 @@
 1.0-release
 	Initial release
-
-1.0-r2
-	Removed tmpfs support from kernel
-	
-	Removed device creation code from kexec-loader
-	
-	Create devices in the initramfs using MAKEDEV instead of dynamic
-	creation from the config file.
