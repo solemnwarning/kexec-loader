@@ -63,24 +63,6 @@ static void config_add_mount(kl_mount** mounts, char* device, char* mpoint) {
 	mount_add(mounts, &nmount);
 }
 
-/* Create a device */
-static void config_create_device(mode_t type, char* value, unsigned int lnum) {
-	int major = -1;
-	int minor = -1;
-	
-	major = atoi(value);
-	while(!IS_WHITESPACE(value[0]) && value[0] != '\0') { value++; }
-	while(IS_WHITESPACE(value[0])) { value++; }
-	
-	minor = atoi(value);
-	while(!IS_WHITESPACE(value[0]) && value[0] != '\0') { value++; }
-	while(IS_WHITESPACE(value[0])) { value++; }
-	
-	if(mknod(value, 0600 | type, makedev(major,minor)) == -1) {
-		printm("Can't create device %s: %s", value, strerror(errno));
-	}
-}
-
 /* Read configuration file, one line at a time and call config_parse() for each
  * individual line, in the event of an error an incomplete configuration may,
  * or may not be loaded.
@@ -216,14 +198,6 @@ void config_parse(char* line, unsigned int lnum) {
 		snprintf(mpoint, 1023, "/target/%s", tmp);
 		
 		config_add_mount(&(target.mounts), value, mpoint);
-		return;
-	}
-	if(str_compare(name, "chardev", STR_NOCASE)) {
-		config_create_device(S_IFCHR, value, lnum);
-		return;
-	}
-	if(str_compare(name, "blkdev", STR_NOCASE)) {
-		config_create_device(S_IFBLK, value, lnum);
 		return;
 	}
 	

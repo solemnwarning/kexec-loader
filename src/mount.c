@@ -123,10 +123,6 @@ void mount_virt(void) {
 	if(mount("proc", "/proc", "proc", 0, NULL) == -1) {
 		fatal("Can't mount /proc filesystem: %s", strerror(errno));
 	}
-	
-	if(mount("tmpfs", "/dev", "tmpfs", 0, NULL) == -1) {
-		fatal("Can't mount /dev filesystem: %s", strerror(errno));
-	}
 }
 
 /* Mount kexec-loader bootdisk on /boot */
