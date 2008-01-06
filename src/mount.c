@@ -39,6 +39,7 @@
 #include "mount.h"
 #include "misc.h"
 #include "../config.h"
+#include "config.h"
 
 int got_boot = 0; /* Is /boot mounted? */
 
@@ -47,6 +48,9 @@ int got_boot = 0; /* Is /boot mounted? */
  *
  * Filesystems with a device of 'rootfs' are ignored since rootfs can never be
  * unmounted and it's harmless to leave mounted anyway.
+ *
+ * Filesystems mounted on /proc are also ignored since the /sbin/kexec program
+ * needs /proc/iomem.
 */
 void unmount_tree(char const* dir) {
 	FILE* mfile = NULL;
@@ -58,8 +62,8 @@ void unmount_tree(char const* dir) {
 			continue;
 		}
 		
-		nferror("Can't open /proc/mounts: %s", strerror(errno));
-		warn("Not umounting any filesystems!!");
+		printm("Can't open /proc/mounts: %s", strerror(errno));
+		printm("Not umounting any filesystems!!");
 		return;
 	}
 	
@@ -76,10 +80,13 @@ void unmount_tree(char const* dir) {
 			continue;
 		}
 		if((token = strtok(NULL, " ")) == NULL) {
-			nferror("/proc/mounts is gobbledegook!");
+			printm("/proc/mounts is gobbledegook!");
 			return;
 		}
 		if(!str_compare(token, cmp2, STR_WILDCARD2)) {
+			continue;
+		}
+		if(str_compare(token, "/proc", STR_WILDCARD2)) {
 			continue;
 		}
 		
@@ -91,7 +98,7 @@ void unmount_tree(char const* dir) {
 			continue;
 		}
 		
-		nferror("Can't close /proc/mounts: %s", strerror(errno));
+		printm("Can't close /proc/mounts: %s", strerror(errno));
 	}
 	
 	while(mcount > 0) {
@@ -104,7 +111,7 @@ void unmount_tree(char const* dir) {
 		}
 		
 		if(umount(mount) == -1) {
-			nferror("Can't umount %s: %s", mount, strerror(errno));
+			printm("Can't umount %s: %s", mount, strerror(errno));
 		}
 		mounts[mnum][0] = '\0';
 		mcount--;
@@ -115,10 +122,6 @@ void unmount_tree(char const* dir) {
 void mount_virt(void) {
 	if(mount("proc", "/proc", "proc", 0, NULL) == -1) {
 		fatal("Can't mount /proc filesystem: %s", strerror(errno));
-	}
-	
-	if(mount("tmpfs", "/dev", "tmpfs", 0, NULL) == -1) {
-		fatal("Can't mount /dev filesystem: %s", strerror(errno));
 	}
 }
 
@@ -155,4 +158,57 @@ void mount_boot(void) {
 		
 		devname = devices[++devnum];
 	}
+}
+
+/* Mount all mounts in a kl_mount list
+ *
+ * If all mounts are sucessfully mounted 1 is returned, if any mounts fail zero
+ * is returned any any already-completed mounts will not be unmounted
+*/
+int mount_list(kl_mount* mount_src) {
+	kl_mount* mounts = NULL;
+	kl_mount* cmount = NULL;
+	kl_mount* mptr = NULL;
+	char cmp1[1024] = {'\0'};
+	
+	if((mounts = mount_copy(mount_src)) == NULL) {
+		printm("Copying mount list failed: %s", strerror(errno));
+		return(0);
+	}
+	
+	unsigned int count = 0;
+	for(mptr = mounts; mptr != NULL; mptr = mptr->next) {
+		count++;
+	}
+	
+	while(count > 0) {
+		cmount = mounts;
+		mptr = mounts;
+		
+		while(cmount != NULL) {
+			snprintf(cmp1, 1023, "%s*", cmount->mpoint);
+			
+			if(str_compare(cmp1, mptr->mpoint, STR_WILDCARD1)) {
+				mptr = cmount;
+			}
+			cmount = cmount->next;
+		}
+		
+		if(str_compare(mptr->fstype, "auto", 0)) {
+			printm("Filesystem type 'auto' is unsupported!");
+			mount_free(&mounts);
+			return(0);
+		}
+		
+		if(mount(mptr->device, mptr->mpoint, mptr->fstype, MS_RDONLY, NULL) == -1) {
+			printm("Can't mount %s: %s", mptr->mpoint, strerror(errno));
+			mount_free(&mounts);
+			return(0);
+		}
+		
+		mptr->mpoint[0] = '\0';
+		count--;
+	}
+	
+	return(1);
 }

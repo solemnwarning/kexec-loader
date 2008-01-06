@@ -34,14 +34,10 @@ export LIBS=
 
 all:
 	@$(MAKE) -C src/
-	@$(MAKE) -C utils/
 
 clean:
 	@$(MAKE) -C src/ clean
-	@$(MAKE) -C utils/ clean
 
 check:
 	@$(MAKE) -C src/ clean
 	@$(MAKE) -C src/
-	@$(MAKE) -C utils/ clean
-	@$(MAKE) -C utils/
