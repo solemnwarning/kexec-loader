@@ -39,13 +39,14 @@ if [ ! -f "$MAKEDEV" ]; then
 	exit 1
 fi
 
-install -m 0755 -d "$1"/{dev,boot,proc} || exit 1
+install -m 0755 -d "$1"/{dev,boot,proc,sbin} || exit 1
 install -m 0755 src/kexec-loader "$1/sbin/kexec-loader"
 ln -sf "sbin/kexec-loader" "$1/init"
 
 cd "$1/dev"
 $MAKEDEV consoleonly
 $MAKEDEV ttyS{0,1,2,3}
+$MAKEDEV fd{0,1}
 $MAKEDEV sd{a,b,c,d,e,f,g,h}
 $MAKEDEV hd{a,b,c,d,e,f,g,h}
 
