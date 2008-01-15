@@ -1,6 +1,6 @@
 #!/bin/bash
 # Create an initramfs for kexec-loader
-# Copyright (C) 2007, Daniel Collins <solemnwarning@solemnwarning.net>
+# Copyright (C) 2007,2008 Daniel Collins <solemnwarning@solemnwarning.net>
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -29,7 +29,11 @@
 # EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 if [ -z "$1" ]; then
-	echo "Usage: $0 <target directory>" 1>&2
+	echo "Usage: $0 <target directory> <hdx|sdx>" 1>&2
+	exit 1
+fi
+if [ "$2" != "hdx" -a "$2" != "sdx" ]; then
+	echo "Usage: $0 <target directory> <hdx|sdx>" 1>&2
 	exit 1
 fi
 
@@ -47,8 +51,13 @@ cd "$1/dev"
 $MAKEDEV consoleonly
 $MAKEDEV ttyS{0,1,2,3}
 $MAKEDEV fd{0,1}
-$MAKEDEV sd{a,b,c,d,e,f,g,h}
-$MAKEDEV hd{a,b,c,d,e,f,g,h}
+
+if [ "$2" == "sdx" ]; then
+	$MAKEDEV sd{a,b,c,d,e,f,g,h}
+fi
+if [ "$2" == "hdx" ]; then
+	$MAKEDEV hd{a,b,c,d,e,f,g,h}
+fi
 
 echo "Created initramfs in $1"
 echo "Be sure to set the full path of $1 in CONFIG_INITRAMFS_SOURCE"

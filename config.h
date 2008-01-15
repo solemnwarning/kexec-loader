@@ -1,5 +1,5 @@
 /* kexec-loader - Compile-time configuration
- * Copyright (C) 2007, Daniel Collins <solemnwarning@solemnwarning.net>
+ * Copyright (C) 2007,2008 Daniel Collins <solemnwarning@solemnwarning.net>
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -32,7 +32,7 @@
 #define KEXEC_LOADER_CTCONFIG_H
 
 #define VERSION "trunk (Development branch)"
-#define COPYRIGHT "Copyright (C) 2007 Daniel Collins"
+#define COPYRIGHT "Copyright (C) 2007,2008 Daniel Collins"
 
 #define CONFIG_FILE "kexec-loader.conf"
 #define BOOTFS_TYPE "vfat"
