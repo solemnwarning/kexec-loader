@@ -1,0 +1,106 @@
+Only in kexec-tools-1.101/: config.log
+Only in kexec-tools-1.101/: config.status
+diff -ru kexec-tools-1.101.orig/kexec/kexec.c kexec-tools-1.101/kexec/kexec.c
+--- kexec-tools-1.101.orig/kexec/kexec.c	2005-01-13 13:24:29.000000000 +0000
++++ kexec-tools-1.101/kexec/kexec.c	2008-02-23 15:12:28.000000000 +0000
+@@ -666,15 +666,11 @@
+ 		" -h, --help           Print this help.\n"
+ 		" -v, --version        Print the version of kexec.\n"
+ 		" -f, --force          Force an immediate kexec, don't call shutdown.\n"
+-		" -x, --no-ifdown      Don't bring down network interfaces.\n"
+ 		"                      (if used, must be last option specified)\n"
+ 		" -l, --load           Load the new kernel into the current kernel.\n"
+-		" -p, --load-panic     Load the new kernel for use on panic.\n"
+ 		" -u, --unload         Unload the current kexec target kernel.\n"
+ 		" -e, --exec           Execute a currently loaded kernel.\n"
+ 		" -t, --type=TYPE      Specify the new kernel is of this type.\n"
+-		"     --mem-min=<addr> Specify the lowest memory addres to load code into.\n"
+-		"     --mem-max=<addr> Specify the highest memory addres to load code into.\n"
+ 		"\n"
+ 		"Supported kernel file types and options: \n"
+ 		);
+@@ -693,7 +689,6 @@
+ 	int do_exec = 0;
+ 	int do_shutdown = 1;
+ 	int do_sync = 1;
+-	int do_ifdown = 0;
+ 	int do_unload = 0;
+ 	unsigned long kexec_flags = 0;
+ 	char *type = 0;
+@@ -716,14 +711,10 @@
+ 		case OPT_VERSION:
+ 			version();
+ 			return 0;
+-		case OPT_NOIFDOWN:
+-			do_ifdown = 0;
+-			break;
+ 		case OPT_FORCE:
+ 			do_load = 1;
+ 			do_shutdown = 0;
+ 			do_sync = 1;
+-			do_ifdown = 1;
+ 			do_exec = 1;
+ 			break;
+ 		case OPT_LOAD:
+@@ -741,37 +732,11 @@
+ 			do_load = 0;
+ 			do_shutdown = 0;
+ 			do_sync = 1;
+-			do_ifdown = 1;
+ 			do_exec = 1;
+ 			break;
+ 		case OPT_TYPE:
+ 			type = optarg;
+ 			break;
+-		case OPT_PANIC:
+-			do_load = 1;
+-			do_exec = 0;
+-			do_shutdown = 0;
+-			do_sync = 0;
+-			kexec_flags = KEXEC_ON_CRASH;
+-			break;
+-		case OPT_MEM_MIN:
+-			mem_min = strtoul(optarg, &endptr, 0);
+-			if (*endptr) {
+-				fprintf(stderr, "Bad option value in --mem-min=%s\n",
+-					optarg);
+-				usage();
+-				return 1;
+-			}
+-			break;
+-		case OPT_MEM_MAX:
+-			mem_max = strtoul(optarg, &endptr, 0);
+-			if (*endptr) {
+-				fprintf(stderr, "Bad option value in --mem-max=%s\n",
+-					optarg);
+-				usage();
+-				return 1;
+-			}
+-			break;
+ 		default:
+ 			break;
+ 		}
+@@ -796,10 +761,6 @@
+ 	if ((result == 0) && do_sync) {
+ 		sync();
+ 	}
+-	if ((result == 0) && do_ifdown) {
+-		extern int ifdown(void);
+-		(void)ifdown();
+-	}
+ 	if ((result == 0) && do_exec) {
+ 		result = my_exec();
+ 	}
+diff -ru kexec-tools-1.101.orig/kexec/Makefile kexec-tools-1.101/kexec/Makefile
+--- kexec-tools-1.101.orig/kexec/Makefile	2004-12-21 19:36:39.000000000 +0000
++++ kexec-tools-1.101/kexec/Makefile	2008-02-23 15:00:11.000000000 +0000
+@@ -10,7 +10,6 @@
+ KCFLAGS:= $(CFLAGS) -Ikexec/arch/$(ARCH)/include
+ 
+ KEXEC_C_SRCS:= kexec/kexec.c 
+-KEXEC_C_SRCS+= kexec/ifdown.c
+ KEXEC_C_SRCS+= kexec/kexec-elf.c 
+ KEXEC_C_SRCS+= kexec/kexec-elf-exec.c 
+ KEXEC_C_SRCS+= kexec/kexec-elf-rel.c 
+Only in kexec-tools-1.101/: Makefile.conf
+Only in kexec-tools-1.101/: objdir-i386-linux-uclibc
