@@ -244,6 +244,9 @@ char* detect_fstype(char const *device) {
 	if(buf[0x438] == 0x53 && buf[0x439] == 0xEF) {
 		retval = "ext2";
 	}
+	if(str_compare((char*)buf, "XFSB", STR_MAXLEN, 4)) {
+		retval = "xfs";
+	}
 	
 	DFST_END:
 	while(fclose(fh) != 0) {
