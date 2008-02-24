@@ -38,5 +38,6 @@ void unmount_tree(char const* dir);
 void mount_virt(void);
 void mount_boot(void);
 int mount_list(kl_mount* mount_src);
+char* detect_fstype(char const *device);
 
 #endif /* !KEXEC_LOADER_MOUNT_H */

@@ -212,3 +212,47 @@ int mount_list(kl_mount* mount_src) {
 	
 	return(1);
 }
+
+/* Attempt to detect the filesystem format of a device or file
+ * Returns the filesystem type as a string on success, NULL on error
+*/
+char* detect_fstype(char const *device) {
+	FILE *fh = NULL;
+	
+	while(!(fh = fopen(device, "rb"))) {
+		if(errno == EINTR) {
+			continue;
+		}
+		
+		printm("Can't open %s: %s\n", device, strerror(errno));
+		return NULL;
+	}
+	
+	char *retval = NULL;
+	unsigned char buf[1088];
+	size_t rcount = 0;
+	
+	while(rcount < 1088) {
+		rcount += fread(buf+rcount, 1, 1088-rcount, fh);
+		
+		if((ferror(fh) && errno != EINTR) || feof(fh)) {
+			goto DFST_END;
+		}
+		clearerr(fh);
+	}
+	
+	if(buf[0x438] == 0x53 && buf[0x439] == 0xEF) {
+		retval = "ext2";
+	}
+	
+	DFST_END:
+	while(fclose(fh) != 0) {
+		if(errno == EINTR) {
+			continue;
+		}
+		
+		printm("Can't close %s: %s\n", device, strerror(errno));
+	}
+	
+	return retval;
+}
