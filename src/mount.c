@@ -195,9 +195,15 @@ int mount_list(kl_mount* mount_src) {
 		}
 		
 		if(str_compare(mptr->fstype, "auto", 0)) {
-			printm("Filesystem type 'auto' is unsupported!");
-			mount_free(&mounts);
-			return(0);
+			char *fstype = detect_fstype(mptr->device);
+			if(!fstype) {
+				printm("Unknown filesystem on %s\n", mptr->device);
+				
+				mount_free(&mounts);
+				return(0);
+			}
+			
+			strncpy(mptr->fstype, fstype, 63);
 		}
 		
 		if(mount(mptr->device, mptr->mpoint, mptr->fstype, MS_RDONLY, NULL) == -1) {
