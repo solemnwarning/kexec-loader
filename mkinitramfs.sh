@@ -75,8 +75,8 @@ cprog find
 cprog cpio
 cprog rm
 
-if [ -z "$1" ]; then
-	echo "Usage: $0 <outfile.cpio>" 1>&2
+if [ -z "$1" -o -z "$2" ]; then
+	echo "Usage: $0 <outfile.cpio> <kexec binary>" 1>&2
 	exit 1
 fi
 
@@ -98,8 +98,9 @@ echo "Creating $initramfs tree..."
 mkdir -p -m 0755 "$initramfs/"{dev,boot,proc,sbin,target} || exit 1
 
 echo "Copying programs..."
-install -m 0755 src/kexec-loader "$initramfs/sbin/kexec-loader"
-ln -sf "sbin/kexec-loader" "$initramfs/init"
+install -m 0755 src/kexec-loader "$initramfs/sbin/kexec-loader" || exit 1
+ln -sf "sbin/kexec-loader" "$initramfs/init" || exit 1
+install -m 0755 "$2" "$initramfs/sbin/kexec" || exit 1
 
 echo "Creating devices..."
 mknod -m 0600 "$initramfs/dev/console" c 5 1 || exit 1
