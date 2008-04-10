@@ -34,6 +34,7 @@
 #include <string.h>
 #include <unistd.h>
 #include <sys/select.h>
+#include <sys/mount.h>
 
 #include "mount.h"
 #include "../config.h"
@@ -44,10 +45,12 @@
 static kl_target* target_menu(void);
 
 int main(int argc, char** argv) {
-	console_init();
+	if(mount("proc", "/proc", "proc", 0, NULL) == -1) {
+		fatal("Can't mount /proc filesystem: %s", strerror(errno));
+	}
 	
+	console_init();
 	mount_boot();
-	mount_virt();
 	config_load();
 	
 	while(1) {

@@ -118,13 +118,6 @@ void unmount_tree(char const* dir) {
 	}
 }
 
-/* Mount virtual filesystems */
-void mount_virt(void) {
-	if(mount("proc", "/proc", "proc", 0, NULL) == -1) {
-		fatal("Can't mount /proc filesystem: %s", strerror(errno));
-	}
-}
-
 /* Mount kexec-loader bootdisk on /boot */
 void mount_boot(void) {
 	char const* devices[] = {
