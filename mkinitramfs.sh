@@ -70,6 +70,7 @@ cprog whoami
 cprog mkdir
 cprog install
 cprog ln
+cprog strip
 cprog mknod
 cprog find
 cprog cpio
@@ -101,6 +102,10 @@ echo "Copying programs..."
 install -m 0755 src/kexec-loader "$initramfs/sbin/kexec-loader" || exit 1
 ln -sf "sbin/kexec-loader" "$initramfs/init" || exit 1
 install -m 0755 "$2" "$initramfs/sbin/kexec" || exit 1
+
+echo "Stripping symbols..."
+strip -s "$initramfs/sbin/kexec-loader"
+strip -s "$initramfs/sbin/kexec"
 
 echo "Creating devices..."
 mknod -m 0600 "$initramfs/dev/console" c 5 1 || exit 1
