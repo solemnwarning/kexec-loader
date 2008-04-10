@@ -82,7 +82,7 @@ fi
 
 if [ "`whoami`" != "root" ]; then
 	cprog fakeroot
-	exec fakeroot -- $0 $1
+	exec fakeroot -- $0 $1 $2
 fi
 
 initramfs="initramfs.tmp"
