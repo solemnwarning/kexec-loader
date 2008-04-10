@@ -129,7 +129,7 @@ create_sdx "$initramfs/dev/sdg" 6
 create_sdx "$initramfs/dev/sdh" 7
 
 echo "Creating $initramfs_cpio..."
-cd "$initramfs" && find | cpio --create --quiet > "$initramfs_cpio" || exit 1
+cd "$initramfs" && find | cpio --create --format=newc --quiet > "$initramfs_cpio" || exit 1
 cd "$rdir"
 
 echo "Deleting $initramfs..."
