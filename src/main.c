@@ -50,6 +50,7 @@ int main(int argc, char** argv) {
 		fatal("Can't mount /proc filesystem: %s", strerror(errno));
 	}
 	
+	kmsg_monitor();
 	console_init();
 	mount_boot();
 	config_load();

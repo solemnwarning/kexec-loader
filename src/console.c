@@ -36,12 +36,16 @@
 #include <unistd.h>
 #include <sys/ioctl.h>
 #include <poll.h>
+#include <sys/klog.h>
 
 #include "../config.h"
 #include "misc.h"
 
 /* Initialize console(s) */
 void console_init(void) {
+	debug_write("Disabling printk() to console...\n");
+	klogctl(6, NULL, 0);
+	
 	struct termios attribs;
 	while(tcgetattr(fileno(stdin), &attribs) == -1) {
 		if(errno == EINTR) {
@@ -63,10 +67,10 @@ void console_init(void) {
 	}
 	
 	if(setvbuf(stdout, NULL, _IONBF, 0) != 0) {
-		fatal("Can't set stdout buffer: %s", strerror(errno));
+		debug_write("Can't set stdout buffer: %s\n", strerror(errno));
 	}
 	if(setvbuf(stderr, NULL, _IONBF, 0) != 0) {
-		fatal("Can't set stderr buffer: %s", strerror(errno));
+		debug_write("Can't set stderr buffer: %s\n", strerror(errno));
 	}
 }
 

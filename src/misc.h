@@ -66,5 +66,6 @@ void mount_free(kl_mount** list);
 kl_mount* mount_copy(kl_mount const* src);
 
 char *get_cmdline(char const *name);
+void kmsg_monitor(void);
 
 #endif /* !KEXEC_LOADER_MISC_H */

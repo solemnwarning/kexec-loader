@@ -360,3 +360,25 @@ char *get_cmdline(char const *name) {
 	
 	return NULL;
 }
+
+/* Fork a process to write Linux kernel messages to the debug console */
+void kmsg_monitor(void) {
+	if(fork() <= 0) {
+		return;
+	}
+	
+	FILE *kmsg = fopen("/proc/kmsg", "r");
+	if(!kmsg) {
+		debug_write("Can't open /proc/kmsg: %s\n", strerror(errno));
+		debug_write("Linux kernel messages will not be available\n");
+		
+		exit(1);
+	}
+	
+	char msgbuf[4096];
+	while(fgets(msgbuf, 4096, kmsg)) {
+		debug_write("%s", msgbuf);
+	}
+	
+	exit(0);
+}

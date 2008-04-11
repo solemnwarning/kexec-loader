@@ -135,11 +135,11 @@ void mount_boot(void) {
 	
 	while(devname != NULL) {
 		if(mount(devname, "/boot", BOOTFS_TYPE, MS_RDONLY, NULL) == -1) {
-			debug_write("Can't mount %s at /boot: %s", devname, strerror(errno));
+			debug_write("Can't mount %s at /boot: %s\n", devname, strerror(errno));
 			return;
 		}
 		if(access("/boot/" CONFIG_FILE, F_OK) == 0) {
-			debug_write("Found " CONFIG_FILE " on %s", devname);
+			debug_write("Found " CONFIG_FILE " on %s\n", devname);
 			
 			got_boot = 1;
 			return;
