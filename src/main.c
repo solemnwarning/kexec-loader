@@ -41,6 +41,7 @@
 #include "console.h"
 #include "config.h"
 #include "kexec.h"
+#include "misc.h"
 
 static kl_target* target_menu(void);
 

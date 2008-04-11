@@ -314,3 +314,49 @@ kl_mount* mount_copy(kl_mount const* src) {
 	
 	return(list);
 }
+
+/* Search for an option that was passed to Linux via /proc/cmdline
+ * Returns the =value if found, or NULL on error/not found
+*/
+char *get_cmdline(char const *name) {
+	FILE *fh;
+	char *tok, *val;
+	char cmdline[1024];
+	size_t len;
+	
+	if(!(fh = fopen("/proc/cmdline", "r"))) {
+		return NULL;
+	}
+	
+	if(!fgets(cmdline, 1024, fh)) {
+		return NULL;
+	}
+	cmdline[strcspn(cmdline, "\n")] = '\0';
+	
+	fclose(fh);
+	
+	tok = strtok(cmdline, " ");
+	while(tok) {
+		if(strchr(tok, '=')) {
+			len = (size_t)(strchr(tok, '=') - tok);
+		}else{
+			len = strlen(tok);
+		}
+		
+		if(strncmp(tok, name, len) == 0) {
+			break;
+		}
+		
+		tok = strtok(NULL, " ");
+	}
+	
+	if(tok) {
+		if((val = strchr(tok, '='))) {
+			return strclone(val+1, 9999);
+		}
+		
+		return strclone("", 1);
+	}
+	
+	return NULL;
+}

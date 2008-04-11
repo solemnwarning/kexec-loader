@@ -70,4 +70,6 @@ kl_mount* mount_add(kl_mount** list, kl_mount const* src);
 void mount_free(kl_mount** list);
 kl_mount* mount_copy(kl_mount const* src);
 
+char *get_cmdline(char const *name);
+
 #endif /* !KEXEC_LOADER_MISC_H */
