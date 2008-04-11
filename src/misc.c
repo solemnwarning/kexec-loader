@@ -83,31 +83,31 @@ void printm_r(char const* file, unsigned int line, char const* fmt, ...) {
 	printm_called = 1;
 }
 
-/* Print a debug message */
-void debug_r(char const* file, unsigned int line, char const* fmt, ...) {
-	#ifdef DEBUG_FILE
-	static FILE* debug_fh = NULL;
+/* Write a message to the debug console */
+void debug_write(char const* fmt, ...) {
+	static FILE *debug_fh = NULL;
 	
-	while((debug_fh = fopen(DEBUG_FILE, "a")) == NULL) {
-		if(errno == EINTR) {
-			continue;
+	if(!debug_fh) {
+		char *filename = get_cmdline("kexec_debug");
+		if(!filename) {
+			filename = "/dev/tty2";
 		}
 		
-		printm("Can't open debug file: %s", strerror(errno));
-		return;
+		if((debug_fh = fopen(filename, "a")) == NULL) {
+			free(filename);
+			return;
+		}
+		
+		free(filename);
 	}
 	
 	va_list argv;
 	va_start(argv, fmt);
 	
-	fprintf(debug_fh, "%s:%u: ", file, line);
 	vfprintf(debug_fh, fmt, argv);
-	fprintf(debug_fh, "\n");
 	fflush(debug_fh);
-	fsync(fileno(debug_fh));
 	
 	va_end(argv);
-	#endif
 }
 
 /* Copy a string */

@@ -145,7 +145,7 @@ void config_parse(char* line, unsigned int lnum) {
 	
 	if(str_compare(name, "timeout", STR_NOCASE)) {
 		config.timeout = strtoul(value, NULL, 10);
-		debug("timeout='%s' (%u)", value, config.timeout);
+		debug_write("timeout='%s' (%u)", value, config.timeout);
 		
 		return;
 	}

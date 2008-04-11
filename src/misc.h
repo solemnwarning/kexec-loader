@@ -53,12 +53,7 @@ void fatal_r(char const* file, unsigned int line, char const* fmt, ...);
 #define printm(...) printm_r(__FILE__, __LINE__, __VA_ARGS__)
 void printm_r(char const* file, unsigned int line, char const* fmt, ...);
 
-#ifdef DEBUG_FILE
-#define debug(...) debug_r(__FILE__, __LINE__, __VA_ARGS__)
-#else
-#define debug(...)
-#endif
-void debug_r(char const* file, unsigned int line, char const* fmt, ...);
+void debug_write(char const* fmt, ...);
 
 char* strclone(char const* string, size_t maxlen);
 int str_compare(char const*, char const*, int, ...);

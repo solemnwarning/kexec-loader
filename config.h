@@ -38,6 +38,5 @@
 #define BOOTFS_TYPE "vfat"
 
 #define KEXEC_PATH "/sbin/kexec"
-#define DEBUG_FILE "/dev/ttyS0"
 
 #endif /* !KEXEC_LOADER_CTCONFIG_H */
