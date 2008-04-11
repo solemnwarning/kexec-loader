@@ -109,6 +109,13 @@ strip -s "$initramfs/sbin/kexec"
 
 echo "Creating devices..."
 mknod -m 0600 "$initramfs/dev/console" c 5 1 || exit 1
+mknod -m 0600 "$initramfs/dev/tty1" c 4 1 || exit 1
+mknod -m 0600 "$initramfs/dev/tty2" c 4 2 || exit 1
+mknod -m 0600 "$initramfs/dev/tty3" c 4 3 || exit 1
+mknod -m 0600 "$initramfs/dev/tty4" c 4 4 || exit 1
+mknod -m 0600 "$initramfs/dev/tty5" c 4 5 || exit 1
+mknod -m 0600 "$initramfs/dev/tty6" c 4 6 || exit 1
+
 mknod -m 0600 "$initramfs/dev/ttyS0" c 4 64 || exit 1
 mknod -m 0600 "$initramfs/dev/ttyS1" c 4 65 || exit 1
 mknod -m 0600 "$initramfs/dev/ttyS2" c 4 66 || exit 1
