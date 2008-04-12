@@ -79,7 +79,7 @@ void config_load(void) {
 			continue;
 		}
 		
-		printm("Can't open " CONFIG_FILE ": %s", strerror(errno));
+		debug_write("Can't open " CONFIG_FILE ": %s\n", strerror(errno));
 		return;
 	}
 	
@@ -96,8 +96,8 @@ void config_load(void) {
 			continue;
 		}
 		
-		printm("Can't close " CONFIG_FILE ": %s", strerror(errno));
-		printm("Discarding cfg_handle!");
+		debug_write("Can't close " CONFIG_FILE ": %s\n", strerror(errno));
+		debug_write("Discarding cfg_handle!\n");
 		return;
 	}
 }
@@ -201,7 +201,7 @@ void config_parse(char* line, unsigned int lnum) {
 		return;
 	}
 	
-	printm("Unknown configuration variable '%s' at line %u", name, lnum);
+	debug_write("Unknown configuration variable '%s' at line %u\n", name, lnum);
 }
 
 /* Add the remaining target, if it exists */
