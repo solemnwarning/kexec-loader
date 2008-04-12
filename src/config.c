@@ -106,46 +106,26 @@ void config_load(void) {
  * tabs and carridge-return characters.
 */
 void config_parse(char* line, unsigned int lnum) {
-	/* Remove leading whitespace from line */
-	while(IS_WHITESPACE(line[0])) {
-		line++;
-	}
+	char *name = line+strspn(line, " \t\r\n");
+	char *value = name+strcspn(name, " \t\r\n");
 	
-	/* Skip line if it's a comment, or empty */
-	if(line[0] == '#' || line[0] == '\0') {
-		return;
-	}
-	
-	/* Remove trailing whitespace from line */
-	size_t count = strlen(line)-1;
-	while(IS_WHITESPACE(line[count])) {
-		line[count--] = '\0';
-	}
-	
-	char* name = line;
-	char* value = line;
-	
-	/* If there are any whitespace characters remaining in the string treat
-	 * them as name/value seperators, replace the first one with nil to
-	 * terminate the string pointed to by name, also offset value to the
-	 * first non-whitespace character after the whitespace which should be
-	 * the beginning of the value.
-	*/
-	while(!IS_WHITESPACE(value[0]) && value[0] != '\0') {
-		value++;
-	}
 	if(value[0] != '\0') {
 		value[0] = '\0';
 		value++;
 		
-		while(IS_WHITESPACE(value[0])) {
-			value++;
-		}
+		value = value+strspn(value, " \t");
+		value[strcspn(value, "\r\n")] = '\0';
 	}
+	
+	/* Skip line if it's a comment, or empty */
+	if(name[0] == '#' || name[0] == '\0') {
+		return;
+	}
+	
+	debug_write("config:%u: '%s' = '%s'\n", lnum, name, value);
 	
 	if(str_compare(name, "timeout", STR_NOCASE)) {
 		config.timeout = strtoul(value, NULL, 10);
-		debug_write("timeout='%s' (%u)\n", value, config.timeout);
 		
 		return;
 	}
@@ -201,7 +181,7 @@ void config_parse(char* line, unsigned int lnum) {
 		return;
 	}
 	
-	debug_write("Unknown configuration variable '%s' at line %u\n", name, lnum);
+	debug_write("config:%u: Unknown directive '%s'\n", lnum, name);
 }
 
 /* Add the remaining target, if it exists */

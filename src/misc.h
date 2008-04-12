@@ -40,8 +40,6 @@
 #define STR_WILDCARD1	8	/* Parse wildcard characters * and ? in str1 */
 #define STR_WILDCARD2	16	/* Parse wildcard characters * and ? in str2 */
 
-#define IS_WHITESPACE(x) (x == ' ' || x == '\t' || x == '\n' || x == '\r')
-
 extern int printm_called;
 
 #define allocate(size) allocate_r(__FILE__, __LINE__, size)
