@@ -32,7 +32,6 @@
 #define KEXEC_LOADER_MOUNT_H
 #include "config.h"
 
-void unmount_tree(char const* dir);
 int mount_config(void);
 int mount_list(kl_mount* mounts);
 void unmount_list(kl_mount *mounts);

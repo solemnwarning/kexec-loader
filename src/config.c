@@ -171,11 +171,11 @@ void config_parse(char* line, unsigned int lnum) {
 		return;
 	}
 	if(str_compare(name, "kernel", STR_NOCASE)) {
-		snprintf(target.kernel, 1023, "/target/%s", value);
+		snprintf(target.kernel, 1023, "/mnt/%s", value);
 		return;
 	}
 	if(str_compare(name, "initrd", STR_NOCASE)) {
-		snprintf(target.initrd, 1023, "/target/%s", value);
+		snprintf(target.initrd, 1023, "/mnt/%s", value);
 		return;
 	}
 	if(str_compare(name, "append", STR_NOCASE)) {
@@ -187,21 +187,22 @@ void config_parse(char* line, unsigned int lnum) {
 		return;
 	}
 	if(str_compare(name, "rootfs", STR_NOCASE)) {
-		config_add_mount(&(target.mounts), value, "/target");
+		config_add_mount(&(target.mounts), value, "/");
 		return;
 	}
 	if(str_compare(name, "mount", STR_NOCASE)) {
-		char* tmp = strchr(value, ' ');
-		if(tmp == NULL) {
-			fatal("Invalid mount at line %u", lnum);
+		char* mpoint = strchr(value, ' ');
+		if(mpoint == NULL) {
+			debug("config:%u: Invalid mount", lnum);
+			return;
 		}
-		while(tmp[0] == ' ') {
-			tmp[0] = '\0';
-			tmp++;
-		}
+		mpoint[0] = '\0';
+		mpoint += (strspn(mpoint+1, " \t")+1);
 		
-		char mpoint[1024] = {'\0'};
-		snprintf(mpoint, 1023, "/target/%s", tmp);
+		if(strlen(mpoint) == 0) {
+			debug("config:%u: Invalid mount", lnum);
+			return;
+		}
 		
 		config_add_mount(&(target.mounts), value, mpoint);
 		return;

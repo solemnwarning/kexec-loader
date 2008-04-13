@@ -55,8 +55,6 @@ int main(int argc, char** argv) {
 	config_load();
 	
 	while(1) {
-		unmount_tree("/target");
-		
 		kl_target* target = target_menu();
 		
 		console_clear();
@@ -77,13 +75,13 @@ int main(int argc, char** argv) {
 		}
 		
 		if(!kexec_load(target->kernel, append, initrd)) {
+			unmount_list(target->mounts);
 			continue;
 		}
 		
 		break;
 	}
 	
-	unmount_tree("/");
 	kexec_boot();
 	
 	while(1) {
