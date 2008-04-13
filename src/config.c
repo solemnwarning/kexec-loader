@@ -193,14 +193,16 @@ void config_parse(char* line, unsigned int lnum) {
 	if(str_compare(name, "mount", STR_NOCASE)) {
 		char* mpoint = strchr(value, ' ');
 		if(mpoint == NULL) {
-			debug("config:%u: Invalid mount", lnum);
+			debug("config:%u: Invalid mount\n", lnum);
+			printm("config:%u: Invalid mount", lnum);
 			return;
 		}
 		mpoint[0] = '\0';
 		mpoint += (strspn(mpoint+1, " \t")+1);
 		
 		if(strlen(mpoint) == 0) {
-			debug("config:%u: Invalid mount", lnum);
+			debug("config:%u: Invalid mount\n", lnum);
+			printm("config:%u: Invalid mount", lnum);
 			return;
 		}
 		
@@ -209,6 +211,7 @@ void config_parse(char* line, unsigned int lnum) {
 	}
 	
 	debug("config:%u: Unknown directive '%s'\n", lnum, name);
+	printm("config:%u: Unknown directive '%s'", lnum, name);
 }
 
 /* Add the remaining target, if it exists */

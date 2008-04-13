@@ -73,7 +73,11 @@ int main(int argc, char** argv) {
 		unmount_list(target->mounts);
 		
 		reboot(LINUX_REBOOT_MAGIC1, LINUX_REBOOT_MAGIC2, LINUX_REBOOT_CMD_KEXEC, NULL);
-		debug("Can't reboot(): %s\n", strerror(errno));
+		
+		int err = errno;
+		
+		debug("Can't reboot(): %s\n", strerror(err));
+		printm("Can't reboot(): %s", strerror(err));
 	}
 	
 	while(1) {

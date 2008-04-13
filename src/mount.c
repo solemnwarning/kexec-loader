@@ -77,6 +77,7 @@ int mount_config(void) {
 	}
 	
 	debug("Can't find disk containing " CONFIG_FILE "\n");
+	printm("Can't find disk containing " CONFIG_FILE);
 	return 0;
 }
 
@@ -102,13 +103,17 @@ int mount_list(kl_mount* mounts) {
 				fstype = detect_fstype(mptr->device);
 				if(!fstype) {
 					debug("Unknown filesystem on %s\n", mptr->device);
+					printm("Unknown filesystem on %s", mptr->device);
 					
 					break;
 				}
 			}
 			
 			if(mount(mptr->device, mpoint, fstype, MS_RDONLY, NULL) == -1) {
-				debug("Can't mount %s: %s\n", mpoint, strerror(errno));
+				int err = errno;
+				
+				debug("Can't mount %s: %s\n", mpoint, strerror(err));
+				printm("Can't mount %s: %s", mpoint, strerror(err));
 				
 				break;
 			}
@@ -210,7 +215,7 @@ char* detect_fstype(char const *device) {
 			continue;
 		}
 		
-		printm("Can't open %s: %s\n", device, strerror(errno));
+		printm("Can't open %s: %s", device, strerror(errno));
 		return NULL;
 	}
 	
@@ -240,7 +245,7 @@ char* detect_fstype(char const *device) {
 			continue;
 		}
 		
-		printm("Can't close %s: %s\n", device, strerror(errno));
+		printm("Can't close %s: %s", device, strerror(errno));
 	}
 	
 	return retval;
