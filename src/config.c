@@ -36,10 +36,12 @@
 #include <sys/stat.h>
 #include <fcntl.h>
 #include <unistd.h>
+#include <sys/mount.h>
 
 #include "config.h"
 #include "../config.h"
 #include "misc.h"
+#include "mount.h"
 
 struct kl_config config = CONFIG_DEFAULTS_DEFINE;
 static struct kl_target target = TARGET_DEFAULTS_DEFINE;
@@ -68,11 +70,15 @@ static void config_add_mount(kl_mount** mounts, char* device, char* mpoint) {
  * or may not be loaded.
 */
 void config_load(void) {
+	if(!mount_config()) {
+		return;
+	}
+	
 	TARGET_DEFAULTS(&target);
 	
 	FILE* cfg_handle = NULL;
 	while(cfg_handle == NULL) {
-		if((cfg_handle = fopen("/boot/" CONFIG_FILE, "r")) != NULL) {
+		if((cfg_handle = fopen("/mnt/" CONFIG_FILE, "r")) != NULL) {
 			break;
 		}
 		if(errno == EINTR) {
@@ -99,6 +105,10 @@ void config_load(void) {
 		debug_write("Can't close " CONFIG_FILE ": %s\n", strerror(errno));
 		debug_write("Discarding cfg_handle!\n");
 		return;
+	}
+	
+	if(umount("/mnt") == -1) {
+		debug_write("Can't unmount /mnt: %s\n", strerror(errno));
 	}
 }
 

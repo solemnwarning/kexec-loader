@@ -32,10 +32,8 @@
 #define KEXEC_LOADER_MOUNT_H
 #include "config.h"
 
-extern int got_boot;
-
 void unmount_tree(char const* dir);
-void mount_boot(void);
+int mount_config(void);
 int mount_list(kl_mount* mount_src);
 char* detect_fstype(char const *device);
 

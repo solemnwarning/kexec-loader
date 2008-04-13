@@ -41,8 +41,6 @@
 #include "../config.h"
 #include "config.h"
 
-int got_boot = 0; /* Is /boot mounted? */
-
 /* Unmount all mounts under a certain directory, including the directory if it
  * is a mount itself.
  *
@@ -118,8 +116,10 @@ void unmount_tree(char const* dir) {
 	}
 }
 
-/* Mount kexec-loader bootdisk on /boot */
-void mount_boot(void) {
+/* Mount disk containing CONFIG_FILE at /mnt
+ * Returns 1 if device containing file was mounted, zero otherwise
+*/
+int mount_config(void) {
 	char const* devices[] = {
 		"/dev/fd0",
 		"/dev/fd1",
@@ -133,24 +133,26 @@ void mount_boot(void) {
 	unsigned int devnum = 0;
 	char const* devname = devices[0];
 	
-	while(devname != NULL) {
-		if(mount(devname, "/boot", BOOTFS_TYPE, MS_RDONLY, NULL) == -1) {
-			debug_write("Can't mount %s at /boot: %s\n", devname, strerror(errno));
-			return;
+	while(devname) {
+		if(mount(devname, "/mnt", BOOTFS_TYPE, MS_RDONLY, NULL) == -1) {
+			debug_write("Can't mount %s at /mnt: %s\n", devname, strerror(errno));
+			goto ENDLOOP;
 		}
-		if(access("/boot/" CONFIG_FILE, F_OK) == 0) {
+		if(access("/mnt/" CONFIG_FILE, F_OK) == 0) {
 			debug_write("Found " CONFIG_FILE " on %s\n", devname);
-			
-			got_boot = 1;
-			return;
+			return 1;
 		}
 		
-		if(umount("/boot") == -1) {
-			fatal("Can't unmount /boot: %s", strerror(errno));
+		if(umount("/mnt") == -1) {
+			debug_write("Can't unmount /mnt: %s\n", strerror(errno));
 		}
 		
+		ENDLOOP:
 		devname = devices[++devnum];
 	}
+	
+	debug_write("Can't find disk containing " CONFIG_FILE "\n");
+	return 0;
 }
 
 /* Mount all mounts in a kl_mount list

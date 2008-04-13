@@ -52,7 +52,6 @@ int main(int argc, char** argv) {
 	
 	kmsg_monitor();
 	console_init();
-	mount_boot();
 	config_load();
 	
 	while(1) {

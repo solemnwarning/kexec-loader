@@ -96,7 +96,7 @@ else
 fi
 
 echo "Creating $initramfs tree..."
-mkdir -p -m 0755 "$initramfs/"{dev,boot,proc,sbin,target} || exit 1
+mkdir -p -m 0755 "$initramfs/"{dev,mnt,proc,sbin,target} || exit 1
 
 echo "Copying programs..."
 install -m 0755 src/kexec-loader "$initramfs/sbin/kexec-loader" || exit 1
