@@ -75,7 +75,7 @@ static int run_kexec(char** kexec_argv) {
  *
  * Returns 1 on success, zero on error
 */
-int kexec_load(char const* kernel, char const* append, char const* initrd) {
+int load_kernel(char const* kernel, char const* append, char const* initrd) {
 	char append_arg[1024] = {'\0'};
 	char initrd_arg[1024] = {'\0'};
 	
@@ -85,11 +85,11 @@ int kexec_load(char const* kernel, char const* append, char const* initrd) {
 	argv_append("-l");
 	argv_append((char*)kernel);
 	
-	if(append != NULL) {
+	if(append[0] != '\0') {
 		snprintf(append_arg, 1023, "--append=%s", append);
 		argv_append(append_arg);
 	}
-	if(initrd != NULL) {
+	if(initrd[0] != '\0') {
 		snprintf(initrd_arg, 1023, "--initrd=%s", initrd);
 		argv_append(initrd_arg);
 	}
@@ -100,12 +100,4 @@ int kexec_load(char const* kernel, char const* append, char const* initrd) {
 	}
 	
 	return(1);
-}
-
-/* Boot a kernel using the kexec program
- * Only returns on error
-*/
-void kexec_boot(void) {
-	reboot(LINUX_REBOOT_MAGIC1, LINUX_REBOOT_MAGIC2, LINUX_REBOOT_CMD_KEXEC, NULL);
-	debug("Can't reboot(): %s\n", strerror(errno));
 }

@@ -35,6 +35,7 @@
 #include <unistd.h>
 #include <sys/select.h>
 #include <sys/mount.h>
+#include <linux/reboot.h>
 
 #include "mount.h"
 #include "../config.h"
@@ -64,25 +65,16 @@ int main(int argc, char** argv) {
 			continue;
 		}
 		
-		char* append = NULL;
-		char* initrd = NULL;
-		
-		if(target->append[0] != '\0') {
-			append = target->append;
-		}
-		if(target->initrd[0] != '\0') {
-			initrd = target->initrd;
-		}
-		
-		if(!kexec_load(target->kernel, append, initrd)) {
+		if(!load_kernel(target->kernel, target->append, target->initrd)) {
 			unmount_list(target->mounts);
 			continue;
 		}
 		
-		break;
+		unmount_list(target->mounts);
+		
+		reboot(LINUX_REBOOT_MAGIC1, LINUX_REBOOT_MAGIC2, LINUX_REBOOT_CMD_KEXEC, NULL);
+		debug("Can't reboot(): %s\n", strerror(errno));
 	}
-	
-	kexec_boot();
 	
 	while(1) {
 		sleep(9999);
