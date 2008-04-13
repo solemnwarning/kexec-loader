@@ -35,6 +35,7 @@
 #include <errno.h>
 #include <string.h>
 #include <sys/wait.h>
+#include <linux/reboot.h>
 
 #include "kexec.h"
 #include "misc.h"
@@ -102,17 +103,9 @@ int kexec_load(char const* kernel, char const* append, char const* initrd) {
 }
 
 /* Boot a kernel using the kexec program
- *
- * Returns 1 on success, zero on error
+ * Only returns on error
 */
-int kexec_boot(void) {
-	char* kexec_argv[3] = {NULL};
-	kexec_argv[1] = "-e";
-	
-	if(run_kexec(kexec_argv) != 0) {
-		printm("run_kexec() returned nonzero");
-		return(0);
-	}
-	
-	return(1);
+void kexec_boot(void) {
+	reboot(LINUX_REBOOT_MAGIC1, LINUX_REBOOT_MAGIC2, LINUX_REBOOT_CMD_KEXEC, NULL);
+	debug_write("Can't reboot(): %s\n", strerror(errno));
 }
