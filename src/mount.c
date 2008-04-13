@@ -155,63 +155,88 @@ int mount_config(void) {
 	return 0;
 }
 
-/* Mount all mounts in a kl_mount list
+/* Mount all mounts in a kl_mount list at /mnt
  *
  * If all mounts are sucessfully mounted 1 is returned, if any mounts fail zero
- * is returned any any already-completed mounts will not be unmounted
+ * is returned any any already-completed mounts are unmounted
 */
-int mount_list(kl_mount* mount_src) {
-	kl_mount* mounts = NULL;
-	kl_mount* cmount = NULL;
-	kl_mount* mptr = NULL;
-	char cmp1[1024] = {'\0'};
+int mount_list(kl_mount* mounts) {
+	kl_mount *mptr = mounts;
+	int depth = 0, n = 0, n2 = 0;
+	char mpoint[1024];
+	char *fstype;
 	
-	if((mounts = mount_copy(mount_src)) == NULL) {
-		printm("Copying mount list failed: %s", strerror(errno));
-		return(0);
-	}
-	
-	unsigned int count = 0;
-	for(mptr = mounts; mptr != NULL; mptr = mptr->next) {
-		count++;
-	}
-	
-	while(count > 0) {
-		cmount = mounts;
-		mptr = mounts;
-		
-		while(cmount != NULL) {
-			snprintf(cmp1, 1023, "%s*", cmount->mpoint);
+	while(1) {
+		if(mptr->depth == depth) {
+			snprintf(mpoint, 1024, "/mnt%s", mptr->mpoint);
+			mpoint[1023] = '\0';
 			
-			if(str_compare(cmp1, mptr->mpoint, STR_WILDCARD1)) {
-				mptr = cmount;
+			fstype = mptr->fstype;
+			
+			if(str_compare(fstype, "auto", 0)) {
+				fstype = detect_fstype(mptr->device);
+				if(!fstype) {
+					debug("Unknown filesystem on %s\n", mptr->device);
+					
+					break;
+				}
 			}
-			cmount = cmount->next;
-		}
-		
-		if(str_compare(mptr->fstype, "auto", 0)) {
-			char *fstype = detect_fstype(mptr->device);
-			if(!fstype) {
-				printm("Unknown filesystem on %s\n", mptr->device);
+			
+			if(mount(mptr->device, mpoint, fstype, MS_RDONLY, NULL) == -1) {
+				debug("Can't mount %s: %s\n", mpoint, strerror(errno));
 				
-				mount_free(&mounts);
-				return(0);
+				break;
 			}
 			
-			strncpy(mptr->fstype, fstype, 63);
+			n++;
 		}
 		
-		if(mount(mptr->device, mptr->mpoint, mptr->fstype, MS_RDONLY, NULL) == -1) {
-			printm("Can't mount %s: %s", mptr->mpoint, strerror(errno));
-			mount_free(&mounts);
-			return(0);
+		if((mptr = mptr->next) == NULL) {
+			if(n == 0) {
+				return 1;
+			}
+			
+			n = 0;
+			depth++;
+			
+			mptr = mounts;
 		}
-		
-		mptr->mpoint[0] = '\0';
-		count--;
 	}
 	
-	return(1);
+	/* If the first loop ever returns there's been an error
+	 * The next loop undoes all the mounts created by the first loop
+	*/
+	
+	mptr = mounts;
+	
+	while(depth >= 0) {
+		if(mptr->depth == depth) {
+			if(n2 == n) {
+				n = -1;
+				goto DDEPTH;
+			}
+			
+			snprintf(mpoint, 1024, "/mnt%s", mptr->mpoint);
+			mpoint[1023] = '\0';
+			
+			if(umount(mpoint) == -1) {
+				debug("Can't unmount %s: %s\n", mpoint, strerror(errno));
+			}
+			
+			n2++;
+		}
+		
+		if((mptr = mptr->next) == NULL) {
+			DDEPTH:
+			
+			n2 = 0;
+			depth--;
+			
+			mptr = mounts;
+		}
+	}
+	
+	return 0;
 }
 
 /* Attempt to detect the filesystem format of a device or file
