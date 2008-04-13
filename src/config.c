@@ -46,7 +46,9 @@
 struct kl_config config = CONFIG_DEFAULTS_DEFINE;
 static struct kl_target target = TARGET_DEFAULTS_DEFINE;
 
-/* Add a mount */
+/* Add a mount
+ * This changes the mpoint string passed to it
+*/
 static void config_add_mount(kl_mount** mounts, char* device, char* mpoint) {
 	char* fstype = "auto";
 	
@@ -59,10 +61,22 @@ static void config_add_mount(kl_mount** mounts, char* device, char* mpoint) {
 	
 	kl_mount nmount = MOUNT_DEFAULTS_DEFINE;
 	strncpy(nmount.device, device, 1023);
+	strcpy(nmount.mpoint, "/");
 	strncpy(nmount.fstype, fstype, 63);
 	
-	snprintf(nmount.mpoint, 1024, "/%s", mpoint + strspn(mpoint, "/"));
-	nmount.mpoint[1023] = '\0';
+	char *mptok = strtok(mpoint, "/");
+	while(mptok) {
+		if(strlen(mptok) > 0) {
+			goto NTOK;
+		}
+		
+		strncat(nmount.mpoint, mptok, 1023);
+		strncat(nmount.mpoint, "/", 1023);
+		nmount.depth++;
+		
+		NTOK:
+		mptok = strtok(NULL, "/");
+	}
 	
 	mount_add(mounts, &nmount);
 }
