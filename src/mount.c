@@ -239,6 +239,41 @@ int mount_list(kl_mount* mounts) {
 	return 0;
 }
 
+/* Unmount all mounts in a kl_mount list from /mnt
+ * Continues on errors
+*/
+void unmount_list(kl_mount *mounts) {
+	kl_mount *mptr = mounts;
+	int depth = 0;
+	char mpoint[1024];
+	
+	while(mptr) {
+		if(mptr->depth > depth) {
+			depth = mptr->depth;
+		}
+		
+		mptr = mptr->next;
+	}
+	
+	mptr = mounts;
+	
+	while(depth >= 0) {
+		if(mptr->depth == depth) {
+			snprintf(mpoint, 1024, "/mnt%s", mptr->mpoint);
+			mpoint[1023] = '\0';
+			
+			if(umount(mpoint) == -1) {
+				debug("Can't unmount %s: %s\n", mpoint, strerror(errno));
+			}
+		}
+		
+		if((mptr = mptr->next) == NULL) {
+			depth--;
+			mptr = mounts;
+		}
+	}
+}
+
 /* Attempt to detect the filesystem format of a device or file
  * Returns the filesystem type as a string on success, NULL on error
 */
