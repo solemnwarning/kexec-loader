@@ -135,23 +135,23 @@ int mount_config(void) {
 	
 	while(devname) {
 		if(mount(devname, "/mnt", BOOTFS_TYPE, MS_RDONLY, NULL) == -1) {
-			debug_write("Can't mount %s at /mnt: %s\n", devname, strerror(errno));
+			debug("Can't mount %s at /mnt: %s\n", devname, strerror(errno));
 			goto ENDLOOP;
 		}
 		if(access("/mnt/" CONFIG_FILE, F_OK) == 0) {
-			debug_write("Found " CONFIG_FILE " on %s\n", devname);
+			debug("Found " CONFIG_FILE " on %s\n", devname);
 			return 1;
 		}
 		
 		if(umount("/mnt") == -1) {
-			debug_write("Can't unmount /mnt: %s\n", strerror(errno));
+			debug("Can't unmount /mnt: %s\n", strerror(errno));
 		}
 		
 		ENDLOOP:
 		devname = devices[++devnum];
 	}
 	
-	debug_write("Can't find disk containing " CONFIG_FILE "\n");
+	debug("Can't find disk containing " CONFIG_FILE "\n");
 	return 0;
 }
 

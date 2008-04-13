@@ -107,5 +107,5 @@ int kexec_load(char const* kernel, char const* append, char const* initrd) {
 */
 void kexec_boot(void) {
 	reboot(LINUX_REBOOT_MAGIC1, LINUX_REBOOT_MAGIC2, LINUX_REBOOT_CMD_KEXEC, NULL);
-	debug_write("Can't reboot(): %s\n", strerror(errno));
+	debug("Can't reboot(): %s\n", strerror(errno));
 }

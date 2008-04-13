@@ -84,7 +84,7 @@ void printm_r(char const* file, unsigned int line, char const* fmt, ...) {
 }
 
 /* Write a message to the debug console */
-void debug_write(char const* fmt, ...) {
+void debug(char const* fmt, ...) {
 	static FILE *debug_fh = NULL;
 	
 	if(!debug_fh) {
@@ -369,15 +369,15 @@ void kmsg_monitor(void) {
 	
 	FILE *kmsg = fopen("/proc/kmsg", "r");
 	if(!kmsg) {
-		debug_write("Can't open /proc/kmsg: %s\n", strerror(errno));
-		debug_write("Linux kernel messages will not be available\n");
+		debug("Can't open /proc/kmsg: %s\n", strerror(errno));
+		debug("Linux kernel messages will not be available\n");
 		
 		exit(1);
 	}
 	
 	char msgbuf[4096];
 	while(fgets(msgbuf, 4096, kmsg)) {
-		debug_write("%s", msgbuf);
+		debug("%s", msgbuf);
 	}
 	
 	exit(0);

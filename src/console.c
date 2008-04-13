@@ -43,7 +43,7 @@
 
 /* Initialize console(s) */
 void console_init(void) {
-	debug_write("Disabling printk() to console...\n");
+	debug("Disabling printk() to console...\n");
 	klogctl(6, NULL, 0);
 	
 	struct termios attribs;
@@ -67,10 +67,10 @@ void console_init(void) {
 	}
 	
 	if(setvbuf(stdout, NULL, _IONBF, 0) != 0) {
-		debug_write("Can't set stdout buffer: %s\n", strerror(errno));
+		debug("Can't set stdout buffer: %s\n", strerror(errno));
 	}
 	if(setvbuf(stderr, NULL, _IONBF, 0) != 0) {
-		debug_write("Can't set stderr buffer: %s\n", strerror(errno));
+		debug("Can't set stderr buffer: %s\n", strerror(errno));
 	}
 }
 
@@ -121,7 +121,7 @@ void console_attrib(int attrib) {
 void console_getsize(unsigned int* rows, unsigned int* cols) {
 	struct winsize cons_size;
 	if(ioctl(fileno(stdout), TIOCGWINSZ, &cons_size) == -1) {
-		debug_write("Can't ioctl: %s", strerror(errno));
+		debug("Can't ioctl(TIOCGWINSZ): %s\n", strerror(errno));
 	}
 	
 	*rows = cons_size.ws_row;

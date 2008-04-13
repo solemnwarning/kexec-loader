@@ -85,7 +85,7 @@ void config_load(void) {
 			continue;
 		}
 		
-		debug_write("Can't open " CONFIG_FILE ": %s\n", strerror(errno));
+		debug("Can't open " CONFIG_FILE ": %s\n", strerror(errno));
 		return;
 	}
 	
@@ -102,13 +102,13 @@ void config_load(void) {
 			continue;
 		}
 		
-		debug_write("Can't close " CONFIG_FILE ": %s\n", strerror(errno));
-		debug_write("Discarding cfg_handle!\n");
+		debug("Can't close " CONFIG_FILE ": %s\n", strerror(errno));
+		debug("Discarding cfg_handle!\n");
 		return;
 	}
 	
 	if(umount("/mnt") == -1) {
-		debug_write("Can't unmount /mnt: %s\n", strerror(errno));
+		debug("Can't unmount /mnt: %s\n", strerror(errno));
 	}
 }
 
@@ -132,7 +132,7 @@ void config_parse(char* line, unsigned int lnum) {
 		return;
 	}
 	
-	debug_write("config:%u: '%s' = '%s'\n", lnum, name, value);
+	debug("config:%u: '%s' = '%s'\n", lnum, name, value);
 	
 	if(str_compare(name, "timeout", STR_NOCASE)) {
 		config.timeout = strtoul(value, NULL, 10);
@@ -191,7 +191,7 @@ void config_parse(char* line, unsigned int lnum) {
 		return;
 	}
 	
-	debug_write("config:%u: Unknown directive '%s'\n", lnum, name);
+	debug("config:%u: Unknown directive '%s'\n", lnum, name);
 }
 
 /* Add the remaining target, if it exists */
