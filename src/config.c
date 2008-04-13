@@ -66,7 +66,7 @@ static void config_add_mount(kl_mount** mounts, char* device, char* mpoint) {
 	
 	char *mptok = strtok(mpoint, "/");
 	while(mptok) {
-		if(strlen(mptok) > 0) {
+		if(strlen(mptok) == 0) {
 			goto NTOK;
 		}
 		
