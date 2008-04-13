@@ -48,9 +48,7 @@ void* allocate_r(char const* file, unsigned int line, size_t size);
 #define fatal(...) fatal_r(__FILE__, __LINE__, __VA_ARGS__)
 void fatal_r(char const* file, unsigned int line, char const* fmt, ...);
 
-#define printm(...) printm_r(__FILE__, __LINE__, __VA_ARGS__)
-void printm_r(char const* file, unsigned int line, char const* fmt, ...);
-
+void printm(char const* fmt, ...);
 void debug(char const* fmt, ...);
 
 char* strclone(char const* string, size_t maxlen);

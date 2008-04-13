@@ -69,14 +69,12 @@ void fatal_r(char const* file, unsigned int line, char const* fmt, ...) {
 }
 
 /* Print a message to the console */
-void printm_r(char const* file, unsigned int line, char const* fmt, ...) {
+void printm(char const* fmt, ...) {
 	va_list argv;
 	va_start(argv, fmt);
 	
-	char buf[128] = {'\0'};
-	vsnprintf(buf, 127, fmt, argv);
-	
-	printf("%s:%u: %s\n", file, line, buf);
+	vprintf(fmt, argv);
+	putchar('\n');
 	
 	va_end(argv);
 	
