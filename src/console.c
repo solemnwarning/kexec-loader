@@ -82,19 +82,8 @@ void console_setpos(int row, int column) {
 /* Clear the console */
 void console_clear(void) {
 	if(printm_called) {
-		unsigned int tremain = 10;
-		struct pollfd poll_stdin = {fileno(stdin), POLLIN, 0};
-		
-		putchar('\n');
-		while(tremain > 0) {
-			printf("\rPress any key or wait %u seconds...", tremain);
-			
-			if(poll(&poll_stdin, 1, 1000) > 0) {
-				getchar();
-				break;
-			}
-			tremain--;
-		}
+		printf("Press any key to continue...\n");
+		getchar();
 		
 		printm_called = 0;
 	}
