@@ -59,8 +59,10 @@ static void config_add_mount(kl_mount** mounts, char* device, char* mpoint) {
 	
 	kl_mount nmount = MOUNT_DEFAULTS_DEFINE;
 	strncpy(nmount.device, device, 1023);
-	strncpy(nmount.mpoint, mpoint, 1023);
 	strncpy(nmount.fstype, fstype, 63);
+	
+	snprintf(nmount.mpoint, 1024, "/%s", mpoint + strspn(mpoint, "/"));
+	nmount.mpoint[1023] = '\0';
 	
 	mount_add(mounts, &nmount);
 }
