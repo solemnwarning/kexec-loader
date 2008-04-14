@@ -261,6 +261,12 @@ char* detect_fstype(char const *device) {
 	) {
 		retval = "minix";
 	}
+	if(str_compare((char*)(buf+0x36), "FAT", STR_MAXLEN, 3)) {
+		retval = "vfat";
+	}
+	if(str_compare((char*)(buf+3), "NTFS    ", STR_MAXLEN, 8)) {
+		retval = "ntfs";
+	}
 	
 	DFST_END:
 	while(fclose(fh) != 0) {
