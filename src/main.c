@@ -110,8 +110,48 @@ int main(int argc, char** argv) {
 static void main_menu(void) {
 	draw_skel();
 	
+	int n, rnum, mpos = 0;
+	
+	kl_target *starget = config.targets;	/* Start of displayed list */
+	kl_target *target;
+	
 	while(1) {
-		sleep(9999);
+		target = starget;
+		
+		for(rnum = srow; rnum <= erow; rnum++) {
+			console_setpos(rnum, scol);
+			
+			if(rnum == srow && starget != config.targets) {
+				printf("More...");
+				continue;
+			}
+			if(rnum == erow && target->next != NULL) {
+				printf("More...");
+				continue;
+			}
+			
+			if((rnum-srow) == mpos) {
+				console_attrib(CONS_INVERT);
+			}
+			
+			for(n = 0; n <= (ecol-scol); n++) {
+				if(target->name[n] == '\0') {
+					break;
+				}
+				
+				putchar(target->name[n]);
+			}
+			
+			if((rnum-srow) == mpos) {
+				console_attrib(CONS_RESET);
+			}
+			
+			if((target = target->next) == NULL) {
+				break;
+			}
+		}
+		
+		while(1) sleep(999);
 	}
 }
 
