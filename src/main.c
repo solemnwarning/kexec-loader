@@ -65,6 +65,10 @@ int main(int argc, char** argv) {
 	erow = rows-5;
 	ecol = cols-1;
 	
+	debug("rows = %d, cols = %d\n", rows, cols);
+	debug("srow = %d, erow = %d\n", srow, erow);
+	debug("scol = %d, ecol = %d\n", scol, ecol);
+	
 	main_menu();
 	
 	#if 0
@@ -116,12 +120,20 @@ static void draw_skel(void) {
 	int rnum, cnum;
 	
 	console_clear();
-	console_setpos(1, 2);
+	console_attrib(CONS_INVERT);
 	
+	console_setpos(1, 1);
+	for(cnum = 1; cnum <= cols; cnum++) {
+		putchar(' ');
+	}
+	
+	console_setpos(1, 2);
 	printf("kexec-loader v" VERSION);
 	
-	console_setpos(1, cols-(strlen(COPYRIGHT)+1));
-	printf(" " COPYRIGHT);
+	console_setpos(1, cols-strlen(COPYRIGHT)-1);
+	printf(COPYRIGHT);
+	
+	console_attrib(CONS_RESET);
 	
 	draw_tbline(srow-1);
 	draw_tbline(erow+1);
