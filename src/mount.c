@@ -41,7 +41,7 @@
 #include "../config.h"
 #include "config.h"
 
-#define MAGIC_BUF_SIZE 1117
+#define MAGIC_BUF_SIZE (0x1003A)
 
 /* Mount disk containing CONFIG_FILE at /mnt
  * Returns 1 if device containing file was mounted, zero otherwise
@@ -222,13 +222,18 @@ char* detect_fstype(char const *device) {
 	}
 	
 	char *retval = NULL;
-	unsigned char buf[MAGIC_BUF_SIZE];
 	size_t rcount = 0;
+	
+	unsigned char buf[MAGIC_BUF_SIZE];
+	memset(buf, '\0', MAGIC_BUF_SIZE);
 	
 	while(rcount < MAGIC_BUF_SIZE) {
 		rcount += fread(buf+rcount, 1, MAGIC_BUF_SIZE-rcount, fh);
 		
-		if((ferror(fh) && errno != EINTR) || feof(fh)) {
+		if(feof(fh)) {
+			break;
+		}
+		if(ferror(fh) && errno != EINTR) {
 			goto DFST_END;
 		}
 		clearerr(fh);
@@ -243,6 +248,18 @@ char* detect_fstype(char const *device) {
 	}
 	if(str_compare((char*)buf, "XFSB", STR_MAXLEN, 4)) {
 		retval = "xfs";
+	}
+	if(str_compare((char*)(buf+0x10034), "ReIsEr", STR_MAXLEN, 6)) {
+		retval = "reiserfs";
+	}
+	if(
+		(buf[0x410] == 0x13 && buf[0x411] == 0x7F) ||
+		(buf[0x410] == 0x7F && buf[0x411] == 0x13) ||
+		(buf[0x410] == 0x8F && buf[0x411] == 0x13) ||
+		(buf[0x410] == 0x68 && buf[0x411] == 0x24) ||
+		(buf[0x410] == 0x78 && buf[0x411] == 0x24)
+	) {
+		retval = "minix";
 	}
 	
 	DFST_END:
