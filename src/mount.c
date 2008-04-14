@@ -41,6 +41,8 @@
 #include "../config.h"
 #include "config.h"
 
+#define MAGIC_BUF_SIZE 1117
+
 /* Mount disk containing CONFIG_FILE at /mnt
  * Returns 1 if device containing file was mounted, zero otherwise
 */
@@ -220,11 +222,11 @@ char* detect_fstype(char const *device) {
 	}
 	
 	char *retval = NULL;
-	unsigned char buf[1088];
+	unsigned char buf[MAGIC_BUF_SIZE];
 	size_t rcount = 0;
 	
-	while(rcount < 1088) {
-		rcount += fread(buf+rcount, 1, 1088-rcount, fh);
+	while(rcount < MAGIC_BUF_SIZE) {
+		rcount += fread(buf+rcount, 1, MAGIC_BUF_SIZE-rcount, fh);
 		
 		if((ferror(fh) && errno != EINTR) || feof(fh)) {
 			goto DFST_END;
@@ -233,7 +235,11 @@ char* detect_fstype(char const *device) {
 	}
 	
 	if(buf[0x438] == 0x53 && buf[0x439] == 0xEF) {
-		retval = "ext2";
+		if(buf[0x45C] & 4) {
+			retval = "ext3";
+		}else{
+			retval = "ext2";
+		}
 	}
 	if(str_compare((char*)buf, "XFSB", STR_MAXLEN, 4)) {
 		retval = "xfs";
