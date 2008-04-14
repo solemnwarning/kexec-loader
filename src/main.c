@@ -44,7 +44,13 @@
 #include "kexec.h"
 #include "misc.h"
 
-static kl_target* target_menu(void);
+static void main_menu(void);
+static void draw_skel(void);
+static void draw_tbline(int rnum);
+
+static int rows = 25, cols = 80;
+static int srow = 4, erow = 0;
+static int scol = 3, ecol = 0;
 
 int main(int argc, char** argv) {
 	if(mount("proc", "/proc", "proc", 0, NULL) == -1) {
@@ -55,6 +61,13 @@ int main(int argc, char** argv) {
 	console_init();
 	config_load();
 	
+	console_getsize(&rows, &cols);
+	erow = rows-5;
+	ecol = cols-1;
+	
+	main_menu();
+	
+	#if 0
 	while(1) {
 		kl_target* target = target_menu();
 		
@@ -79,6 +92,7 @@ int main(int argc, char** argv) {
 		debug("Can't reboot(): %s\n", strerror(err));
 		printm("Can't reboot(): %s", strerror(err));
 	}
+	#endif
 	
 	while(1) {
 		sleep(9999);
@@ -86,6 +100,62 @@ int main(int argc, char** argv) {
 	return(1);
 }
 
+/* Display main menu
+ * This function never returns
+*/
+static void main_menu(void) {
+	draw_skel();
+	
+	while(1) {
+		sleep(9999);
+	}
+}
+
+/* Clear the screen and draw the menu skeleton */
+static void draw_skel(void) {
+	int rnum, cnum;
+	
+	console_clear();
+	console_setpos(1, 2);
+	
+	printf("kexec-loader v" VERSION);
+	
+	console_setpos(1, cols-(strlen(COPYRIGHT)+1));
+	printf(" " COPYRIGHT);
+	
+	draw_tbline(srow-1);
+	draw_tbline(erow+1);
+	
+	for(rnum = srow; rnum <= erow; rnum++) {
+		console_setpos(rnum, 1);
+		
+		for(cnum = 1; cnum <= cols; cnum++) {
+			if(cnum == 1 || cnum == cols) {
+				putchar('|');
+			}else{
+				putchar(' ');
+			}
+		}
+	}
+}
+
+/* Draw a +----+ line along one row */
+static void draw_tbline(int rnum) {
+	console_setpos(rnum, 1);
+	
+	int cnum = 1;
+	while(cnum <= cols) {
+		if(cnum == 1 || cnum == cols) {
+			putchar('+');
+		}else{
+			putchar('-');
+		}
+		
+		cnum++;
+	}
+}
+
+#if 0
 /* Display the target list and return the selected target */
 static kl_target* target_menu(void) {
 	static int first_call = 1;
@@ -255,3 +325,4 @@ static kl_target* target_menu(void) {
 	first_call = 0;
 	return(ctarget);
 }
+#endif

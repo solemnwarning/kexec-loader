@@ -56,6 +56,6 @@ void console_clear(void);
 void console_fgcolour(int colour);
 void console_bgcolour(int colour);
 void console_attrib(int attrib);
-void console_getsize(unsigned int* rows, unsigned int* cols);
+void console_getsize(int* rows, int* cols);
 
 #endif /* !KEXEC_LOADER_CONSOLE_H */

@@ -107,10 +107,11 @@ void console_attrib(int attrib) {
 }
 
 /* Get size of console */
-void console_getsize(unsigned int* rows, unsigned int* cols) {
+void console_getsize(int* rows, int* cols) {
 	struct winsize cons_size;
 	if(ioctl(fileno(stdout), TIOCGWINSZ, &cons_size) == -1) {
 		debug("Can't ioctl(TIOCGWINSZ): %s\n", strerror(errno));
+		return;
 	}
 	
 	*rows = cons_size.ws_row;
