@@ -78,6 +78,10 @@ static void config_add_mount(kl_mount** mounts, char* device, char* mpoint) {
 		mptok = strtok(NULL, "/");
 	}
 	
+	debug(
+		"Adding mount '%s' => '%s', depth %d\n",
+		nmount.device, nmount.mpoint, nmount.depth
+	);
 	mount_add(mounts, &nmount);
 }
 

@@ -111,6 +111,8 @@ int mount_list(kl_mount* mounts) {
 				}
 			}
 			
+			debug("Mounting %s at %s, depth %d\n", mptr->device, mpoint, depth);
+			
 			if(mount(mptr->device, mpoint, fstype, MS_RDONLY, NULL) == -1) {
 				int err = errno;
 				
@@ -151,6 +153,7 @@ int mount_list(kl_mount* mounts) {
 			snprintf(mpoint, 1024, "/mnt%s", mptr->mpoint);
 			mpoint[1023] = '\0';
 			
+			debug("Unmounting %s, depth %d\n", mpoint, depth);
 			if(umount(mpoint) == -1) {
 				debug("Can't unmount %s: %s\n", mpoint, strerror(errno));
 			}
@@ -194,6 +197,7 @@ void unmount_list(kl_mount *mounts) {
 			snprintf(mpoint, 1024, "/mnt%s", mptr->mpoint);
 			mpoint[1023] = '\0';
 			
+			debug("Unmounting %s, depth %d\n", mpoint, depth);
 			if(umount(mpoint) == -1) {
 				debug("Can't unmount %s: %s\n", mpoint, strerror(errno));
 			}

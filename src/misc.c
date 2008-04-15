@@ -264,6 +264,7 @@ kl_mount* mount_add(kl_mount** list, kl_mount const* src) {
 		strncpy(nptr->device, src->device, 1024);
 		strncpy(nptr->mpoint, src->mpoint, 1024);
 		strncpy(nptr->fstype, src->fstype, 64);
+		nptr->depth = src->depth;
 	}
 	
 	nptr->next = *list;
@@ -303,6 +304,7 @@ kl_mount* mount_copy(kl_mount const* src) {
 		strncpy(nptr->device, src->device, 1024);
 		strncpy(nptr->mpoint, src->mpoint, 1024);
 		strncpy(nptr->fstype, src->fstype, 64);
+		nptr->depth = src->depth;
 		
 		nptr->next = list;
 		list = nptr;
