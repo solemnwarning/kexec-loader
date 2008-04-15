@@ -48,6 +48,7 @@ static void main_menu(void);
 static void draw_skel(void);
 static void draw_tbline(int rnum);
 static void target_run(kl_target *target);
+static void list_devices(void);
 
 static int rows = 25, cols = 80;
 static int srow = 4, erow = 0;
@@ -223,6 +224,13 @@ static void main_menu(void) {
 				}
 			}
 		}
+		
+		if(key == 'l' || key == 'L') {
+			list_devices();
+			draw_skel();
+			
+			continue;
+		}
 	}
 }
 
@@ -260,6 +268,9 @@ static void draw_skel(void) {
 			}
 		}
 	}
+	
+	console_setpos(rows-1, 2);
+	printf("Press L to list detected devices");
 }
 
 /* Draw a +----+ line along one row */
@@ -313,4 +324,46 @@ static void target_run(kl_target *target) {
 	
 	debug("Can't reboot(): %s\n", strerror(err));
 	printm("Can't reboot(): %s", strerror(err));
+}
+
+/* Display a list of devices from /proc/diskstats */
+static void list_devices(void) {
+	char buf[1024];
+	char *name;
+	int major, minor, cnum;
+	
+	console_clear();
+	console_attrib(CONS_INVERT);
+	
+	console_setpos(1, 1);
+	for(cnum = 1; cnum <= cols; cnum++) {
+		putchar(' ');
+	}
+	
+	console_setpos(1, 2);
+	printf("kexec-loader " VERSION);
+	
+	console_setpos(1, cols-strlen(COPYRIGHT)-1);
+	printf(COPYRIGHT);
+	
+	console_attrib(CONS_RESET);
+	console_setpos(3, 1);
+	
+	FILE *disks = fopen("/proc/diskstats", "r");
+	if(!disks) {
+		printm("Can't open /proc/diskstats: %s", strerror(errno));
+	}
+	
+	printm("The following disks have been detected by Linux:");
+	printm("");
+	
+	while(fgets(buf, 1024, disks)) {
+		major = atoi(strtok(buf, " \t"));
+		minor = atoi(strtok(NULL, " \t"));
+		name = strtok(NULL, " \t");
+		
+		printm("/dev/%s\t(%d, %d)", name, major, minor);
+	}
+	
+	fclose(disks);
 }
