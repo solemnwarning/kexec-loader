@@ -47,6 +47,7 @@
 static void main_menu(void);
 static void draw_skel(void);
 static void draw_tbline(int rnum);
+static void target_run(kl_target *target);
 
 static int rows = 25, cols = 80;
 static int srow = 4, erow = 0;
@@ -70,38 +71,7 @@ int main(int argc, char** argv) {
 	debug("scol = %d, ecol = %d\n", scol, ecol);
 	
 	main_menu();
-	
-	#if 0
-	while(1) {
-		kl_target* target = target_menu();
-		
-		console_clear();
-		console_setpos(1,1);
-		
-		if(!mount_list(target->mounts)) {
-			continue;
-		}
-		
-		if(!load_kernel(target->kernel, target->append, target->initrd)) {
-			unmount_list(target->mounts);
-			continue;
-		}
-		
-		unmount_list(target->mounts);
-		
-		reboot(LINUX_REBOOT_MAGIC1, LINUX_REBOOT_MAGIC2, LINUX_REBOOT_CMD_KEXEC, NULL);
-		
-		int err = errno;
-		
-		debug("Can't reboot(): %s\n", strerror(err));
-		printm("Can't reboot(): %s", strerror(err));
-	}
-	#endif
-	
-	while(1) {
-		sleep(9999);
-	}
-	return(1);
+	return 1;
 }
 
 /* Display main menu
@@ -182,12 +152,20 @@ static void main_menu(void) {
 			}
 		}
 		
+		target = starget;
+		for(n = 0; n < mpos; n++) {
+			target = target->next;
+		}
+		
 		MENU_INPUT:
 		
 		if(poll(&pollset, 1, (tremain ? 1000 : -1)) == 0) {
 			if(--tremain == 0) {
-				debug("Timeout\n");
-				while(1) { sleep(999); }
+				debug("Timeout reached\n");
+				
+				target_run(target);
+				draw_skel();
+				continue;
 			}else{
 				console_setpos(rows-3, cols-13);
 				console_eline(ELINE_ALL);
@@ -204,13 +182,12 @@ static void main_menu(void) {
 		tremain = 0;
 		key = getchar();
 		
-		target = starget;
-		for(n = 0; n < mpos; n++) {
-			target = target->next;
-		}
-		
 		if(key == '\n') {
-			debug("Boot %s\n", target->name);
+			debug("Enter pressed\n");
+			
+			target_run(target);
+			draw_skel();
+			continue;
 		}
 		
 		if(key == 0x1B && getchar() == '[') {
@@ -299,4 +276,32 @@ static void draw_tbline(int rnum) {
 		
 		cnum++;
 	}
+}
+
+/* Attempt to load and execute a target
+ * This only returns on error
+*/
+static void target_run(kl_target *target) {
+	debug("Attempting to run '%s'\n", target->name);
+	
+	console_clear();
+	console_setpos(1,1);
+	
+	if(!mount_list(target->mounts)) {
+		return;
+	}
+	
+	if(!load_kernel(target->kernel, target->append, target->initrd)) {
+		unmount_list(target->mounts);
+		return;
+	}
+	
+	unmount_list(target->mounts);
+	
+	reboot(LINUX_REBOOT_MAGIC1, LINUX_REBOOT_MAGIC2, LINUX_REBOOT_CMD_KEXEC, NULL);
+	
+	int err = errno;
+	
+	debug("Can't reboot(): %s\n", strerror(err));
+	printm("Can't reboot(): %s", strerror(err));
 }
