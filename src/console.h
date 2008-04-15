@@ -50,6 +50,11 @@
 #define CONS_INVERT	7
 #define CONS_HIDDEN	8
 
+/* Erase line modes */
+#define ELINE_TOEND	""
+#define ELINE_TOSTART	"1"
+#define ELINE_ALL	"2"
+
 void console_init(void);
 void console_setpos(int row, int column);
 void console_clear(void);
@@ -57,5 +62,6 @@ void console_fgcolour(int colour);
 void console_bgcolour(int colour);
 void console_attrib(int attrib);
 void console_getsize(int* rows, int* cols);
+void console_eline(char const* mode);
 
 #endif /* !KEXEC_LOADER_CONSOLE_H */

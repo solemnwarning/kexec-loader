@@ -117,3 +117,8 @@ void console_getsize(int* rows, int* cols) {
 	*rows = cons_size.ws_row;
 	*cols = cons_size.ws_col;
 }
+
+/* Erase the current line */
+void console_eline(char const* mode) {
+	printf("%c[%sK", 0x1B, mode);
+}

@@ -128,12 +128,11 @@ static void main_menu(void) {
 		cmpos = 0;
 		
 		for(rnum = srow; rnum <= erow; rnum++) {
-			console_setpos(rnum, scol);
-			for(n = 0; n <= (ecol-scol); n++) {
-				putchar(' ');
-			}
+			console_setpos(rnum, ecol);
+			console_eline(ELINE_TOSTART);
 			
-			console_setpos(rnum, scol);
+			console_setpos(rnum, 1);
+			printf("| ");
 			
 			if(cmpos == mpos) {
 				console_attrib(CONS_INVERT);
