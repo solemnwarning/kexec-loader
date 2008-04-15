@@ -125,6 +125,11 @@ static void main_menu(void) {
 			console_setpos(rnum, 1);
 			printf("| ");
 			
+			if(target == NULL) {
+				printf("No targets defined!");
+				break;
+			}
+			
 			if(cmpos == mpos) {
 				console_attrib(CONS_INVERT);
 			}
@@ -295,6 +300,7 @@ static void draw_tbline(int rnum) {
 */
 static void target_run(kl_target *target) {
 	debug("Attempting to run '%s'\n", target->name);
+	printm("Loading %s...", target->name);
 	
 	console_clear();
 	console_setpos(1,1);
@@ -327,8 +333,8 @@ static void target_run(kl_target *target) {
 	
 	int err = errno;
 	
-	debug("Can't reboot(): %s\n", strerror(err));
-	printm("Can't reboot(): %s", strerror(err));
+	debug("Can't execute kernel: %s\n", strerror(err));
+	printm("Can't execute kernel: %s", strerror(err));
 }
 
 /* Display a list of devices from /proc/diskstats */
