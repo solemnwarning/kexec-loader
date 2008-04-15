@@ -110,8 +110,8 @@ int main(int argc, char** argv) {
 static void main_menu(void) {
 	draw_skel();
 	
-	int n, rnum, key, timeout;
-	int tremain = config.timeout;
+	int n, rnum, key;
+	unsigned int tremain = config.timeout;
 	
 	int mpos = 0, mmpos = erow - srow, cmpos;
 	debug("mmpos = %d\n", mmpos);
@@ -136,9 +136,9 @@ static void main_menu(void) {
 		target = target->next;
 		
 		if(mpos == mmpos) {
-			mpos++;
-		}else{
 			starget = starget->next;
+		}else{
+			mpos++;
 		}
 	}
 	
@@ -184,10 +184,7 @@ static void main_menu(void) {
 		
 		MENU_INPUT:
 		
-		if(tremain > 0) {
-			timeout = 1000;
-		}
-		if(poll(&pollset, 1, timeout) == 0) {
+		if(poll(&pollset, 1, (tremain ? 1000 : -1)) == 0) {
 			if(--tremain == 0) {
 				debug("Timeout\n");
 				while(1) { sleep(999); }
@@ -195,7 +192,7 @@ static void main_menu(void) {
 				console_setpos(rows-3, cols-13);
 				console_eline(ELINE_ALL);
 				
-				printf("Timeout: %d", tremain);
+				printf("Timeout: %u", tremain);
 			}
 			
 			goto MENU_INPUT;
@@ -204,7 +201,6 @@ static void main_menu(void) {
 		console_setpos(rows-3, 1);
 		console_eline(ELINE_ALL);
 		
-		timeout = -1;
 		tremain = 0;
 		key = getchar();
 		
