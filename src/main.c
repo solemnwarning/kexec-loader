@@ -36,6 +36,7 @@
 #include <sys/mount.h>
 #include <linux/reboot.h>
 #include <poll.h>
+#include <sys/syscall.h>
 
 #include "mount.h"
 #include "../config.h"
@@ -318,7 +319,11 @@ static void target_run(kl_target *target) {
 	
 	unmount_list(target->mounts);
 	
-	reboot(LINUX_REBOOT_MAGIC1, LINUX_REBOOT_MAGIC2, LINUX_REBOOT_CMD_KEXEC, NULL);
+	syscall(
+		__NR_reboot,
+		LINUX_REBOOT_MAGIC1, LINUX_REBOOT_MAGIC2,
+		LINUX_REBOOT_CMD_KEXEC, NULL
+	);
 	
 	int err = errno;
 	
