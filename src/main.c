@@ -300,10 +300,11 @@ static void draw_tbline(int rnum) {
 */
 static void target_run(kl_target *target) {
 	debug("Attempting to run '%s'\n", target->name);
-	printm("Loading %s...", target->name);
 	
 	console_clear();
 	console_setpos(1,1);
+	
+	printm("Loading %s...", target->name);
 	
 	if(target->kernel[0] == '\0') {
 		printm("Selected target has no kernel");
