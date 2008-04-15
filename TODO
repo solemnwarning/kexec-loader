@@ -1,0 +1,9 @@
+Write some real documentation
+
+Cut down on usage of fatal() function
+
+Implement a shell like GRUB has?
+
+Make zero targets be handled better
+
+Add more informational messages, such as mounting

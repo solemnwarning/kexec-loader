@@ -1,0 +1,29 @@
+Version 1.1:
+	Removed directives for creating devices, all devices inodes should be
+	included with the initramfs.
+	
+	Redesigned mkinitramfs.sh to create a CPIO archive and to use fakeroot
+	if the script is not being run as root.
+	
+	Updated configuration file parser.
+	
+	Added seperate debug console and /proc/kmsg monitor.
+	
+	Rewrote code which deals with mounting/unmounting the disk containing
+	CONFIG_FILE.
+	
+	Rewrote mount_list() to be more effecient by ordering the mounts in
+	order of depth.
+	
+	Replaced unmount_tree() function with unmount_list().
+	
+	Added support for detecting ext2, ext3, XFS, ReiserFS, minix, FAT and
+	NTFS filesystem types.
+	
+	Rewrote menu code, it's slightly more sane now.
+	
+	Implemented list_devices() function, pressing L at the menu displays
+	a list of all devices listed in /proc/diskstats.
+
+Version 1.0:
+	Initial release.

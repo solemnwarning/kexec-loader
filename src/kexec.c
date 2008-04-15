@@ -35,6 +35,7 @@
 #include <errno.h>
 #include <string.h>
 #include <sys/wait.h>
+#include <linux/reboot.h>
 
 #include "kexec.h"
 #include "misc.h"
@@ -74,7 +75,7 @@ static int run_kexec(char** kexec_argv) {
  *
  * Returns 1 on success, zero on error
 */
-int kexec_load(char const* kernel, char const* append, char const* initrd) {
+int load_kernel(char const* kernel, char const* append, char const* initrd) {
 	char append_arg[1024] = {'\0'};
 	char initrd_arg[1024] = {'\0'};
 	
@@ -84,30 +85,14 @@ int kexec_load(char const* kernel, char const* append, char const* initrd) {
 	argv_append("-l");
 	argv_append((char*)kernel);
 	
-	if(append != NULL) {
+	if(append[0] != '\0') {
 		snprintf(append_arg, 1023, "--append=%s", append);
 		argv_append(append_arg);
 	}
-	if(initrd != NULL) {
+	if(initrd[0] != '\0') {
 		snprintf(initrd_arg, 1023, "--initrd=%s", initrd);
 		argv_append(initrd_arg);
 	}
-	
-	if(run_kexec(kexec_argv) != 0) {
-		printm("run_kexec() returned nonzero");
-		return(0);
-	}
-	
-	return(1);
-}
-
-/* Boot a kernel using the kexec program
- *
- * Returns 1 on success, zero on error
-*/
-int kexec_boot(void) {
-	char* kexec_argv[3] = {NULL};
-	kexec_argv[1] = "-e";
 	
 	if(run_kexec(kexec_argv) != 0) {
 		printm("run_kexec() returned nonzero");

@@ -31,7 +31,6 @@
 #ifndef KEXEC_LOADER_KEXEC_H
 #define KEXEC_LOADER_KEXEC_H
 
-int kexec_load(char const* kernel, char const* append, char const* initrd);
-int kexec_boot(void);
+int load_kernel(char const* kernel, char const* append, char const* initrd);
 
 #endif /* !KEXEC_LOADER_KEXEC_H */

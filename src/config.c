@@ -36,15 +36,19 @@
 #include <sys/stat.h>
 #include <fcntl.h>
 #include <unistd.h>
+#include <sys/mount.h>
 
 #include "config.h"
 #include "../config.h"
 #include "misc.h"
+#include "mount.h"
 
 struct kl_config config = CONFIG_DEFAULTS_DEFINE;
 static struct kl_target target = TARGET_DEFAULTS_DEFINE;
 
-/* Add a mount */
+/* Add a mount
+ * This changes the mpoint string passed to it
+*/
 static void config_add_mount(kl_mount** mounts, char* device, char* mpoint) {
 	char* fstype = "auto";
 	
@@ -57,9 +61,27 @@ static void config_add_mount(kl_mount** mounts, char* device, char* mpoint) {
 	
 	kl_mount nmount = MOUNT_DEFAULTS_DEFINE;
 	strncpy(nmount.device, device, 1023);
-	strncpy(nmount.mpoint, mpoint, 1023);
+	strcpy(nmount.mpoint, "/");
 	strncpy(nmount.fstype, fstype, 63);
 	
+	char *mptok = strtok(mpoint, "/");
+	while(mptok) {
+		if(strlen(mptok) == 0) {
+			goto NTOK;
+		}
+		
+		strncat(nmount.mpoint, mptok, 1023);
+		strncat(nmount.mpoint, "/", 1023);
+		nmount.depth++;
+		
+		NTOK:
+		mptok = strtok(NULL, "/");
+	}
+	
+	debug(
+		"Adding mount '%s' => '%s', depth %d\n",
+		nmount.device, nmount.mpoint, nmount.depth
+	);
 	mount_add(mounts, &nmount);
 }
 
@@ -68,18 +90,22 @@ static void config_add_mount(kl_mount** mounts, char* device, char* mpoint) {
  * or may not be loaded.
 */
 void config_load(void) {
+	if(!mount_config()) {
+		return;
+	}
+	
 	TARGET_DEFAULTS(&target);
 	
 	FILE* cfg_handle = NULL;
 	while(cfg_handle == NULL) {
-		if((cfg_handle = fopen("/boot/" CONFIG_FILE, "r")) != NULL) {
+		if((cfg_handle = fopen("/mnt/" CONFIG_FILE, "r")) != NULL) {
 			break;
 		}
 		if(errno == EINTR) {
 			continue;
 		}
 		
-		printm("Can't open " CONFIG_FILE ": %s", strerror(errno));
+		debug("Can't open " CONFIG_FILE ": %s\n", strerror(errno));
 		return;
 	}
 	
@@ -96,9 +122,13 @@ void config_load(void) {
 			continue;
 		}
 		
-		printm("Can't close " CONFIG_FILE ": %s", strerror(errno));
-		printm("Discarding cfg_handle!");
+		debug("Can't close " CONFIG_FILE ": %s\n", strerror(errno));
+		debug("Discarding cfg_handle!\n");
 		return;
+	}
+	
+	if(umount("/mnt") == -1) {
+		debug("Can't unmount /mnt: %s\n", strerror(errno));
 	}
 }
 
@@ -106,46 +136,26 @@ void config_load(void) {
  * tabs and carridge-return characters.
 */
 void config_parse(char* line, unsigned int lnum) {
-	/* Remove leading whitespace from line */
-	while(IS_WHITESPACE(line[0])) {
-		line++;
-	}
+	char *name = line+strspn(line, " \t\r\n");
+	char *value = name+strcspn(name, " \t\r\n");
 	
-	/* Skip line if it's a comment, or empty */
-	if(line[0] == '#' || line[0] == '\0') {
-		return;
-	}
-	
-	/* Remove trailing whitespace from line */
-	size_t count = strlen(line)-1;
-	while(IS_WHITESPACE(line[count])) {
-		line[count--] = '\0';
-	}
-	
-	char* name = line;
-	char* value = line;
-	
-	/* If there are any whitespace characters remaining in the string treat
-	 * them as name/value seperators, replace the first one with nil to
-	 * terminate the string pointed to by name, also offset value to the
-	 * first non-whitespace character after the whitespace which should be
-	 * the beginning of the value.
-	*/
-	while(!IS_WHITESPACE(value[0]) && value[0] != '\0') {
-		value++;
-	}
 	if(value[0] != '\0') {
 		value[0] = '\0';
 		value++;
 		
-		while(IS_WHITESPACE(value[0])) {
-			value++;
-		}
+		value = value+strspn(value, " \t");
+		value[strcspn(value, "\r\n")] = '\0';
 	}
+	
+	/* Skip line if it's a comment, or empty */
+	if(name[0] == '#' || name[0] == '\0') {
+		return;
+	}
+	
+	debug("config:%u: '%s' = '%s'\n", lnum, name, value);
 	
 	if(str_compare(name, "timeout", STR_NOCASE)) {
 		config.timeout = strtoul(value, NULL, 10);
-		debug("timeout='%s' (%u)", value, config.timeout);
 		
 		return;
 	}
@@ -165,11 +175,11 @@ void config_parse(char* line, unsigned int lnum) {
 		return;
 	}
 	if(str_compare(name, "kernel", STR_NOCASE)) {
-		snprintf(target.kernel, 1023, "/target/%s", value);
+		snprintf(target.kernel, 1023, "/mnt/%s", value);
 		return;
 	}
 	if(str_compare(name, "initrd", STR_NOCASE)) {
-		snprintf(target.initrd, 1023, "/target/%s", value);
+		snprintf(target.initrd, 1023, "/mnt/%s", value);
 		return;
 	}
 	if(str_compare(name, "append", STR_NOCASE)) {
@@ -181,27 +191,31 @@ void config_parse(char* line, unsigned int lnum) {
 		return;
 	}
 	if(str_compare(name, "rootfs", STR_NOCASE)) {
-		config_add_mount(&(target.mounts), value, "/target");
+		config_add_mount(&(target.mounts), value, "/");
 		return;
 	}
 	if(str_compare(name, "mount", STR_NOCASE)) {
-		char* tmp = strchr(value, ' ');
-		if(tmp == NULL) {
-			fatal("Invalid mount at line %u", lnum);
+		char* mpoint = strchr(value, ' ');
+		if(mpoint == NULL) {
+			debug("config:%u: Invalid mount\n", lnum);
+			printm("config:%u: Invalid mount", lnum);
+			return;
 		}
-		while(tmp[0] == ' ') {
-			tmp[0] = '\0';
-			tmp++;
-		}
+		mpoint[0] = '\0';
+		mpoint += (strspn(mpoint+1, " \t")+1);
 		
-		char mpoint[1024] = {'\0'};
-		snprintf(mpoint, 1023, "/target/%s", tmp);
+		if(strlen(mpoint) == 0) {
+			debug("config:%u: Invalid mount\n", lnum);
+			printm("config:%u: Invalid mount", lnum);
+			return;
+		}
 		
 		config_add_mount(&(target.mounts), value, mpoint);
 		return;
 	}
 	
-	printm("Unknown configuration variable '%s' at line %u", name, lnum);
+	debug("config:%u: Unknown directive '%s'\n", lnum, name);
+	printm("config:%u: Unknown directive '%s'", lnum, name);
 }
 
 /* Add the remaining target, if it exists */

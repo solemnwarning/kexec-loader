@@ -40,8 +40,6 @@
 #define STR_WILDCARD1	8	/* Parse wildcard characters * and ? in str1 */
 #define STR_WILDCARD2	16	/* Parse wildcard characters * and ? in str2 */
 
-#define IS_WHITESPACE(x) (x == ' ' || x == '\t' || x == '\n' || x == '\r')
-
 extern int printm_called;
 
 #define allocate(size) allocate_r(__FILE__, __LINE__, size)
@@ -50,15 +48,8 @@ void* allocate_r(char const* file, unsigned int line, size_t size);
 #define fatal(...) fatal_r(__FILE__, __LINE__, __VA_ARGS__)
 void fatal_r(char const* file, unsigned int line, char const* fmt, ...);
 
-#define printm(...) printm_r(__FILE__, __LINE__, __VA_ARGS__)
-void printm_r(char const* file, unsigned int line, char const* fmt, ...);
-
-#ifdef DEBUG_FILE
-#define debug(...) debug_r(__FILE__, __LINE__, __VA_ARGS__)
-#else
-#define debug(...)
-#endif
-void debug_r(char const* file, unsigned int line, char const* fmt, ...);
+void printm(char const* fmt, ...);
+void debug(char const* fmt, ...);
 
 char* strclone(char const* string, size_t maxlen);
 int str_compare(char const*, char const*, int, ...);
@@ -69,5 +60,8 @@ void target_free(kl_target** list);
 kl_mount* mount_add(kl_mount** list, kl_mount const* src);
 void mount_free(kl_mount** list);
 kl_mount* mount_copy(kl_mount const* src);
+
+char *get_cmdline(char const *name);
+void kmsg_monitor(void);
 
 #endif /* !KEXEC_LOADER_MISC_H */

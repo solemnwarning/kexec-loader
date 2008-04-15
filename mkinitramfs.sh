@@ -28,38 +28,121 @@
 # NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE,
 # EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-if [ -z "$1" ]; then
-	echo "Usage: $0 <target directory> <hdx|sdx>" 1>&2
+# Check a program is somewhere in $PATH
+#
+function cprog() {
+	if which "$1" > /dev/null; then
+		return 0
+	fi
+	
+	echo "No executable '$1' program found in \$PATH" 1>&2
+	exit 1
+}
+
+# Create /dev/hdX and /dev/hdX[0-16] devices
+#
+function create_hdx() {
+	mknod -m 0600 $1 b $2 $3 || exit 1
+	
+	part=1
+	while [ "$part" -le "16" ]; do
+		mknod -m 0600 $1$part b $2 $[$3+$part] || exit 1
+		
+		part=$[$part+1]
+	done
+}
+
+# Create /dev/sdX and /dev/sdX[0-15] devices
+#
+function create_sdx() {
+	base=$[$2*16]
+	mknod -m 0600 $1 b 8 $base
+	
+	part=1
+	while [ "$part" -le "15" ]; do
+		mknod -m 0600 $1$part b 8 $[$base+$part] || exit 1
+		
+		part=$[$part+1]
+	done
+}
+
+cprog whoami
+cprog mkdir
+cprog install
+cprog ln
+cprog strip
+cprog mknod
+cprog find
+cprog cpio
+cprog rm
+
+if [ -z "$1" -o -z "$2" ]; then
+	echo "Usage: $0 <outfile.cpio> <kexec binary>" 1>&2
 	exit 1
 fi
-if [ "$2" != "hdx" -a "$2" != "sdx" ]; then
-	echo "Usage: $0 <target directory> <hdx|sdx>" 1>&2
-	exit 1
+
+if [ "`whoami`" != "root" ]; then
+	cprog fakeroot
+	exec fakeroot -- $0 $1 $2
 fi
 
-MAKEDEV="`pwd`/MAKEDEV"
-if [ ! -f "$MAKEDEV" ]; then
-	echo "Can't find MAKEDEV" 1>&2
-	exit 1
+initramfs="initramfs.tmp"
+rdir="$PWD"
+
+if echo "$1" | grep -e "\/.*/" > /dev/null; then
+	initramfs_cpio="$1"
+else
+	initramfs_cpio="$PWD/$1"
 fi
 
-install -m 0755 -d "$1"/{dev,boot,proc,sbin,target} || exit 1
-install -m 0755 src/kexec-loader "$1/sbin/kexec-loader"
-ln -sf "sbin/kexec-loader" "$1/init"
+echo "Creating $initramfs tree..."
+mkdir -p -m 0755 "$initramfs/"{dev,mnt,proc,sbin} || exit 1
 
-cd "$1/dev"
-$MAKEDEV consoleonly
-$MAKEDEV ttyS{0,1,2,3}
-$MAKEDEV fd{0,1}
+echo "Copying programs..."
+install -m 0755 src/kexec-loader "$initramfs/sbin/kexec-loader" || exit 1
+ln -sf "sbin/kexec-loader" "$initramfs/init" || exit 1
+install -m 0755 "$2" "$initramfs/sbin/kexec" || exit 1
 
-if [ "$2" == "sdx" ]; then
-	$MAKEDEV sd{a,b,c,d,e,f,g,h}
-fi
-if [ "$2" == "hdx" ]; then
-	$MAKEDEV hd{a,b,c,d,e,f,g,h}
-fi
+echo "Stripping symbols..."
+strip -s "$initramfs/sbin/kexec-loader"
+strip -s "$initramfs/sbin/kexec"
 
-echo "Created initramfs in $1"
-echo "Be sure to set the full path of $1 in CONFIG_INITRAMFS_SOURCE"
-echo ""
-echo "Device Drivers -> Block devices -> Initramfs source file(s)"
+echo "Creating devices..."
+mknod -m 0600 "$initramfs/dev/console" c 5 1 || exit 1
+mknod -m 0600 "$initramfs/dev/tty1" c 4 1 || exit 1
+mknod -m 0600 "$initramfs/dev/tty2" c 4 2 || exit 1
+mknod -m 0600 "$initramfs/dev/tty3" c 4 3 || exit 1
+mknod -m 0600 "$initramfs/dev/tty4" c 4 4 || exit 1
+mknod -m 0600 "$initramfs/dev/tty5" c 4 5 || exit 1
+mknod -m 0600 "$initramfs/dev/tty6" c 4 6 || exit 1
+
+mknod -m 0600 "$initramfs/dev/ttyS0" c 4 64 || exit 1
+mknod -m 0600 "$initramfs/dev/ttyS1" c 4 65 || exit 1
+mknod -m 0600 "$initramfs/dev/ttyS2" c 4 66 || exit 1
+mknod -m 0600 "$initramfs/dev/ttyS3" c 4 67 || exit 1
+
+mknod -m 0600 "$initramfs/dev/fd0" b 2 0 || exit 1
+mknod -m 0600 "$initramfs/dev/fd1" b 2 1 || exit 1
+
+create_hdx "$initramfs/dev/hda" 3 0
+create_hdx "$initramfs/dev/hdb" 3 64
+create_hdx "$initramfs/dev/hdc" 22 0
+create_hdx "$initramfs/dev/hdd" 22 64
+create_hdx "$initramfs/dev/hde" 33 0
+create_hdx "$initramfs/dev/hdf" 33 64
+
+create_sdx "$initramfs/dev/sda" 0
+create_sdx "$initramfs/dev/sdb" 1
+create_sdx "$initramfs/dev/sdc" 2
+create_sdx "$initramfs/dev/sdd" 3
+create_sdx "$initramfs/dev/sde" 4
+create_sdx "$initramfs/dev/sdf" 5
+create_sdx "$initramfs/dev/sdg" 6
+create_sdx "$initramfs/dev/sdh" 7
+
+echo "Creating $initramfs_cpio..."
+cd "$initramfs" && find | cpio --create --format=newc --quiet > "$initramfs_cpio" || exit 1
+cd "$rdir"
+
+echo "Deleting $initramfs..."
+rm -rf "$initramfs"

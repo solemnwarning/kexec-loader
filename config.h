@@ -31,13 +31,11 @@
 #ifndef KEXEC_LOADER_CTCONFIG_H
 #define KEXEC_LOADER_CTCONFIG_H
 
-#define VERSION "trunk (Development branch)"
 #define COPYRIGHT "Copyright (C) 2007,2008 Daniel Collins"
 
 #define CONFIG_FILE "kexec-loader.conf"
 #define BOOTFS_TYPE "vfat"
 
 #define KEXEC_PATH "/sbin/kexec"
-#define DEBUG_FILE "/dev/ttyS0"
 
 #endif /* !KEXEC_LOADER_CTCONFIG_H */

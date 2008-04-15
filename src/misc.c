@@ -69,45 +69,43 @@ void fatal_r(char const* file, unsigned int line, char const* fmt, ...) {
 }
 
 /* Print a message to the console */
-void printm_r(char const* file, unsigned int line, char const* fmt, ...) {
+void printm(char const* fmt, ...) {
 	va_list argv;
 	va_start(argv, fmt);
 	
-	char buf[128] = {'\0'};
-	vsnprintf(buf, 127, fmt, argv);
-	
-	printf("%s:%u: %s\n", file, line, buf);
+	vprintf(fmt, argv);
+	putchar('\n');
 	
 	va_end(argv);
 	
 	printm_called = 1;
 }
 
-/* Print a debug message */
-void debug_r(char const* file, unsigned int line, char const* fmt, ...) {
-	#ifdef DEBUG_FILE
-	static FILE* debug_fh = NULL;
+/* Write a message to the debug console */
+void debug(char const* fmt, ...) {
+	static FILE *debug_fh = NULL;
 	
-	while((debug_fh = fopen(DEBUG_FILE, "a")) == NULL) {
-		if(errno == EINTR) {
-			continue;
+	if(!debug_fh) {
+		char *filename = get_cmdline("kexec_debug");
+		if(!filename) {
+			filename = "/dev/tty2";
 		}
 		
-		printm("Can't open debug file: %s", strerror(errno));
-		return;
+		if((debug_fh = fopen(filename, "a")) == NULL) {
+			free(filename);
+			return;
+		}
+		
+		free(filename);
 	}
 	
 	va_list argv;
 	va_start(argv, fmt);
 	
-	fprintf(debug_fh, "%s:%u: ", file, line);
 	vfprintf(debug_fh, fmt, argv);
-	fprintf(debug_fh, "\n");
 	fflush(debug_fh);
-	fsync(fileno(debug_fh));
 	
 	va_end(argv);
-	#endif
 }
 
 /* Copy a string */
@@ -266,6 +264,7 @@ kl_mount* mount_add(kl_mount** list, kl_mount const* src) {
 		strncpy(nptr->device, src->device, 1024);
 		strncpy(nptr->mpoint, src->mpoint, 1024);
 		strncpy(nptr->fstype, src->fstype, 64);
+		nptr->depth = src->depth;
 	}
 	
 	nptr->next = *list;
@@ -305,6 +304,7 @@ kl_mount* mount_copy(kl_mount const* src) {
 		strncpy(nptr->device, src->device, 1024);
 		strncpy(nptr->mpoint, src->mpoint, 1024);
 		strncpy(nptr->fstype, src->fstype, 64);
+		nptr->depth = src->depth;
 		
 		nptr->next = list;
 		list = nptr;
@@ -313,4 +313,72 @@ kl_mount* mount_copy(kl_mount const* src) {
 	}
 	
 	return(list);
+}
+
+/* Search for an option that was passed to Linux via /proc/cmdline
+ * Returns the =value if found, or NULL on error/not found
+*/
+char *get_cmdline(char const *name) {
+	FILE *fh;
+	char *tok, *val;
+	char cmdline[1024];
+	size_t len;
+	
+	if(!(fh = fopen("/proc/cmdline", "r"))) {
+		return NULL;
+	}
+	
+	if(!fgets(cmdline, 1024, fh)) {
+		return NULL;
+	}
+	cmdline[strcspn(cmdline, "\n")] = '\0';
+	
+	fclose(fh);
+	
+	tok = strtok(cmdline, " ");
+	while(tok) {
+		if(strchr(tok, '=')) {
+			len = (size_t)(strchr(tok, '=') - tok);
+		}else{
+			len = strlen(tok);
+		}
+		
+		if(strncmp(tok, name, len) == 0) {
+			break;
+		}
+		
+		tok = strtok(NULL, " ");
+	}
+	
+	if(tok) {
+		if((val = strchr(tok, '='))) {
+			return strclone(val+1, 9999);
+		}
+		
+		return strclone("", 1);
+	}
+	
+	return NULL;
+}
+
+/* Fork a process to write Linux kernel messages to the debug console */
+void kmsg_monitor(void) {
+	if(fork() <= 0) {
+		return;
+	}
+	
+	FILE *kmsg = fopen("/proc/kmsg", "r");
+	if(!kmsg) {
+		debug("Can't open /proc/kmsg: %s\n", strerror(errno));
+		debug("Linux kernel messages will not be available\n");
+		
+		exit(1);
+	}
+	
+	char msgbuf[4096];
+	while(fgets(msgbuf, 4096, kmsg)) {
+		debug("%s", msgbuf);
+	}
+	
+	exit(0);
 }

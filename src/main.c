@@ -33,227 +33,349 @@
 #include <errno.h>
 #include <string.h>
 #include <unistd.h>
-#include <sys/select.h>
+#include <sys/mount.h>
+#include <linux/reboot.h>
+#include <poll.h>
+#include <sys/syscall.h>
 
 #include "mount.h"
 #include "../config.h"
 #include "console.h"
 #include "config.h"
 #include "kexec.h"
+#include "misc.h"
 
-static kl_target* target_menu(void);
+static void main_menu(void);
+static void draw_skel(void);
+static void draw_tbline(int rnum);
+static void target_run(kl_target *target);
+static void list_devices(void);
+
+static int rows = 25, cols = 80;
+static int srow = 4, erow = 0;
+static int scol = 3, ecol = 0;
 
 int main(int argc, char** argv) {
-	console_init();
+	if(mount("proc", "/proc", "proc", 0, NULL) == -1) {
+		fatal("Can't mount /proc filesystem: %s", strerror(errno));
+	}
 	
-	mount_boot();
-	mount_virt();
+	kmsg_monitor();
+	console_init();
 	config_load();
 	
-	while(1) {
-		unmount_tree("/target");
-		
-		kl_target* target = target_menu();
-		
-		console_clear();
-		console_setpos(1,1);
-		
-		if(!mount_list(target->mounts)) {
-			continue;
-		}
-		
-		char* append = NULL;
-		char* initrd = NULL;
-		
-		if(target->append[0] != '\0') {
-			append = target->append;
-		}
-		if(target->initrd[0] != '\0') {
-			initrd = target->initrd;
-		}
-		
-		if(!kexec_load(target->kernel, append, initrd)) {
-			continue;
-		}
-		
-		break;
-	}
+	console_getsize(&rows, &cols);
+	erow = rows-5;
+	ecol = cols-1;
 	
-	unmount_tree("/");
-	kexec_boot();
+	debug("rows = %d, cols = %d\n", rows, cols);
+	debug("srow = %d, erow = %d\n", srow, erow);
+	debug("scol = %d, ecol = %d\n", scol, ecol);
 	
-	while(1) {
-		sleep(9999);
-	}
-	return(1);
+	main_menu();
+	return 1;
 }
 
-/* Display the target list and return the selected target */
-static kl_target* target_menu(void) {
-	static int first_call = 1;
+/* Display main menu
+ * This function never returns
+*/
+static void main_menu(void) {
+	draw_skel();
 	
-	unsigned int rows, cols;
-	console_getsize(&rows, &cols);
-	
-	unsigned int mpos = 1, mmpos = (rows-3), ddefault = 0, wpos, n;
-	int gotchar, i;
-	
-	kl_target* ctarget = config.targets;
-	kl_target* starget = config.targets;
-	
+	int n, rnum, key;
 	unsigned int tremain = config.timeout;
-	struct timeval timeout = {0,0};
-	struct timeval* timeptr = NULL;
-	if(first_call && config.timeout > 0) {
-		timeptr = &timeout;
-	}
 	
-	char timestr[16] = {'\0'};
+	int mpos = 0, mmpos = erow - srow, cmpos;
+	debug("mmpos = %d\n", mmpos);
 	
-	fd_set read_fds;
+	kl_target *starget = config.targets;	/* Start of displayed list */
+	kl_target *target = starget;
 	
-	while(ctarget != NULL) {
-		if(ctarget->flags & TARGET_DEFAULT) {
-			ddefault = 1;
+	struct pollfd pollset;
+	pollset.fd = STDIN_FILENO;
+	pollset.events = POLLIN;
+	
+	while(target != NULL) {
+		if(target->flags & TARGET_DEFAULT) {
 			break;
 		}
-		ctarget = ctarget->next;
-		
-		if(mpos < mmpos) {
-			mpos++;
-		}else{
-			starget = starget->next;
+		if(target->next == NULL) {
+			starget = config.targets;
+			mpos = 0;
+			
+			break;
 		}
-	}
-	if(!ddefault) {
-		ctarget = config.targets;
-		starget = config.targets;
-		mpos = 1;
+		target = target->next;
 		
-		ddefault = 1;
+		if(mpos == mmpos) {
+			starget = starget->next;
+		}else{
+			mpos++;
+		}
 	}
 	
 	while(1) {
-		console_clear();
+		target = starget;
+		cmpos = 0;
 		
-		console_attrib(CONS_INVERT);
-		console_setpos(1,1);
-		for(n = 0; n < cols; n++) { putchar(' '); }
-		
-		console_setpos(1,2);
-		printf("kexec-loader " VERSION);
-		
-		console_setpos(1, cols - strlen(COPYRIGHT));
-		printf(COPYRIGHT);
-		
-		console_attrib(CONS_RESET);
-		
-		if(starget == NULL) {
-			console_setpos(3, 2);
-			printf("No targets defined!");
+		for(rnum = srow; rnum <= erow; rnum++) {
+			console_setpos(rnum, ecol);
+			console_eline(ELINE_TOSTART);
 			
-			while(1) { sleep(999); }
-		}
-		
-		ctarget = starget;
-		
-		for(wpos = 1; wpos <= mmpos; wpos++) {
-			if(ctarget == NULL) {
+			console_setpos(rnum, 1);
+			printf("| ");
+			
+			if(target == NULL) {
+				printf("No targets defined!");
 				break;
 			}
 			
-			console_setpos(wpos+2, 2);
-			
-			if(wpos == mpos) {
+			if(cmpos == mpos) {
 				console_attrib(CONS_INVERT);
 			}
 			
-			for(n = 0; n < (cols-2); n++) {
-				if(ctarget->name[n] == '\0') {
+			for(n = 0; n <= (ecol-scol); n++) {
+				if(target->name[n] == '\0') {
 					break;
 				}
 				
-				putchar(ctarget->name[n]);
+				putchar(target->name[n]);
 			}
 			
-			if(wpos == mpos) {
-				if(timeptr != NULL) {
-					snprintf(timestr, 15, " Timeout: %u", tremain);
-					console_setpos(rows-1, cols - strlen(timestr));
-					
-					printf("%s", timestr);
-				}
-				
+			if(cmpos++ == mpos) {
 				console_attrib(CONS_RESET);
 			}
-			ctarget = ctarget->next;
+			
+			if(
+				(rnum == srow && starget != config.targets) ||
+				(rnum == erow && target->next)
+			) {
+				console_setpos(rnum, ecol-8);
+				printf("More...");
+			}
+			
+			if((target = target->next) == NULL) {
+				break;
+			}
+		}
+		
+		target = starget;
+		for(n = 0; n < mpos; n++) {
+			target = target->next;
 		}
 		
 		MENU_INPUT:
-		FD_ZERO(&read_fds);
-		FD_SET(fileno(stdin), &read_fds);
-		timeout.tv_sec = 1;
 		
-		i = select(fileno(stdin)+1, &read_fds, NULL, NULL, timeptr);
-		if(i <= 0) {
+		if(poll(&pollset, 1, (tremain ? 1000 : -1)) == 0) {
 			if(--tremain == 0) {
-				ctarget = starget;
-				for(n = 1; n < mpos; n++) { ctarget = ctarget->next; }
+				debug("Timeout reached\n");
 				
-				goto ENDMENU;
-			}else{
+				target_run(target);
+				draw_skel();
 				continue;
+			}else{
+				console_setpos(rows-3, cols-13);
+				console_eline(ELINE_ALL);
+				
+				printf("Timeout: %u", tremain);
 			}
+			
+			goto MENU_INPUT;
 		}
-		timeptr = NULL;
 		
-		gotchar = getchar();
-		if(gotchar == '\n') {
-			ctarget = starget;
-			for(n = 1; n < mpos; n++) { ctarget = ctarget->next; }
+		console_setpos(rows-3, 1);
+		console_eline(ELINE_ALL);
+		
+		tremain = 0;
+		key = getchar();
+		
+		if(key == '\n') {
+			debug("Enter pressed\n");
 			
-			goto ENDMENU;
+			target_run(target);
+			draw_skel();
+			continue;
 		}
-		if(gotchar == 0x1B && getchar() == '[') {
-			gotchar = getchar();
+		
+		if(key == 0x1B && getchar() == '[') {
+			key = getchar();
 			
-			if(gotchar == 65 || gotchar == 66) {
-				ctarget = starget;
-				for(n = 1; n < mpos; n++) {
-					ctarget = ctarget->next;
-				}
-			}
-			if(gotchar == 65) {
-				if(ctarget == config.targets) {
+			/* key == 65: Up arrow
+			 * key == 66: Down arrow
+			*/
+			
+			if(key == 65) {
+				if(target == config.targets) {
 					goto MENU_INPUT;
 				}
 				
-				if(mpos > 1) {
-					mpos--;
-				}else{
+				if(mpos == 0) {
 					starget = config.targets;
-					while(starget != NULL && starget->next != ctarget) {
+					while(starget->next != target) {
 						starget = starget->next;
 					}
+				}else{
+					mpos--;
 				}
-				
-				continue;
 			}
-			if(gotchar == 66) {
-				if(ctarget->next == NULL) {
+			if(key == 66) {
+				if(target->next == NULL) {
 					goto MENU_INPUT;
 				}
 				
-				if(mpos < mmpos) {
-					mpos++;
-				}else{
+				if(mpos == mmpos) {
 					starget = starget->next;
+				}else{
+					mpos++;
 				}
+			}
+		}
+		
+		if(key == 'l' || key == 'L') {
+			list_devices();
+			draw_skel();
+			
+			continue;
+		}
+	}
+}
+
+/* Clear the screen and draw the menu skeleton */
+static void draw_skel(void) {
+	int rnum, cnum;
+	
+	console_clear();
+	console_attrib(CONS_INVERT);
+	
+	console_setpos(1, 1);
+	for(cnum = 1; cnum <= cols; cnum++) {
+		putchar(' ');
+	}
+	
+	console_setpos(1, 2);
+	printf("kexec-loader " VERSION);
+	
+	console_setpos(1, cols-strlen(COPYRIGHT)-1);
+	printf(COPYRIGHT);
+	
+	console_attrib(CONS_RESET);
+	
+	draw_tbline(srow-1);
+	draw_tbline(erow+1);
+	
+	for(rnum = srow; rnum <= erow; rnum++) {
+		console_setpos(rnum, 1);
+		
+		for(cnum = 1; cnum <= cols; cnum++) {
+			if(cnum == 1 || cnum == cols) {
+				putchar('|');
+			}else{
+				putchar(' ');
 			}
 		}
 	}
 	
-	ENDMENU:
-	first_call = 0;
-	return(ctarget);
+	console_setpos(rows-1, 2);
+	printf("Press L to list detected devices");
+}
+
+/* Draw a +----+ line along one row */
+static void draw_tbline(int rnum) {
+	console_setpos(rnum, 1);
+	
+	int cnum = 1;
+	while(cnum <= cols) {
+		if(cnum == 1 || cnum == cols) {
+			putchar('+');
+		}else{
+			putchar('-');
+		}
+		
+		cnum++;
+	}
+}
+
+/* Attempt to load and execute a target
+ * This only returns on error
+*/
+static void target_run(kl_target *target) {
+	debug("Attempting to run '%s'\n", target->name);
+	
+	console_clear();
+	console_setpos(1,1);
+	
+	printm("Loading %s...", target->name);
+	
+	if(target->kernel[0] == '\0') {
+		printm("Selected target has no kernel");
+		return;
+	}
+	if(target->mounts == NULL) {
+		printm("Selected target has no mounts");
+		return;
+	}
+	
+	if(!mount_list(target->mounts)) {
+		return;
+	}
+	
+	if(!load_kernel(target->kernel, target->append, target->initrd)) {
+		unmount_list(target->mounts);
+		return;
+	}
+	
+	unmount_list(target->mounts);
+	
+	syscall(
+		__NR_reboot,
+		LINUX_REBOOT_MAGIC1, LINUX_REBOOT_MAGIC2,
+		LINUX_REBOOT_CMD_KEXEC, NULL
+	);
+	
+	int err = errno;
+	
+	debug("Can't execute kernel: %s\n", strerror(err));
+	printm("Can't execute kernel: %s", strerror(err));
+}
+
+/* Display a list of devices from /proc/diskstats */
+static void list_devices(void) {
+	char buf[1024];
+	char *name;
+	int major, minor, cnum;
+	
+	console_clear();
+	console_attrib(CONS_INVERT);
+	
+	console_setpos(1, 1);
+	for(cnum = 1; cnum <= cols; cnum++) {
+		putchar(' ');
+	}
+	
+	console_setpos(1, 2);
+	printf("kexec-loader " VERSION);
+	
+	console_setpos(1, cols-strlen(COPYRIGHT)-1);
+	printf(COPYRIGHT);
+	
+	console_attrib(CONS_RESET);
+	console_setpos(3, 1);
+	
+	FILE *disks = fopen("/proc/diskstats", "r");
+	if(!disks) {
+		printm("Can't open /proc/diskstats: %s", strerror(errno));
+	}
+	
+	printm("The following disks have been detected by Linux:");
+	printm("");
+	
+	while(fgets(buf, 1024, disks)) {
+		major = atoi(strtok(buf, " \t"));
+		minor = atoi(strtok(NULL, " \t"));
+		name = strtok(NULL, " \t");
+		
+		printm("/dev/%s\t(%d, %d)", name, major, minor);
+	}
+	
+	fclose(disks);
 }

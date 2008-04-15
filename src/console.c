@@ -36,12 +36,16 @@
 #include <unistd.h>
 #include <sys/ioctl.h>
 #include <poll.h>
+#include <sys/klog.h>
 
 #include "../config.h"
 #include "misc.h"
 
 /* Initialize console(s) */
 void console_init(void) {
+	debug("Disabling printk() to console...\n");
+	klogctl(6, NULL, 0);
+	
 	struct termios attribs;
 	while(tcgetattr(fileno(stdin), &attribs) == -1) {
 		if(errno == EINTR) {
@@ -63,10 +67,10 @@ void console_init(void) {
 	}
 	
 	if(setvbuf(stdout, NULL, _IONBF, 0) != 0) {
-		fatal("Can't set stdout buffer: %s", strerror(errno));
+		debug("Can't set stdout buffer: %s\n", strerror(errno));
 	}
 	if(setvbuf(stderr, NULL, _IONBF, 0) != 0) {
-		fatal("Can't set stderr buffer: %s", strerror(errno));
+		debug("Can't set stderr buffer: %s\n", strerror(errno));
 	}
 }
 
@@ -78,19 +82,8 @@ void console_setpos(int row, int column) {
 /* Clear the console */
 void console_clear(void) {
 	if(printm_called) {
-		unsigned int tremain = 10;
-		struct pollfd poll_stdin = {fileno(stdin), POLLIN, 0};
-		
-		putchar('\n');
-		while(tremain > 0) {
-			printf("\rPress any key or wait %u seconds...", tremain);
-			
-			if(poll(&poll_stdin, 1, 1000) > 0) {
-				getchar();
-				break;
-			}
-			tremain--;
-		}
+		printf("Press any key to continue...\n");
+		getchar();
 		
 		printm_called = 0;
 	}
@@ -114,12 +107,18 @@ void console_attrib(int attrib) {
 }
 
 /* Get size of console */
-void console_getsize(unsigned int* rows, unsigned int* cols) {
+void console_getsize(int* rows, int* cols) {
 	struct winsize cons_size;
 	if(ioctl(fileno(stdout), TIOCGWINSZ, &cons_size) == -1) {
-		printm("Can't ioctl: %s", strerror(errno));
+		debug("Can't ioctl(TIOCGWINSZ): %s\n", strerror(errno));
+		return;
 	}
 	
 	*rows = cons_size.ws_row;
 	*cols = cons_size.ws_col;
+}
+
+/* Erase the current line */
+void console_eline(char const* mode) {
+	printf("%c[%sK", 0x1B, mode);
 }

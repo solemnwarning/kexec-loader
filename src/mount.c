@@ -41,92 +41,12 @@
 #include "../config.h"
 #include "config.h"
 
-int got_boot = 0; /* Is /boot mounted? */
+#define MAGIC_BUF_SIZE (0x1003A)
 
-/* Unmount all mounts under a certain directory, including the directory if it
- * is a mount itself.
- *
- * Filesystems with a device of 'rootfs' are ignored since rootfs can never be
- * unmounted and it's harmless to leave mounted anyway.
- *
- * Filesystems mounted on /proc are also ignored since the /sbin/kexec program
- * needs /proc/iomem.
+/* Mount disk containing CONFIG_FILE at /mnt
+ * Returns 1 if device containing file was mounted, zero otherwise
 */
-void unmount_tree(char const* dir) {
-	FILE* mfile = NULL;
-	while(mfile == NULL) {
-		if((mfile = fopen("/proc/mounts", "r")) != NULL) {
-			break;
-		}
-		if(errno == EINTR) {
-			continue;
-		}
-		
-		printm("Can't open /proc/mounts: %s", strerror(errno));
-		printm("Not umounting any filesystems!!");
-		return;
-	}
-	
-	char mounts[128][1024] = {{'\0'}};
-	char line[1024] = {'\0'};
-	size_t mcount = 0, mnum, mpos;
-	
-	char cmp2[1024] = {'\0'};
-	snprintf(cmp2, 1023, "%s*", dir);
-	
-	while(fgets(line, 1024, mfile) != NULL && mcount < 128) {
-		char* token = strtok(line, " ");
-		if(str_compare(token, "rootfs", 0)) {
-			continue;
-		}
-		if((token = strtok(NULL, " ")) == NULL) {
-			printm("/proc/mounts is gobbledegook!");
-			return;
-		}
-		if(!str_compare(token, cmp2, STR_WILDCARD2)) {
-			continue;
-		}
-		if(str_compare(token, "/proc", STR_WILDCARD2)) {
-			continue;
-		}
-		
-		strncpy(mounts[mcount++], token, 1023);
-	}
-	
-	while(fclose(mfile) != 0) {
-		if(errno == EINTR) {
-			continue;
-		}
-		
-		printm("Can't close /proc/mounts: %s", strerror(errno));
-	}
-	
-	while(mcount > 0) {
-		char* mount = "";
-		for(mpos = 0; mpos < 128; mpos++) {
-			if(str_compare(mount, mounts[mpos], STR_MAXLEN, strlen(mount))) {
-				mount = mounts[mpos];
-				mnum = mpos;
-			}
-		}
-		
-		if(umount(mount) == -1) {
-			printm("Can't umount %s: %s", mount, strerror(errno));
-		}
-		mounts[mnum][0] = '\0';
-		mcount--;
-	}
-}
-
-/* Mount virtual filesystems */
-void mount_virt(void) {
-	if(mount("proc", "/proc", "proc", 0, NULL) == -1) {
-		fatal("Can't mount /proc filesystem: %s", strerror(errno));
-	}
-}
-
-/* Mount kexec-loader bootdisk on /boot */
-void mount_boot(void) {
+int mount_config(void) {
 	char const* devices[] = {
 		"/dev/fd0",
 		"/dev/fd1",
@@ -140,83 +60,154 @@ void mount_boot(void) {
 	unsigned int devnum = 0;
 	char const* devname = devices[0];
 	
-	while(devname != NULL) {
-		if(mount(devname, "/boot", BOOTFS_TYPE, MS_RDONLY, NULL) == -1) {
-			debug("Can't mount %s at /boot: %s", devname, strerror(errno));
-			return;
+	while(devname) {
+		if(mount(devname, "/mnt", BOOTFS_TYPE, MS_RDONLY, NULL) == -1) {
+			debug("Can't mount %s at /mnt: %s\n", devname, strerror(errno));
+			goto ENDLOOP;
 		}
-		if(access("/boot/" CONFIG_FILE, F_OK) == 0) {
-			debug("Found " CONFIG_FILE " on %s", devname);
-			
-			got_boot = 1;
-			return;
+		if(access("/mnt/" CONFIG_FILE, F_OK) == 0) {
+			debug("Found " CONFIG_FILE " on %s\n", devname);
+			return 1;
 		}
 		
-		if(umount("/boot") == -1) {
-			fatal("Can't unmount /boot: %s", strerror(errno));
+		if(umount("/mnt") == -1) {
+			debug("Can't unmount /mnt: %s\n", strerror(errno));
 		}
 		
+		ENDLOOP:
 		devname = devices[++devnum];
 	}
+	
+	debug("Can't find disk containing " CONFIG_FILE "\n");
+	printm("Can't find disk containing " CONFIG_FILE);
+	return 0;
 }
 
-/* Mount all mounts in a kl_mount list
+/* Mount all mounts in a kl_mount list at /mnt
  *
  * If all mounts are sucessfully mounted 1 is returned, if any mounts fail zero
- * is returned any any already-completed mounts will not be unmounted
+ * is returned any any already-completed mounts are unmounted
 */
-int mount_list(kl_mount* mount_src) {
-	kl_mount* mounts = NULL;
-	kl_mount* cmount = NULL;
-	kl_mount* mptr = NULL;
-	char cmp1[1024] = {'\0'};
+int mount_list(kl_mount* mounts) {
+	kl_mount *mptr = mounts;
+	int depth = 0, n = 0, n2 = 0;
+	char mpoint[1024];
+	char *fstype;
 	
-	if((mounts = mount_copy(mount_src)) == NULL) {
-		printm("Copying mount list failed: %s", strerror(errno));
-		return(0);
-	}
-	
-	unsigned int count = 0;
-	for(mptr = mounts; mptr != NULL; mptr = mptr->next) {
-		count++;
-	}
-	
-	while(count > 0) {
-		cmount = mounts;
-		mptr = mounts;
-		
-		while(cmount != NULL) {
-			snprintf(cmp1, 1023, "%s*", cmount->mpoint);
+	while(1) {
+		if(mptr->depth == depth) {
+			snprintf(mpoint, 1024, "/mnt%s", mptr->mpoint);
+			mpoint[1023] = '\0';
 			
-			if(str_compare(cmp1, mptr->mpoint, STR_WILDCARD1)) {
-				mptr = cmount;
+			fstype = mptr->fstype;
+			
+			if(str_compare(fstype, "auto", 0)) {
+				fstype = detect_fstype(mptr->device);
+				if(!fstype) {
+					debug("Unknown filesystem on %s\n", mptr->device);
+					printm("Unknown filesystem on %s", mptr->device);
+					
+					break;
+				}
 			}
-			cmount = cmount->next;
-		}
-		
-		if(str_compare(mptr->fstype, "auto", 0)) {
-			char *fstype = detect_fstype(mptr->device);
-			if(!fstype) {
-				printm("Unknown filesystem on %s\n", mptr->device);
+			
+			debug("Mounting %s at %s, depth %d\n", mptr->device, mpoint, depth);
+			
+			if(mount(mptr->device, mpoint, fstype, MS_RDONLY, NULL) == -1) {
+				int err = errno;
 				
-				mount_free(&mounts);
-				return(0);
+				debug("Can't mount %s: %s\n", mpoint, strerror(err));
+				printm("Can't mount %s: %s", mpoint, strerror(err));
+				
+				break;
 			}
 			
-			strncpy(mptr->fstype, fstype, 63);
+			n++;
 		}
 		
-		if(mount(mptr->device, mptr->mpoint, mptr->fstype, MS_RDONLY, NULL) == -1) {
-			printm("Can't mount %s: %s", mptr->mpoint, strerror(errno));
-			mount_free(&mounts);
-			return(0);
+		if((mptr = mptr->next) == NULL) {
+			if(n == 0) {
+				return 1;
+			}
+			
+			n = 0;
+			depth++;
+			
+			mptr = mounts;
 		}
-		
-		mptr->mpoint[0] = '\0';
-		count--;
 	}
 	
-	return(1);
+	/* If the first loop ever returns there's been an error
+	 * The next loop undoes all the mounts created by the first loop
+	*/
+	
+	mptr = mounts;
+	
+	while(depth >= 0) {
+		if(mptr->depth == depth) {
+			if(n2 == n) {
+				n = -1;
+				goto DDEPTH;
+			}
+			
+			snprintf(mpoint, 1024, "/mnt%s", mptr->mpoint);
+			mpoint[1023] = '\0';
+			
+			debug("Unmounting %s, depth %d\n", mpoint, depth);
+			if(umount(mpoint) == -1) {
+				debug("Can't unmount %s: %s\n", mpoint, strerror(errno));
+			}
+			
+			n2++;
+		}
+		
+		if((mptr = mptr->next) == NULL) {
+			DDEPTH:
+			
+			n2 = 0;
+			depth--;
+			
+			mptr = mounts;
+		}
+	}
+	
+	return 0;
+}
+
+/* Unmount all mounts in a kl_mount list from /mnt
+ * Continues on errors
+*/
+void unmount_list(kl_mount *mounts) {
+	kl_mount *mptr = mounts;
+	int depth = 0;
+	char mpoint[1024];
+	
+	while(mptr) {
+		if(mptr->depth > depth) {
+			depth = mptr->depth;
+		}
+		
+		mptr = mptr->next;
+	}
+	
+	mptr = mounts;
+	
+	while(depth >= 0) {
+		if(mptr->depth == depth) {
+			snprintf(mpoint, 1024, "/mnt%s", mptr->mpoint);
+			mpoint[1023] = '\0';
+			
+			debug("Unmounting %s, depth %d\n", mpoint, depth);
+			if(umount(mpoint) == -1) {
+				debug("Can't unmount %s: %s\n", mpoint, strerror(errno));
+			}
+		}
+		
+		if((mptr = mptr->next) == NULL) {
+			depth--;
+			mptr = mounts;
+		}
+	}
 }
 
 /* Attempt to detect the filesystem format of a device or file
@@ -230,28 +221,55 @@ char* detect_fstype(char const *device) {
 			continue;
 		}
 		
-		printm("Can't open %s: %s\n", device, strerror(errno));
+		printm("Can't open %s: %s", device, strerror(errno));
 		return NULL;
 	}
 	
 	char *retval = NULL;
-	unsigned char buf[1088];
 	size_t rcount = 0;
 	
-	while(rcount < 1088) {
-		rcount += fread(buf+rcount, 1, 1088-rcount, fh);
+	unsigned char buf[MAGIC_BUF_SIZE];
+	memset(buf, '\0', MAGIC_BUF_SIZE);
+	
+	while(rcount < MAGIC_BUF_SIZE) {
+		rcount += fread(buf+rcount, 1, MAGIC_BUF_SIZE-rcount, fh);
 		
-		if((ferror(fh) && errno != EINTR) || feof(fh)) {
+		if(feof(fh)) {
+			break;
+		}
+		if(ferror(fh) && errno != EINTR) {
 			goto DFST_END;
 		}
 		clearerr(fh);
 	}
 	
 	if(buf[0x438] == 0x53 && buf[0x439] == 0xEF) {
-		retval = "ext2";
+		if(buf[0x45C] & 4) {
+			retval = "ext3";
+		}else{
+			retval = "ext2";
+		}
 	}
 	if(str_compare((char*)buf, "XFSB", STR_MAXLEN, 4)) {
 		retval = "xfs";
+	}
+	if(str_compare((char*)(buf+0x10034), "ReIsEr", STR_MAXLEN, 6)) {
+		retval = "reiserfs";
+	}
+	if(
+		(buf[0x410] == 0x13 && buf[0x411] == 0x7F) ||
+		(buf[0x410] == 0x7F && buf[0x411] == 0x13) ||
+		(buf[0x410] == 0x8F && buf[0x411] == 0x13) ||
+		(buf[0x410] == 0x68 && buf[0x411] == 0x24) ||
+		(buf[0x410] == 0x78 && buf[0x411] == 0x24)
+	) {
+		retval = "minix";
+	}
+	if(str_compare((char*)(buf+0x36), "FAT", STR_MAXLEN, 3)) {
+		retval = "vfat";
+	}
+	if(str_compare((char*)(buf+3), "NTFS    ", STR_MAXLEN, 8)) {
+		retval = "ntfs";
 	}
 	
 	DFST_END:
@@ -260,7 +278,7 @@ char* detect_fstype(char const *device) {
 			continue;
 		}
 		
-		printm("Can't close %s: %s\n", device, strerror(errno));
+		printm("Can't close %s: %s", device, strerror(errno));
 	}
 	
 	return retval;
