@@ -287,6 +287,15 @@ static void target_run(kl_target *target) {
 	console_clear();
 	console_setpos(1,1);
 	
+	if(target->kernel[0] == '\0') {
+		printm("Selected target has no kernel");
+		return;
+	}
+	if(target->mounts == NULL) {
+		printm("Selected target has no mounts");
+		return;
+	}
+	
 	if(!mount_list(target->mounts)) {
 		return;
 	}
