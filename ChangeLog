@@ -19,6 +19,11 @@ Version 1.1:
 	
 	Added support for detecting ext2, ext3, XFS, ReiserFS, minix, FAT and
 	NTFS filesystem types.
+	
+	Rewrote menu code, it's slightly more sane now.
+	
+	Implemented list_devices() function, pressing L at the menu displays
+	a list of all devices listed in /proc/diskstats.
 
 Version 1.0:
 	Initial release.
