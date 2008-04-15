@@ -33,9 +33,9 @@
 #include <errno.h>
 #include <string.h>
 #include <unistd.h>
-#include <sys/select.h>
 #include <sys/mount.h>
 #include <linux/reboot.h>
+#include <poll.h>
 
 #include "mount.h"
 #include "../config.h"
@@ -110,27 +110,32 @@ int main(int argc, char** argv) {
 static void main_menu(void) {
 	draw_skel();
 	
-	int n, rnum, mpos = 0;
+	int n, rnum, key, timeout;
+	int tremain = config.timeout;
+	
+	int mpos = 0, mmpos = erow - srow, cmpos;
+	debug("mmpos = %d\n", mmpos);
 	
 	kl_target *starget = config.targets;	/* Start of displayed list */
 	kl_target *target;
 	
+	struct pollfd pollset;
+	pollset.fd = STDIN_FILENO;
+	pollset.events = POLLIN;
+	
 	while(1) {
 		target = starget;
+		cmpos = 0;
 		
 		for(rnum = srow; rnum <= erow; rnum++) {
 			console_setpos(rnum, scol);
-			
-			if(rnum == srow && starget != config.targets) {
-				printf("More...");
-				continue;
-			}
-			if(rnum == erow && target->next != NULL) {
-				printf("More...");
-				continue;
+			for(n = 0; n <= (ecol-scol); n++) {
+				putchar(' ');
 			}
 			
-			if((rnum-srow) == mpos) {
+			console_setpos(rnum, scol);
+			
+			if(cmpos == mpos) {
 				console_attrib(CONS_INVERT);
 			}
 			
@@ -142,8 +147,16 @@ static void main_menu(void) {
 				putchar(target->name[n]);
 			}
 			
-			if((rnum-srow) == mpos) {
+			if(cmpos++ == mpos) {
 				console_attrib(CONS_RESET);
+			}
+			
+			if(
+				(rnum == srow && starget != config.targets) ||
+				(rnum == erow && target->next)
+			) {
+				console_setpos(rnum, ecol-8);
+				printf("More...");
 			}
 			
 			if((target = target->next) == NULL) {
@@ -151,7 +164,72 @@ static void main_menu(void) {
 			}
 		}
 		
-		while(1) sleep(999);
+		MENU_INPUT:
+		
+		if(tremain > 0) {
+			timeout = 1000;
+		}
+		if(poll(&pollset, 1, timeout) == 0) {
+			console_setpos(rows-3, 1);
+			for(n = 1; n <= cols; n++) {
+				putchar(' ');
+			}
+			
+			if(--tremain == 0) {
+				debug("Timeout\n");
+				while(1) { sleep(999); }
+			}else{
+				console_setpos(rows-3, cols-13);
+				printf("Timeout: %d", tremain);
+			}
+		}
+		
+		timeout = -1;
+		tremain = 0;
+		key = getchar();
+		
+		target = starget;
+		for(n = 0; n < mpos; n++) {
+			target = target->next;
+		}
+		
+		if(key == '\n') {
+			debug("Boot %s\n", target->name);
+		}
+		
+		if(key == 0x1B && getchar() == '[') {
+			key = getchar();
+			
+			/* key == 65: Up arrow
+			 * key == 66: Down arrow
+			*/
+			
+			if(key == 65) {
+				if(target == config.targets) {
+					goto MENU_INPUT;
+				}
+				
+				if(mpos == 0) {
+					starget = config.targets;
+					while(starget->next != target) {
+						starget = starget->next;
+					}
+				}else{
+					mpos--;
+				}
+			}
+			if(key == 66) {
+				if(target->next == NULL) {
+					goto MENU_INPUT;
+				}
+				
+				if(mpos == mmpos) {
+					starget = starget->next;
+				}else{
+					mpos++;
+				}
+			}
+		}
 	}
 }
 
@@ -206,175 +284,3 @@ static void draw_tbline(int rnum) {
 		cnum++;
 	}
 }
-
-#if 0
-/* Display the target list and return the selected target */
-static kl_target* target_menu(void) {
-	static int first_call = 1;
-	
-	unsigned int rows, cols;
-	console_getsize(&rows, &cols);
-	
-	unsigned int mpos = 1, mmpos = (rows-3), ddefault = 0, wpos, n;
-	int gotchar, i;
-	
-	kl_target* ctarget = config.targets;
-	kl_target* starget = config.targets;
-	
-	unsigned int tremain = config.timeout;
-	struct timeval timeout = {0,0};
-	struct timeval* timeptr = NULL;
-	if(first_call && config.timeout > 0) {
-		timeptr = &timeout;
-	}
-	
-	char timestr[16] = {'\0'};
-	
-	fd_set read_fds;
-	
-	while(ctarget != NULL) {
-		if(ctarget->flags & TARGET_DEFAULT) {
-			ddefault = 1;
-			break;
-		}
-		ctarget = ctarget->next;
-		
-		if(mpos < mmpos) {
-			mpos++;
-		}else{
-			starget = starget->next;
-		}
-	}
-	if(!ddefault) {
-		ctarget = config.targets;
-		starget = config.targets;
-		mpos = 1;
-		
-		ddefault = 1;
-	}
-	
-	while(1) {
-		console_clear();
-		
-		console_attrib(CONS_INVERT);
-		console_setpos(1,1);
-		for(n = 0; n < cols; n++) { putchar(' '); }
-		
-		console_setpos(1,2);
-		printf("kexec-loader " VERSION);
-		
-		console_setpos(1, cols - strlen(COPYRIGHT));
-		printf(COPYRIGHT);
-		
-		console_attrib(CONS_RESET);
-		
-		if(starget == NULL) {
-			console_setpos(3, 2);
-			printf("No targets defined!");
-			
-			while(1) { sleep(999); }
-		}
-		
-		ctarget = starget;
-		
-		for(wpos = 1; wpos <= mmpos; wpos++) {
-			if(ctarget == NULL) {
-				break;
-			}
-			
-			console_setpos(wpos+2, 2);
-			
-			if(wpos == mpos) {
-				console_attrib(CONS_INVERT);
-			}
-			
-			for(n = 0; n < (cols-2); n++) {
-				if(ctarget->name[n] == '\0') {
-					break;
-				}
-				
-				putchar(ctarget->name[n]);
-			}
-			
-			if(wpos == mpos) {
-				if(timeptr != NULL) {
-					snprintf(timestr, 15, " Timeout: %u", tremain);
-					console_setpos(rows-1, cols - strlen(timestr));
-					
-					printf("%s", timestr);
-				}
-				
-				console_attrib(CONS_RESET);
-			}
-			ctarget = ctarget->next;
-		}
-		
-		MENU_INPUT:
-		FD_ZERO(&read_fds);
-		FD_SET(fileno(stdin), &read_fds);
-		timeout.tv_sec = 1;
-		
-		i = select(fileno(stdin)+1, &read_fds, NULL, NULL, timeptr);
-		if(i <= 0) {
-			if(--tremain == 0) {
-				ctarget = starget;
-				for(n = 1; n < mpos; n++) { ctarget = ctarget->next; }
-				
-				goto ENDMENU;
-			}else{
-				continue;
-			}
-		}
-		timeptr = NULL;
-		
-		gotchar = getchar();
-		if(gotchar == '\n') {
-			ctarget = starget;
-			for(n = 1; n < mpos; n++) { ctarget = ctarget->next; }
-			
-			goto ENDMENU;
-		}
-		if(gotchar == 0x1B && getchar() == '[') {
-			gotchar = getchar();
-			
-			if(gotchar == 65 || gotchar == 66) {
-				ctarget = starget;
-				for(n = 1; n < mpos; n++) {
-					ctarget = ctarget->next;
-				}
-			}
-			if(gotchar == 65) {
-				if(ctarget == config.targets) {
-					goto MENU_INPUT;
-				}
-				
-				if(mpos > 1) {
-					mpos--;
-				}else{
-					starget = config.targets;
-					while(starget != NULL && starget->next != ctarget) {
-						starget = starget->next;
-					}
-				}
-				
-				continue;
-			}
-			if(gotchar == 66) {
-				if(ctarget->next == NULL) {
-					goto MENU_INPUT;
-				}
-				
-				if(mpos < mmpos) {
-					mpos++;
-				}else{
-					starget = starget->next;
-				}
-			}
-		}
-	}
-	
-	ENDMENU:
-	first_call = 0;
-	return(ctarget);
-}
-#endif
