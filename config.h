@@ -31,7 +31,6 @@
 #ifndef KEXEC_LOADER_CTCONFIG_H
 #define KEXEC_LOADER_CTCONFIG_H
 
-#define VERSION "1.1"
 #define COPYRIGHT "Copyright (C) 2007,2008 Daniel Collins"
 
 #define CONFIG_FILE "kexec-loader.conf"

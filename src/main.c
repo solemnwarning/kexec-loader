@@ -239,7 +239,7 @@ static void draw_skel(void) {
 	}
 	
 	console_setpos(1, 2);
-	printf("kexec-loader v" VERSION);
+	printf("kexec-loader " VERSION);
 	
 	console_setpos(1, cols-strlen(COPYRIGHT)-1);
 	printf(COPYRIGHT);

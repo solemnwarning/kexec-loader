@@ -27,8 +27,12 @@
 # NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE,
 # EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
+# This should be "vN.N" releases
+#
+VERSION=r$(shell svn info | grep 'Revision:' | sed -e 's/Revision: //')
+
 export CC=i386-linux-uclibc-gcc
-export CFLAGS=-Wall -static
+export CFLAGS=-Wall -static -DVERSION=\"$(VERSION)\"
 export INCLUDES=
 export LIBS=
 
