@@ -117,11 +117,30 @@ static void main_menu(void) {
 	debug("mmpos = %d\n", mmpos);
 	
 	kl_target *starget = config.targets;	/* Start of displayed list */
-	kl_target *target;
+	kl_target *target = starget;
 	
 	struct pollfd pollset;
 	pollset.fd = STDIN_FILENO;
 	pollset.events = POLLIN;
+	
+	while(target != NULL) {
+		if(target->flags & TARGET_DEFAULT) {
+			break;
+		}
+		if(target->next == NULL) {
+			starget = config.targets;
+			mpos = 0;
+			
+			break;
+		}
+		target = target->next;
+		
+		if(mpos == mmpos) {
+			mpos++;
+		}else{
+			starget = starget->next;
+		}
+	}
 	
 	while(1) {
 		target = starget;
@@ -169,19 +188,21 @@ static void main_menu(void) {
 			timeout = 1000;
 		}
 		if(poll(&pollset, 1, timeout) == 0) {
-			console_setpos(rows-3, 1);
-			for(n = 1; n <= cols; n++) {
-				putchar(' ');
-			}
-			
 			if(--tremain == 0) {
 				debug("Timeout\n");
 				while(1) { sleep(999); }
 			}else{
 				console_setpos(rows-3, cols-13);
+				console_eline(ELINE_ALL);
+				
 				printf("Timeout: %d", tremain);
 			}
+			
+			goto MENU_INPUT;
 		}
+		
+		console_setpos(rows-3, 1);
+		console_eline(ELINE_ALL);
 		
 		timeout = -1;
 		tremain = 0;
