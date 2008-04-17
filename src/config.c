@@ -91,6 +91,49 @@ static void config_add_mount(kl_mount** mounts, char* device, char* mpoint) {
 	mount_add(mounts, &nmount);
 }
 
+/* Add a target to config.targets */
+static void cfg_add_target(void) {
+	if(!target.kernel) {
+		debug("Target %s has no kernel, not adding\n", target.name);
+		printm("Target %s has no kernel, not adding", target.name);
+		
+		goto END;
+	}
+	if(!target.mounts) {
+		debug("Target %s has no mounts, not adding\n", target.name);
+		printm("Target %s has no mounts, not adding", target.name);
+		
+		goto END;
+	}
+	
+	kl_target *nptr = malloc(sizeof(kl_target));
+	if(!nptr) {
+		debug("Can't malloc() %u bytes\n", sizeof(kl_target));
+		goto END;
+	}
+	
+	nptr->name = target.name;
+	nptr->flags = target.flags;
+	nptr->kernel = target.kernel;
+	nptr->initrd = target.initrd;
+	nptr->append = target.append;
+	nptr->mounts = target.mounts;
+	
+	if(!config.targets) {
+		config.targets = nptr;
+	}else{
+		kl_target *eptr = config.targets;
+		while(eptr && eptr->next) {
+			eptr = eptr->next;
+		}
+		
+		eptr->next = nptr;
+	}
+	
+	END:
+	TARGET_DEFAULTS(&target);
+}
+
 /* Read configuration file, one line at a time and call config_parse() for each
  * individual line, in the event of an error an incomplete configuration may,
  * or may not be loaded.
@@ -166,15 +209,15 @@ void config_parse(char* line, unsigned int lnum) {
 		return;
 	}
 	if(str_compare(name, "title", STR_NOCASE)) {
-		if(value[0] == '\0') {
-			value = "Untitled";
+		if(target.name) {
+			cfg_add_target();
 		}
-		if(target.name != NULL) {
-			if(target_add(&(config.targets), &target) == NULL) {
-				debug("Can't add target: %s\n", strerror(errno));
-			}
+		
+		if(value[0] == '\0') {
+			debug("config:%u: Title requires an argument\n", lnum);
+			printm("config:%u: Title requires an argument", lnum);
 			
-			TARGET_DEFAULTS(&target);
+			return;
 		}
 		
 		target.name = my_strcpy(value);
@@ -182,9 +225,17 @@ void config_parse(char* line, unsigned int lnum) {
 			debug("config:%u: Can't allocate memory\n", lnum);
 			printm("config:%u: Can't allocate memory", lnum);
 		}
+		
 		return;
 	}
 	if(str_compare(name, "kernel", STR_NOCASE)) {
+		if(value[0] == '\0') {
+			debug("config:%u: Kernel requires an argument\n", lnum);
+			printm("config:%u: Kernel requires an argument", lnum);
+			
+			return;
+		}
+		
 		target.kernel = my_sprintf("/mnt/%s", value);
 		if(!target.kernel) {
 			debug("config:%u: Can't allocate memory\n", lnum);
@@ -194,6 +245,13 @@ void config_parse(char* line, unsigned int lnum) {
 		return;
 	}
 	if(str_compare(name, "initrd", STR_NOCASE)) {
+		if(value[0] == '\0') {
+			debug("config:%u: initrd requires an argument\n", lnum);
+			printm("config:%u: initrd requires an argument", lnum);
+			
+			return;
+		}
+		
 		target.initrd = my_sprintf("/mnt/%s", value);
 		if(!target.initrd) {
 			debug("config:%u: Can't allocate memory\n", lnum);
@@ -203,6 +261,13 @@ void config_parse(char* line, unsigned int lnum) {
 		return;
 	}
 	if(str_compare(name, "append", STR_NOCASE)) {
+		if(value[0] == '\0') {
+			debug("config:%u: Append requires an argument\n", lnum);
+			printm("config:%u: Append requires an argument", lnum);
+			
+			return;
+		}
+		
 		target.append = my_strcpy(value);
 		if(!target.append) {
 			debug("config:%u: Can't allocate memory\n", lnum);
@@ -216,6 +281,13 @@ void config_parse(char* line, unsigned int lnum) {
 		return;
 	}
 	if(str_compare(name, "rootfs", STR_NOCASE)) {
+		if(value[0] == '\0') {
+			debug("config:%u: RootFS requires an argument\n", lnum);
+			printm("config:%u: RootFS requires an argument", lnum);
+			
+			return;
+		}
+		
 		config_add_mount(&(target.mounts), value, "/");
 		return;
 	}
@@ -229,7 +301,7 @@ void config_parse(char* line, unsigned int lnum) {
 		mpoint[0] = '\0';
 		mpoint += (strspn(mpoint+1, " \t")+1);
 		
-		if(strlen(mpoint) == 0) {
+		if(value[0] == '\0' || mpoint[0] == '\0') {
 			debug("config:%u: Invalid mount\n", lnum);
 			printm("config:%u: Invalid mount", lnum);
 			return;
@@ -245,11 +317,7 @@ void config_parse(char* line, unsigned int lnum) {
 
 /* Add the remaining target, if it exists */
 void config_finish(void) {
-	if(target.name != NULL) {
-		if(target_add(&(config.targets), &target) == NULL) {
-			debug("Can't add target: %s\n", strerror(errno));
-		}
-		
-		TARGET_DEFAULTS(&target);
+	if(target.name) {
+		cfg_add_target();
 	}
 }

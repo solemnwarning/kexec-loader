@@ -62,7 +62,7 @@ struct kl_mount {
 	(ptr)->kernel = NULL;\
 	(ptr)->initrd = NULL;\
 	(ptr)->append = NULL;\
-	mount_free(&((ptr)->mounts));\
+	(ptr)->mounts = NULL;\
 	(ptr)->next = NULL;
 
 #define TARGET_DEFAULTS_DEFINE {NULL,0,NULL,NULL,NULL,NULL,NULL}
