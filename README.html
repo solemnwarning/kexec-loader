@@ -14,7 +14,7 @@ body {
 	font-family: sans-serif;
 }
 
-h1, h2, p {
+h1, h2, h3, p {
 	margin: 5px 0px;
 	padding: 0px;
 }
@@ -49,6 +49,7 @@ whitespace and then a value, lines beginning with the hash (#) character are
 ignored, as are empty lines.
 </p>
 
+<h3>Directives:</h3>
 <ul class="li5">
 <li>timeout <i>&lt;integer&gt;</i><br>
 	Sets the timeout until the default target is loaded in seconds, if no
@@ -80,5 +81,15 @@ ignored, as are empty lines.
 	reiserfs, minix, FAT and NTFS.
 </li>
 </ul>
+<hr>
+
+<h2>Debug console</h2>
+<p>
+Once kexec-loader has started all debugging messages, as well as Linux kernel
+messages are sent to a seperate debug console. By default the debug console is
+/dev/tty2, this can be changed at boot by using the Linux cmdline, for example
+kexec_debug=/dev/ttyS0 writes all debug messages and kernel messages to the
+first serial port.
+</p>
 </body>
 </html>
