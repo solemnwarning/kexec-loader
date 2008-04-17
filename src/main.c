@@ -37,6 +37,8 @@
 #include <linux/reboot.h>
 #include <poll.h>
 #include <sys/syscall.h>
+#include <sys/time.h>
+#include <sys/resource.h>
 
 #include "mount.h"
 #include "../config.h"
@@ -58,6 +60,15 @@ static int scol = 3, ecol = 0;
 int main(int argc, char** argv) {
 	if(mount("proc", "/proc", "proc", 0, NULL) == -1) {
 		fatal("Can't mount /proc filesystem: %s", strerror(errno));
+	}
+	
+	struct rlimit limit = {
+		STACK_LIMIT,
+		STACK_LIMIT
+	};
+	
+	if(setrlimit(RLIMIT_STACK, &limit) == -1) {
+		debug("Can't set stack limit to %d\n", STACK_LIMIT);
 	}
 	
 	kmsg_monitor();
