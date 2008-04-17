@@ -34,5 +34,6 @@
 char *my_strcat(char *dest, char *src);
 char *my_sprintf(char const *fmt, ...);
 char *my_asprintf(char *str, char const *fmt, ...);
+char *my_strcpy(char *src);
 
 #endif /* !KEXEC_LOADER_MYSTRING_H */

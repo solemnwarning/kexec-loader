@@ -42,6 +42,7 @@
 #include "../config.h"
 #include "misc.h"
 #include "mount.h"
+#include "mystring.h"
 
 struct kl_config config = CONFIG_DEFAULTS_DEFINE;
 static struct kl_target target = TARGET_DEFAULTS_DEFINE;
@@ -163,7 +164,7 @@ void config_parse(char* line, unsigned int lnum) {
 		if(value[0] == '\0') {
 			value = "Untitled";
 		}
-		if(target.name[0] != '\0') {
+		if(target.name != NULL) {
 			if(target_add(&(config.targets), &target) == NULL) {
 				debug("Can't add target: %s\n", strerror(errno));
 			}
@@ -171,7 +172,11 @@ void config_parse(char* line, unsigned int lnum) {
 			TARGET_DEFAULTS(&target);
 		}
 		
-		strncpy(target.name, value, 63);
+		target.name = my_strcpy(value);
+		if(!target.name) {
+			debug("config:%u: Can't allocate memory\n", lnum);
+			printm("config:%u: Can't allocate memory", lnum);
+		}
 		return;
 	}
 	if(str_compare(name, "kernel", STR_NOCASE)) {
@@ -220,7 +225,7 @@ void config_parse(char* line, unsigned int lnum) {
 
 /* Add the remaining target, if it exists */
 void config_finish(void) {
-	if(target.name[0] != '\0') {
+	if(target.name != NULL) {
 		if(target_add(&(config.targets), &target) == NULL) {
 			debug("Can't add target: %s\n", strerror(errno));
 		}

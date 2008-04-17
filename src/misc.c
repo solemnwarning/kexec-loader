@@ -40,6 +40,7 @@
 #include "config.h"
 #include "../config.h"
 #include "console.h"
+#include "mystring.h"
 
 int printm_called = 0;
 
@@ -219,7 +220,9 @@ kl_target* target_add(kl_target** list, kl_target const* src) {
 	TARGET_DEFAULTS(nptr);
 	
 	if(src != NULL) {
-		strncpy(nptr->name, src->name, 64);
+		if(!(nptr->name = my_strcpy(src->name))) {
+			return NULL;
+		}
 		strncpy(nptr->kernel, src->kernel, 1024);
 		strncpy(nptr->initrd, src->initrd, 1024);
 		strncpy(nptr->append, src->append, 512);

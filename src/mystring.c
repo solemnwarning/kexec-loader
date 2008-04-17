@@ -86,3 +86,19 @@ char *my_asprintf(char *str, char const *fmt, ...) {
 	va_end(argv);
 	return my_strcat(str, buf);
 }
+
+/* Allocate a buffer using malloc() and copy a string into it
+ * Returns the string on success, NULL if malloc() fails
+*/
+char *my_strcpy(char *src) {
+	size_t size = strlen(src)+1;
+	
+	char *dest = malloc(size);
+	if(!dest) {
+		debug("Can't malloc() %u bytes\n", size);
+		return NULL;
+	}
+	
+	strcpy(dest, src);
+	return dest;
+}
