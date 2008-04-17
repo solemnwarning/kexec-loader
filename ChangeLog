@@ -1,3 +1,15 @@
+Version x.y:
+	Fixed bug: main_menu() no longer crashes if you have zero targets.
+	
+	Fixed bug: Timeout is no longer displayed after a one second delay.
+	
+	Implemented dynamic-length strings.
+	
+	Rewrote a lot of code used for loading configuration.
+	
+	Removed obsolete mount_add(), mount_copy(), mount_free(), target_add()
+	and target_free() functions.
+
 Version 1.1:
 	Removed directives for creating devices, all devices inodes should be
 	included with the initramfs.
