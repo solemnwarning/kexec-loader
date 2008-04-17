@@ -1,4 +1,6 @@
 Version x.y:
+	Rewrote fatal() function and removed pointless calls to it.
+	
 	Fixed bug: main_menu() no longer crashes if you have zero targets.
 	
 	Fixed bug: Timeout is no longer displayed after a one second delay.
