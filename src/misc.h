@@ -52,9 +52,6 @@ void debug(char const* fmt, ...);
 char* strclone(char const* string, size_t maxlen);
 int str_compare(char const*, char const*, int, ...);
 
-kl_target* target_add(kl_target** list, kl_target const* src);
-void target_free(kl_target** list);
-
 kl_mount* mount_add(kl_mount** list, kl_mount const* src);
 void mount_free(kl_mount** list);
 kl_mount* mount_copy(kl_mount const* src);

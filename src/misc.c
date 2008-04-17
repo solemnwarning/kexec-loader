@@ -206,65 +206,6 @@ int str_compare(char const* str1, char const* str2, int flags, ...) {
 	return(1);
 }
 
-/* Insert a new target structure at the beginning of a target list
- * Returns a pointer to the new list node on success, NULL if malloc() fails.
- *
- * If 'src' is non-NULL, the data in 'src' will be copied to the new structure
- * in the list, it will not be modified.
-*/
-kl_target* target_add(kl_target** list, kl_target const* src) {
-	kl_target* nptr = malloc(sizeof(kl_target));
-	if(nptr == NULL) {
-		return(NULL);
-	}
-	TARGET_DEFAULTS(nptr);
-	
-	if(src != NULL) {
-		if(!(nptr->name = my_strcpy(src->name))) {
-			return NULL;
-		}
-		if(!(nptr->kernel = my_strcpy(src->kernel))) {
-			return NULL;
-		}
-		if(!(nptr->initrd = my_strcpy(src->initrd))) {
-			return NULL;
-		}
-		if(!(nptr->append = my_strcpy(src->append))) {
-			return NULL;
-		}
-		
-		nptr->flags = src->flags;
-		nptr->mounts = mount_copy(src->mounts);
-	}
-	
-	kl_target* eptr = *list;
-	while(eptr != NULL && eptr->next != NULL) {
-		eptr = eptr->next;
-	}
-	if(eptr == NULL) {
-		nptr->next = *list;
-		*list = nptr;
-	}else{
-		eptr->next = nptr;
-		nptr->next = NULL;
-	}
-	
-	return(nptr);
-}
-
-/* Free an entire target list */
-void target_free(kl_target** list) {
-	kl_target* dptr = NULL;
-	
-	while(*list != NULL) {
-		dptr = *list;
-		*list = (*list)->next;
-		
-		mount_free(&(dptr->mounts));
-		free(dptr);
-	}
-}
-
 /* Exactly the same as target_add(), except it handles mount lists instead of
  * target lists.
 */
