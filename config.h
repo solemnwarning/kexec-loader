@@ -41,4 +41,7 @@
 #define STACK_LIMIT (1024*16)
 #define STACK_BUF 2048
 
+#define DEVICE_SIZE 32
+#define MPOINT_SIZE 2048
+
 #endif /* !KEXEC_LOADER_CTCONFIG_H */

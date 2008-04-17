@@ -32,6 +32,7 @@
 #define KEXEC_LOADER_CONF_H
 #include <time.h>
 #include <string.h>
+#include "../config.h"
 
 #define TARGET_DEFAULT (1<<0)
 
@@ -39,17 +40,17 @@ typedef struct kl_target kl_target;
 typedef struct kl_mount kl_mount;
 
 #define MOUNT_DEFAULTS(ptr) \
-	(ptr)->device = NULL;\
-	(ptr)->mpoint = NULL;\
+	(ptr)->device[0] = '\0';\
+	(ptr)->mpoint[0] = '\0';\
 	(ptr)->fstype[0] = '\0';\
 	(ptr)->depth = 0;\
 	(ptr)->next = NULL;
 
-#define MOUNT_DEFAULTS_DEFINE {NULL,NULL,{'\0'},0,NULL}
+#define MOUNT_DEFAULTS_DEFINE {{'\0'},{'\0'},{'\0'},0,NULL}
 
 struct kl_mount {
-	char *device;
-	char *mpoint;
+	char device[DEVICE_SIZE];
+	char mpoint[MPOINT_SIZE];
 	char fstype[64];
 	unsigned int depth;
 	

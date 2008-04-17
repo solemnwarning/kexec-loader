@@ -62,17 +62,16 @@ static void config_add_mount(unsigned int lnum, char* device, char* mpoint) {
 	
 	kl_mount *nptr = malloc(sizeof(kl_mount));
 	if(!nptr) {
-		goto ABORT;
+		debug("config:%u: Can't allocate memory\n", lnum);
+		printm("config:%u: Can't allocate memory", lnum);
+		
+		return;
 	}
 	MOUNT_DEFAULTS(nptr);
 	
-	if(!(nptr->device = my_strcpy(device))) {
-		goto ABORT;
-	}
-	if(!(nptr->mpoint = my_strcpy("/"))) {
-		goto ABORT;
-	}
-	strncpy(nptr->fstype, src->fstype, 63);
+	strncpy(nptr->device, device, DEVICE_SIZE-1);
+	strncpy(nptr->mpoint, mpoint, MPOINT_SIZE-1);
+	strncpy(nptr->fstype, fstype, 63);
 	
 	char *mptok = strtok(mpoint, "/");
 	while(mptok) {
@@ -80,7 +79,8 @@ static void config_add_mount(unsigned int lnum, char* device, char* mpoint) {
 			goto NTOK;
 		}
 		
-		nptr->mpoint = my_asprintf(nptr->mpoint, "%s/", mptok);
+		strncat(nptr->mpoint, mptok, MPOINT_SIZE);
+		strncat(nptr->mpoint, "/", MPOINT_SIZE);
 		nptr->depth++;
 		
 		NTOK:
@@ -94,16 +94,6 @@ static void config_add_mount(unsigned int lnum, char* device, char* mpoint) {
 	
 	nptr->next = target.mounts;
 	target.mounts = nptr;
-	
-	ABORT:
-	if(nptr) {
-		free(nptr->device);
-		free(nptr->mpoint);
-		free(nptr);
-	}
-	
-	debug("config:%u: Can't allocate memory\n", lnum);
-	printm("config:%u: Can't allocate memory", lnum);
 }
 
 /* Add a target to config.targets */
