@@ -84,6 +84,9 @@ static void main_menu(void) {
 	
 	int n, rnum, key;
 	unsigned int tremain = config.timeout;
+	if(config.targets == NULL) {
+		tremain = 0;
+	}
 	
 	int mpos = 0, mmpos = erow - srow, cmpos;
 	debug("mmpos = %d\n", mmpos);
@@ -192,6 +195,10 @@ static void main_menu(void) {
 		if(key == '\n') {
 			debug("Enter pressed\n");
 			
+			if(!starget) {
+				goto MENU_INPUT;
+			}
+			
 			target_run(target);
 			draw_skel();
 			continue;
@@ -205,7 +212,7 @@ static void main_menu(void) {
 			*/
 			
 			if(key == 65) {
-				if(target == config.targets) {
+				if(!starget || target == config.targets) {
 					goto MENU_INPUT;
 				}
 				
@@ -219,7 +226,7 @@ static void main_menu(void) {
 				}
 			}
 			if(key == 66) {
-				if(target->next == NULL) {
+				if(!starget || target->next == NULL) {
 					goto MENU_INPUT;
 				}
 				
