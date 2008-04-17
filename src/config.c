@@ -72,9 +72,7 @@ static void config_add_mount(unsigned int lnum, char* device, char* mpoint) {
 	if(!(nptr->mpoint = my_strcpy("/"))) {
 		goto ABORT;
 	}
-	if(!(nptr->fstype = my_strcpy(fstype))) {
-		goto ABORT;
-	}
+	strncpy(nptr->fstype, src->fstype, 63);
 	
 	char *mptok = strtok(mpoint, "/");
 	while(mptok) {
@@ -101,7 +99,6 @@ static void config_add_mount(unsigned int lnum, char* device, char* mpoint) {
 	if(nptr) {
 		free(nptr->device);
 		free(nptr->mpoint);
-		free(nptr->fstype);
 		free(nptr);
 	}
 	

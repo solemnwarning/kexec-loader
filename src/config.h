@@ -41,16 +41,16 @@ typedef struct kl_mount kl_mount;
 #define MOUNT_DEFAULTS(ptr) \
 	(ptr)->device = NULL;\
 	(ptr)->mpoint = NULL;\
-	(ptr)->fstype = NULL;\
+	(ptr)->fstype[0] = '\0';\
 	(ptr)->depth = 0;\
 	(ptr)->next = NULL;
 
-#define MOUNT_DEFAULTS_DEFINE {NULL,NULL,NULL,0,NULL}
+#define MOUNT_DEFAULTS_DEFINE {NULL,NULL,{'\0'},0,NULL}
 
 struct kl_mount {
 	char *device;
 	char *mpoint;
-	char *fstype;
+	char fstype[64];
 	unsigned int depth;
 	
 	struct kl_mount* next;
