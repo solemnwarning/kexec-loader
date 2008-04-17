@@ -5,8 +5,6 @@ Version x.y:
 	
 	Fixed bug: Timeout is no longer displayed after a one second delay.
 	
-	Implemented dynamic-length strings.
-	
 	Rewrote a lot of code used for loading configuration.
 	
 	Removed obsolete mount_add(), mount_copy(), mount_free(), target_add()

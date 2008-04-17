@@ -40,7 +40,6 @@
 #include "config.h"
 #include "../config.h"
 #include "console.h"
-#include "mystring.h"
 
 int printm_called = 0;
 

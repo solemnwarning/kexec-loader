@@ -40,9 +40,9 @@ typedef struct kl_target kl_target;
 typedef struct kl_mount kl_mount;
 
 #define MOUNT_DEFAULTS(ptr) \
-	(ptr)->device[0] = '\0';\
-	(ptr)->mpoint[0] = '\0';\
-	(ptr)->fstype[0] = '\0';\
+	memset((ptr)->device, '\0', DEVICE_SIZE);\
+	memset((ptr)->mpoint, '\0', MPOINT_SIZE);\
+	memset((ptr)->fstype, '\0', 64);\
 	(ptr)->depth = 0;\
 	(ptr)->next = NULL;
 
@@ -58,23 +58,23 @@ struct kl_mount {
 };
 
 #define TARGET_DEFAULTS(ptr) \
-	(ptr)->name = NULL;\
+	memset((ptr)->name, '\0', NAME_SIZE);\
 	(ptr)->flags = 0;\
-	(ptr)->kernel = NULL;\
-	(ptr)->initrd = NULL;\
-	(ptr)->append = NULL;\
+	memset((ptr)->kernel, '\0', KERNEL_SIZE);\
+	memset((ptr)->initrd, '\0', INITRD_SIZE);\
+	memset((ptr)->append, '\0', APPEND_SIZE);\
 	(ptr)->mounts = NULL;\
 	(ptr)->next = NULL;
 
-#define TARGET_DEFAULTS_DEFINE {NULL,0,NULL,NULL,NULL,NULL,NULL}
+#define TARGET_DEFAULTS_DEFINE {{'\0'},0,{'\0'},{'\0'},{'\0'},NULL,NULL}
 
 struct kl_target {
-	char *name;
+	char name[NAME_SIZE];
 	int flags;
 	
-	char *kernel;
-	char *initrd;
-	char *append;
+	char kernel[KERNEL_SIZE];
+	char initrd[INITRD_SIZE];
+	char append[APPEND_SIZE];
 	
 	struct kl_mount* mounts;
 	struct kl_target* next;

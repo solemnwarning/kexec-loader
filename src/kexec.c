@@ -85,11 +85,11 @@ int load_kernel(char const* kernel, char const* append, char const* initrd) {
 	argv_append("-l");
 	argv_append((char*)kernel);
 	
-	if(append) {
+	if(append[0] != '\0') {
 		snprintf(append_arg, STACK_BUF, "--append=%s", append);
 		argv_append(append_arg);
 	}
-	if(initrd) {
+	if(initrd[0] != '\0') {
 		snprintf(initrd_arg, STACK_BUF, "--initrd=%s", initrd);
 		argv_append(initrd_arg);
 	}

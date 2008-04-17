@@ -326,15 +326,6 @@ static void target_run(kl_target *target) {
 	
 	printm("Loading %s...", target->name);
 	
-	if(target->kernel == NULL) {
-		printm("Selected target has no kernel");
-		return;
-	}
-	if(target->mounts == NULL) {
-		printm("Selected target has no mounts");
-		return;
-	}
-	
 	if(!mount_list(target->mounts)) {
 		return;
 	}

@@ -42,7 +42,6 @@
 #include "../config.h"
 #include "misc.h"
 #include "mount.h"
-#include "mystring.h"
 
 struct kl_config config = CONFIG_DEFAULTS_DEFINE;
 static struct kl_target target = TARGET_DEFAULTS_DEFINE;
@@ -98,7 +97,7 @@ static void config_add_mount(unsigned int lnum, char* device, char* mpoint) {
 
 /* Add a target to config.targets */
 static void cfg_add_target(void) {
-	if(!target.kernel) {
+	if(target.kernel[0] == '\0') {
 		debug("Target %s has no kernel, not adding\n", target.name);
 		printm("Target %s has no kernel, not adding", target.name);
 		
@@ -119,11 +118,12 @@ static void cfg_add_target(void) {
 	
 	TARGET_DEFAULTS(nptr);
 	
-	nptr->name = target.name;
+	strcpy(nptr->name, target.name);
 	nptr->flags = target.flags;
-	nptr->kernel = target.kernel;
-	nptr->initrd = target.initrd;
-	nptr->append = target.append;
+	
+	strcpy(nptr->kernel, target.kernel);
+	strcpy(nptr->initrd, target.initrd);
+	strcpy(nptr->append, target.append);
 	nptr->mounts = target.mounts;
 	
 	if(!config.targets) {
@@ -216,7 +216,7 @@ void config_parse(char* line, unsigned int lnum) {
 		return;
 	}
 	if(str_compare(name, "title", STR_NOCASE)) {
-		if(target.name) {
+		if(target.name[0] != '\0') {
 			cfg_add_target();
 		}
 		
@@ -227,11 +227,7 @@ void config_parse(char* line, unsigned int lnum) {
 			return;
 		}
 		
-		target.name = my_strcpy(value);
-		if(!target.name) {
-			debug("config:%u: Can't allocate memory\n", lnum);
-			printm("config:%u: Can't allocate memory", lnum);
-		}
+		strncpy(target.name, value, NAME_SIZE-1);
 		
 		return;
 	}
@@ -243,11 +239,7 @@ void config_parse(char* line, unsigned int lnum) {
 			return;
 		}
 		
-		target.kernel = my_sprintf("/mnt/%s", value);
-		if(!target.kernel) {
-			debug("config:%u: Can't allocate memory\n", lnum);
-			printm("config:%u: Can't allocate memory", lnum);
-		}
+		snprintf(target.kernel, KERNEL_SIZE, "/mnt/%s", value);
 		
 		return;
 	}
@@ -259,11 +251,7 @@ void config_parse(char* line, unsigned int lnum) {
 			return;
 		}
 		
-		target.initrd = my_sprintf("/mnt/%s", value);
-		if(!target.initrd) {
-			debug("config:%u: Can't allocate memory\n", lnum);
-			printm("config:%u: Can't allocate memory", lnum);
-		}
+		snprintf(target.initrd, INITRD_SIZE, "/mnt/%s", value);
 		
 		return;
 	}
@@ -275,11 +263,7 @@ void config_parse(char* line, unsigned int lnum) {
 			return;
 		}
 		
-		target.append = my_strcpy(value);
-		if(!target.append) {
-			debug("config:%u: Can't allocate memory\n", lnum);
-			printm("config:%u: Can't allocate memory", lnum);
-		}
+		strncpy(target.append, value, APPEND_SIZE-1);
 		
 		return;
 	}
@@ -324,7 +308,7 @@ void config_parse(char* line, unsigned int lnum) {
 
 /* Add the remaining target, if it exists */
 void config_finish(void) {
-	if(target.name) {
+	if(target.name[0] != '\0') {
 		cfg_add_target();
 	}
 }
