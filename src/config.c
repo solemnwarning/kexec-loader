@@ -48,27 +48,32 @@ struct kl_config config = CONFIG_DEFAULTS_DEFINE;
 static struct kl_target target = TARGET_DEFAULTS_DEFINE;
 
 /* Add a mount
- * This changes the mpoint string passed to it
+ * This changes the device string passed to it
 */
-static void config_add_mount(kl_mount** mounts, char* device, char* mpoint) {
+static void config_add_mount(unsigned int lnum, char* device, char* mpoint) {
 	char* fstype = "auto";
 	
-	if(strchr(device, ':') != NULL) {
+	if(strchr(device, ':')) {
 		fstype = device;
 		device = strchr(device, ':');
 		device[0] = '\0';
 		device++;
 	}
 	
-	kl_mount nmount = MOUNT_DEFAULTS_DEFINE;
-	if(!(nmount.device = my_strcpy(device))) {
-		return;
+	kl_mount *nptr = malloc(sizeof(kl_mount));
+	if(!nptr) {
+		goto ABORT;
 	}
-	if(!(nmount.mpoint = my_strcpy("/"))) {
-		return;
+	MOUNT_DEFAULTS(nptr);
+	
+	if(!(nptr->device = my_strcpy(device))) {
+		goto ABORT;
 	}
-	if(!(nmount.fstype = my_strcpy(fstype))) {
-		return;
+	if(!(nptr->mpoint = my_strcpy("/"))) {
+		goto ABORT;
+	}
+	if(!(nptr->fstype = my_strcpy(fstype))) {
+		goto ABORT;
 	}
 	
 	char *mptok = strtok(mpoint, "/");
@@ -77,8 +82,8 @@ static void config_add_mount(kl_mount** mounts, char* device, char* mpoint) {
 			goto NTOK;
 		}
 		
-		mptok = my_asprintf("%s/", mptok);
-		nmount.depth++;
+		nptr->mpoint = my_asprintf(nptr->mpoint, "%s/", mptok);
+		nptr->depth++;
 		
 		NTOK:
 		mptok = strtok(NULL, "/");
@@ -86,9 +91,22 @@ static void config_add_mount(kl_mount** mounts, char* device, char* mpoint) {
 	
 	debug(
 		"Adding mount '%s' => '%s', depth %d\n",
-		nmount.device, nmount.mpoint, nmount.depth
+		nptr->device, nptr->mpoint, nptr->depth
 	);
-	mount_add(mounts, &nmount);
+	
+	nptr->next = target.mounts;
+	target.mounts = nptr;
+	
+	ABORT:
+	if(nptr) {
+		free(nptr->device);
+		free(nptr->mpoint);
+		free(nptr->fstype);
+		free(nptr);
+	}
+	
+	debug("config:%u: Can't allocate memory\n", lnum);
+	printm("config:%u: Can't allocate memory", lnum);
 }
 
 /* Add a target to config.targets */
@@ -111,6 +129,8 @@ static void cfg_add_target(void) {
 		debug("Can't malloc() %u bytes\n", sizeof(kl_target));
 		goto END;
 	}
+	
+	TARGET_DEFAULTS(nptr);
 	
 	nptr->name = target.name;
 	nptr->flags = target.flags;
@@ -288,7 +308,7 @@ void config_parse(char* line, unsigned int lnum) {
 			return;
 		}
 		
-		config_add_mount(&(target.mounts), value, "/");
+		config_add_mount(lnum, value, "/");
 		return;
 	}
 	if(str_compare(name, "mount", STR_NOCASE)) {
@@ -307,7 +327,7 @@ void config_parse(char* line, unsigned int lnum) {
 			return;
 		}
 		
-		config_add_mount(&(target.mounts), value, mpoint);
+		config_add_mount(lnum, value, mpoint);
 		return;
 	}
 	
