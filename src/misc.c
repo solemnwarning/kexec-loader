@@ -39,6 +39,7 @@
 #include "misc.h"
 #include "config.h"
 #include "../config.h"
+#include "console.h"
 
 int printm_called = 0;
 
@@ -46,7 +47,7 @@ int printm_called = 0;
 void* allocate_r(char const* file, unsigned int line, size_t size) {
 	void* ptr = malloc(size);
 	if(ptr == NULL) {
-		fatal_r(file, line, "Can't allocate %u bytes: %s", strerror(errno));
+		fatal("Can't allocate %u bytes: %s", strerror(errno));
 	}
 	
 	memset(ptr, 0, size);
@@ -54,13 +55,18 @@ void* allocate_r(char const* file, unsigned int line, size_t size) {
 }
 
 /* Fatal error encountered, abort! */
-void fatal_r(char const* file, unsigned int line, char const* fmt, ...) {
+void fatal(char const* fmt, ...) {
 	va_list argv;
 	va_start(argv, fmt);
 	
-	fprintf(stderr, "fatal() called at %s:%u!\n", file, line);
-	vfprintf(stderr, fmt, argv);
+	char buf[1024];
+	vsnprintf(buf, 1024, fmt, argv);
 	
+	console_setpos(1, 1);
+	printf("%c[2J", 0x1B);
+	printf("FATAL: %s\n", buf);
+	
+	debug("FATAL: %s\n", buf);
 	va_end(argv);
 	
 	while(1) {
