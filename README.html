@@ -1,0 +1,84 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN" "http://www.w3.org/TR/html4/strict.dtd">
+<html>
+
+<head>
+<title>kexec-loader manual</title>
+<meta name="GENERATOR" content="Quanta Plus">
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+
+<style type="text/css">
+body {
+	margin: 0px;
+	padding: 5px;
+	
+	font-family: sans-serif;
+}
+
+h1, h2, p {
+	margin: 5px 0px;
+	padding: 0px;
+}
+
+.li5 li {
+	margin-bottom: 5px;
+}
+</style>
+</head>
+
+<body>
+<h1>kexec-loader manual</h1>
+<p>Copyright &copy; 2008 Daniel Collins</p>
+<hr>
+
+<h2>Configuration</h2>
+<p>
+When kexec-loader starts it searches for a file named kexec-loader.conf in the
+root directory of the following filesystems, in order:
+</p>
+<ol>
+<li>/dev/fd0</li>
+<li>/dev/fd1</li>
+<li>/dev/sda</li>
+<li>/dev/sdb</li>
+<li>/dev/sdc</li>
+<li>/dev/sdd</li>
+</ol>
+<p>
+The configuration file should contain directives, optionally followed by some
+whitespace and then a value, lines beginning with the hash (#) character are
+ignored, as are empty lines.
+</p>
+
+<ul class="li5">
+<li>timeout <i>&lt;integer&gt;</i><br>
+	Sets the timeout until the default target is loaded in seconds, if no
+	target is set as default the first target is used.
+</li>
+<li>title <i>&lt;text&gt;</i><br>
+	Marks the beginning of a target definition.
+</li>
+<li>kernel <i>&lt;filename&gt;</i><br>
+	Filename of the kernel to load.
+</li>
+<li>append <i>&lt;text&gt;</i><br>
+	Arguments to append to the kernel command-line.
+</li>
+<li>initrd <i>&lt;filename&gt;</i><br>
+	Filename of initrd image to load.
+</li>
+<li>default<br>
+	Marks target as default to boot when timeout expires.
+</li>
+<li>rootfs <i>[&lt;fstype&gt;:]&lt;device&gt;</i><br>
+	Specifies the root filesystem, equivilent to mount with a mount-point
+	of "/"
+</li>
+<li>mount <i>[&lt;fstype&gt;:]&lt;device&gt; &lt;mount-point&gt;</i><br>
+	Mounts the specified device at the specified mount-point, if fstype is
+	ommited or set to "auto" kexec-loader will attempt to guess the
+	filesystem type, currently detection is supported for ext2, ext3, XFS,
+	reiserfs, minix, FAT and NTFS.
+</li>
+</ul>
+</body>
+</html>

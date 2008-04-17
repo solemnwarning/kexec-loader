@@ -1,7 +1,0 @@
-To create a kexec-loader bootdisk:
-
-1) Edit the CC variable in Makefile to the correct gcc
-2) Create or download a static kexec binary
-3) Use mkinitramfs.sh to create a Linux initramfs CPIO archive
-4) Compile a Linux kernel with the required drivers and initramfs image
-5) Copy the kernel and a bootloader such as Syslinux to a floppy
