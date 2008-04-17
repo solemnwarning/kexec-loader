@@ -11,6 +11,9 @@ Version x.y:
 	
 	Removed obsolete mount_add(), mount_copy(), mount_free(), target_add()
 	and target_free() functions.
+	
+	Added STACK_LIMIT and STACK_BUF macros which configure the maximum
+	stack size and the size of auto buffers.
 
 Version 1.1:
 	Removed directives for creating devices, all devices inodes should be
