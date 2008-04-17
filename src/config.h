@@ -39,18 +39,18 @@ typedef struct kl_target kl_target;
 typedef struct kl_mount kl_mount;
 
 #define MOUNT_DEFAULTS(ptr) \
-	memset((ptr)->device, '\0', 1024);\
-	memset((ptr)->mpoint, '\0', 1024);\
-	memset((ptr)->fstype, '\0', 64);\
+	(ptr)->device = NULL;\
+	(ptr)->mpoint = NULL;\
+	(ptr)->fstype = NULL;\
 	(ptr)->depth = 0;\
 	(ptr)->next = NULL;
 
-#define MOUNT_DEFAULTS_DEFINE {{'\0'},{'\0'},{'\0'},0,NULL}
+#define MOUNT_DEFAULTS_DEFINE {NULL,NULL,NULL,0,NULL}
 
 struct kl_mount {
-	char device[1024];
-	char mpoint[1024];
-	char fstype[64];
+	char *device;
+	char *mpoint;
+	char *fstype;
 	unsigned int depth;
 	
 	struct kl_mount* next;

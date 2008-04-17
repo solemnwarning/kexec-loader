@@ -276,9 +276,16 @@ kl_mount* mount_add(kl_mount** list, kl_mount const* src) {
 	MOUNT_DEFAULTS(nptr);
 	
 	if(src != NULL) {
-		strncpy(nptr->device, src->device, 1024);
-		strncpy(nptr->mpoint, src->mpoint, 1024);
-		strncpy(nptr->fstype, src->fstype, 64);
+		if(!(nptr->device = my_strcpy(src->device))) {
+			return NULL;
+		}
+		if(!(nptr->mpoint = my_strcpy(src->mpoint))) {
+			return NULL;
+		}
+		if(!(nptr->fstype = my_strcpy(src->fstype))) {
+			return NULL;
+		}
+		
 		nptr->depth = src->depth;
 	}
 	
@@ -316,9 +323,16 @@ kl_mount* mount_copy(kl_mount const* src) {
 		}
 		MOUNT_DEFAULTS(nptr);
 		
-		strncpy(nptr->device, src->device, 1024);
-		strncpy(nptr->mpoint, src->mpoint, 1024);
-		strncpy(nptr->fstype, src->fstype, 64);
+		if(!(nptr->device = my_strcpy(src->device))) {
+			return NULL;
+		}
+		if(!(nptr->mpoint = my_strcpy(src->mpoint))) {
+			return NULL;
+		}
+		if(!(nptr->fstype = my_strcpy(src->fstype))) {
+			return NULL;
+		}
+		
 		nptr->depth = src->depth;
 		
 		nptr->next = list;

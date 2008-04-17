@@ -61,9 +61,15 @@ static void config_add_mount(kl_mount** mounts, char* device, char* mpoint) {
 	}
 	
 	kl_mount nmount = MOUNT_DEFAULTS_DEFINE;
-	strncpy(nmount.device, device, 1023);
-	strcpy(nmount.mpoint, "/");
-	strncpy(nmount.fstype, fstype, 63);
+	if(!(nmount.device = my_strcpy(device))) {
+		return;
+	}
+	if(!(nmount.mpoint = my_strcpy("/"))) {
+		return;
+	}
+	if(!(nmount.fstype = my_strcpy(fstype))) {
+		return;
+	}
 	
 	char *mptok = strtok(mpoint, "/");
 	while(mptok) {
@@ -71,8 +77,7 @@ static void config_add_mount(kl_mount** mounts, char* device, char* mpoint) {
 			goto NTOK;
 		}
 		
-		strncat(nmount.mpoint, mptok, 1023);
-		strncat(nmount.mpoint, "/", 1023);
+		mptok = my_asprintf("%s/", mptok);
 		nmount.depth++;
 		
 		NTOK:
