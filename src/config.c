@@ -180,15 +180,30 @@ void config_parse(char* line, unsigned int lnum) {
 		return;
 	}
 	if(str_compare(name, "kernel", STR_NOCASE)) {
-		snprintf(target.kernel, 1023, "/mnt/%s", value);
+		target.kernel = my_sprintf("/mnt/%s", value);
+		if(!target.kernel) {
+			debug("config:%u: Can't allocate memory\n", lnum);
+			printm("config:%u: Can't allocate memory", lnum);
+		}
+		
 		return;
 	}
 	if(str_compare(name, "initrd", STR_NOCASE)) {
-		snprintf(target.initrd, 1023, "/mnt/%s", value);
+		target.initrd = my_sprintf("/mnt/%s", value);
+		if(!target.initrd) {
+			debug("config:%u: Can't allocate memory\n", lnum);
+			printm("config:%u: Can't allocate memory", lnum);
+		}
+		
 		return;
 	}
 	if(str_compare(name, "append", STR_NOCASE)) {
-		strncpy(target.append, value, 511);
+		target.append = my_strcpy(value);
+		if(!target.append) {
+			debug("config:%u: Can't allocate memory\n", lnum);
+			printm("config:%u: Can't allocate memory", lnum);
+		}
+		
 		return;
 	}
 	if(str_compare(name, "default", STR_NOCASE)) {

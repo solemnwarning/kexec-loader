@@ -223,9 +223,15 @@ kl_target* target_add(kl_target** list, kl_target const* src) {
 		if(!(nptr->name = my_strcpy(src->name))) {
 			return NULL;
 		}
-		strncpy(nptr->kernel, src->kernel, 1024);
-		strncpy(nptr->initrd, src->initrd, 1024);
-		strncpy(nptr->append, src->append, 512);
+		if(!(nptr->kernel = my_strcpy(src->kernel))) {
+			return NULL;
+		}
+		if(!(nptr->initrd = my_strcpy(src->initrd))) {
+			return NULL;
+		}
+		if(!(nptr->append = my_strcpy(src->append))) {
+			return NULL;
+		}
 		
 		nptr->flags = src->flags;
 		nptr->mounts = mount_copy(src->mounts);

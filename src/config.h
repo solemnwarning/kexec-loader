@@ -59,21 +59,21 @@ struct kl_mount {
 #define TARGET_DEFAULTS(ptr) \
 	(ptr)->name = NULL;\
 	(ptr)->flags = 0;\
-	memset((ptr)->kernel, '\0', 1024);\
-	memset((ptr)->initrd, '\0', 1024);\
-	memset((ptr)->append, '\0', 512);\
+	(ptr)->kernel = NULL;\
+	(ptr)->initrd = NULL;\
+	(ptr)->append = NULL;\
 	mount_free(&((ptr)->mounts));\
 	(ptr)->next = NULL;
 
-#define TARGET_DEFAULTS_DEFINE {NULL,0,{'\0'},{'\0'},{'\0'},NULL,NULL}
+#define TARGET_DEFAULTS_DEFINE {NULL,0,NULL,NULL,NULL,NULL,NULL}
 
 struct kl_target {
 	char *name;
 	int flags;
 	
-	char kernel[1024];
-	char initrd[1024];
-	char append[512];
+	char *kernel;
+	char *initrd;
+	char *append;
 	
 	struct kl_mount* mounts;
 	struct kl_target* next;

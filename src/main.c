@@ -312,7 +312,7 @@ static void target_run(kl_target *target) {
 	
 	printm("Loading %s...", target->name);
 	
-	if(target->kernel[0] == '\0') {
+	if(target->kernel == NULL) {
 		printm("Selected target has no kernel");
 		return;
 	}
