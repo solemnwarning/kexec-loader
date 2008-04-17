@@ -71,6 +71,9 @@ int main(int argc, char** argv) {
 		debug("Can't set stack limit to %d\n", STACK_LIMIT);
 	}
 	
+	debug("STACK_LIMIT = %d\n", STACK_LIMIT);
+	debug("STACK_BUF = %d\n", STACK_BUF);
+	
 	kmsg_monitor();
 	console_init();
 	config_load();
@@ -357,7 +360,7 @@ static void target_run(kl_target *target) {
 
 /* Display a list of devices from /proc/diskstats */
 static void list_devices(void) {
-	char buf[1024];
+	char buf[STACK_BUF];
 	char *name;
 	int major, minor, cnum;
 	
@@ -386,7 +389,7 @@ static void list_devices(void) {
 	printm("The following disks have been detected by Linux:");
 	printm("");
 	
-	while(fgets(buf, 1024, disks)) {
+	while(fgets(buf, STACK_BUF, disks)) {
 		major = atoi(strtok(buf, " \t"));
 		minor = atoi(strtok(NULL, " \t"));
 		name = strtok(NULL, " \t");

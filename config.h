@@ -39,5 +39,6 @@
 #define KEXEC_PATH "/sbin/kexec"
 
 #define STACK_LIMIT (1024*16)
+#define STACK_BUF 2048
 
 #endif /* !KEXEC_LOADER_CTCONFIG_H */

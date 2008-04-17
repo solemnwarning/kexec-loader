@@ -76,8 +76,8 @@ static int run_kexec(char** kexec_argv) {
  * Returns 1 on success, zero on error
 */
 int load_kernel(char const* kernel, char const* append, char const* initrd) {
-	char append_arg[1024] = {'\0'};
-	char initrd_arg[1024] = {'\0'};
+	char append_arg[STACK_BUF];
+	char initrd_arg[STACK_BUF];
 	
 	char* kexec_argv[6] = {NULL};
 	int argn = 1;
@@ -86,11 +86,11 @@ int load_kernel(char const* kernel, char const* append, char const* initrd) {
 	argv_append((char*)kernel);
 	
 	if(append) {
-		snprintf(append_arg, 1023, "--append=%s", append);
+		snprintf(append_arg, STACK_BUF, "--append=%s", append);
 		argv_append(append_arg);
 	}
 	if(initrd) {
-		snprintf(initrd_arg, 1023, "--initrd=%s", initrd);
+		snprintf(initrd_arg, STACK_BUF, "--initrd=%s", initrd);
 		argv_append(initrd_arg);
 	}
 	

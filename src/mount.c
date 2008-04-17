@@ -91,13 +91,12 @@ int mount_config(void) {
 int mount_list(kl_mount* mounts) {
 	kl_mount *mptr = mounts;
 	int depth = 0, n = 0, n2 = 0;
-	char mpoint[1024];
+	char mpoint[STACK_BUF];
 	char *fstype;
 	
 	while(1) {
 		if(mptr->depth == depth) {
-			snprintf(mpoint, 1024, "/mnt%s", mptr->mpoint);
-			mpoint[1023] = '\0';
+			snprintf(mpoint, STACK_BUF, "/mnt%s", mptr->mpoint);
 			
 			fstype = mptr->fstype;
 			
@@ -150,8 +149,7 @@ int mount_list(kl_mount* mounts) {
 				goto DDEPTH;
 			}
 			
-			snprintf(mpoint, 1024, "/mnt%s", mptr->mpoint);
-			mpoint[1023] = '\0';
+			snprintf(mpoint, STACK_BUF, "/mnt%s", mptr->mpoint);
 			
 			debug("Unmounting %s, depth %d\n", mpoint, depth);
 			if(umount(mpoint) == -1) {
@@ -180,7 +178,7 @@ int mount_list(kl_mount* mounts) {
 void unmount_list(kl_mount *mounts) {
 	kl_mount *mptr = mounts;
 	int depth = 0;
-	char mpoint[1024];
+	char mpoint[STACK_BUF];
 	
 	while(mptr) {
 		if(mptr->depth > depth) {
@@ -194,8 +192,7 @@ void unmount_list(kl_mount *mounts) {
 	
 	while(depth >= 0) {
 		if(mptr->depth == depth) {
-			snprintf(mpoint, 1024, "/mnt%s", mptr->mpoint);
-			mpoint[1023] = '\0';
+			snprintf(mpoint, STACK_BUF, "/mnt%s", mptr->mpoint);
 			
 			debug("Unmounting %s, depth %d\n", mpoint, depth);
 			if(umount(mpoint) == -1) {
