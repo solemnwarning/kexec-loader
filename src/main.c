@@ -169,6 +169,13 @@ static void main_menu(void) {
 		
 		MENU_INPUT:
 		
+		console_setpos(rows-3, cols-13);
+		console_eline(ELINE_ALL);
+		
+		if(tremain) {
+			printf("Timeout: %u", tremain);
+		}
+		
 		if(poll(&pollset, 1, (tremain ? 1000 : -1)) == 0) {
 			if(--tremain == 0) {
 				debug("Timeout reached\n");
@@ -176,18 +183,10 @@ static void main_menu(void) {
 				target_run(target);
 				draw_skel();
 				continue;
-			}else{
-				console_setpos(rows-3, cols-13);
-				console_eline(ELINE_ALL);
-				
-				printf("Timeout: %u", tremain);
 			}
 			
 			goto MENU_INPUT;
 		}
-		
-		console_setpos(rows-3, 1);
-		console_eline(ELINE_ALL);
 		
 		tremain = 0;
 		key = getchar();
