@@ -165,7 +165,7 @@ void config_parse(char* line, unsigned int lnum) {
 		}
 		if(target.name[0] != '\0') {
 			if(target_add(&(config.targets), &target) == NULL) {
-				fatal("Can't load config: %s", strerror(errno));
+				debug("Can't add target: %s\n", strerror(errno));
 			}
 			
 			TARGET_DEFAULTS(&target);
@@ -222,7 +222,7 @@ void config_parse(char* line, unsigned int lnum) {
 void config_finish(void) {
 	if(target.name[0] != '\0') {
 		if(target_add(&(config.targets), &target) == NULL) {
-			fatal("Can't load config: %s", strerror(errno));
+			debug("Can't add target: %s\n", strerror(errno));
 		}
 		
 		TARGET_DEFAULTS(&target);
