@@ -83,7 +83,7 @@ int mount_config(void) {
 	return 0;
 }
 
-/* Mount all mounts in a kl_mount list at /mnt
+/* Mount all mounts in a kl_mount list
  *
  * If all mounts are sucessfully mounted 1 is returned, if any mounts fail zero
  * is returned any any already-completed mounts are unmounted
@@ -91,13 +91,10 @@ int mount_config(void) {
 int mount_list(kl_mount* mounts) {
 	kl_mount *mptr = mounts;
 	int depth = 0, n = 0, n2 = 0;
-	char mpoint[STACK_BUF];
 	char *fstype;
 	
 	while(1) {
 		if(mptr->depth == depth) {
-			snprintf(mpoint, STACK_BUF, "/mnt%s", mptr->mpoint);
-			
 			fstype = mptr->fstype;
 			
 			if(str_compare(fstype, "auto", 0)) {
@@ -108,10 +105,10 @@ int mount_list(kl_mount* mounts) {
 				}
 			}
 			
-			debug("Mounting %s at %s, depth %d\n", mptr->device, mpoint, depth);
+			debug("Mounting %s at %s, depth %d\n", mptr->device, mptr->mpoint, depth);
 			
-			if(mount(mptr->device, mpoint, fstype, MS_RDONLY, NULL) == -1) {
-				print(1, "Can't mount %s: %s", mpoint, strerror(errno));
+			if(mount(mptr->device, mptr->mpoint, fstype, MS_RDONLY, NULL) == -1) {
+				print(1, "Can't mount %s: %s", mptr->mpoint, strerror(errno));
 				break;
 			}
 			
@@ -143,11 +140,9 @@ int mount_list(kl_mount* mounts) {
 				goto DDEPTH;
 			}
 			
-			snprintf(mpoint, STACK_BUF, "/mnt%s", mptr->mpoint);
-			
-			debug("Unmounting %s, depth %d\n", mpoint, depth);
-			if(umount(mpoint) == -1) {
-				debug("Can't unmount %s: %s\n", mpoint, strerror(errno));
+			debug("Unmounting %s, depth %d\n", mptr->mpoint, depth);
+			if(umount(mptr->mpoint) == -1) {
+				debug("Can't unmount %s: %s\n", mptr->mpoint, strerror(errno));
 			}
 			
 			n2++;
@@ -166,13 +161,12 @@ int mount_list(kl_mount* mounts) {
 	return 0;
 }
 
-/* Unmount all mounts in a kl_mount list from /mnt
+/* Unmount all mounts in a kl_mount list
  * Continues on errors
 */
 void unmount_list(kl_mount *mounts) {
 	kl_mount *mptr = mounts;
 	int depth = 0;
-	char mpoint[STACK_BUF];
 	
 	while(mptr) {
 		if(mptr->depth > depth) {
@@ -186,11 +180,9 @@ void unmount_list(kl_mount *mounts) {
 	
 	while(depth >= 0) {
 		if(mptr->depth == depth) {
-			snprintf(mpoint, STACK_BUF, "/mnt%s", mptr->mpoint);
-			
-			debug("Unmounting %s, depth %d\n", mpoint, depth);
-			if(umount(mpoint) == -1) {
-				debug("Can't unmount %s: %s\n", mpoint, strerror(errno));
+			debug("Unmounting %s, depth %d\n", mptr->mpoint, depth);
+			if(umount(mptr->mpoint) == -1) {
+				debug("Can't unmount %s: %s\n", mptr->mpoint, strerror(errno));
 			}
 		}
 		

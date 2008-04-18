@@ -69,7 +69,7 @@ static void config_add_mount(unsigned int lnum, char* device, char* mpoint) {
 	MOUNT_DEFAULTS(nptr);
 	
 	strncpy(nptr->device, device, DEVICE_SIZE-1);
-	strncpy(nptr->mpoint, mpoint, MPOINT_SIZE-1);
+	strncpy(nptr->mpoint, "/mnt/", MPOINT_SIZE-1);
 	strncpy(nptr->fstype, fstype, 63);
 	
 	char *mptok = strtok(mpoint, "/");
