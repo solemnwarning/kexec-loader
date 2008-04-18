@@ -18,6 +18,9 @@ Version x.y:
 	
 	Updated config_add_mount() to prepend /mnt/ to kl_mount.mpoint so that
 	an extra buffer isn't required in mount_list() or unmount_list().
+	
+	Updated config_mount() to retry finding the configuration disk upto 3
+	times upon failure with delay increasing with each attempt.
 
 Version 1.1:
 	Removed directives for creating devices, all devices inodes should be
