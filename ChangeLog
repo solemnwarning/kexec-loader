@@ -12,6 +12,12 @@ Version x.y:
 	
 	Added STACK_LIMIT and STACK_BUF macros which configure the maximum
 	stack size and the size of auto buffers.
+	
+	Wrote check_device() function for checking that devices exist before
+	attempting to mount, determine FS type, etc.
+	
+	Updated config_add_mount() to prepend /mnt/ to kl_mount.mpoint so that
+	an extra buffer isn't required in mount_list() or unmount_list().
 
 Version 1.1:
 	Removed directives for creating devices, all devices inodes should be
