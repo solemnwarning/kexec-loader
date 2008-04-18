@@ -133,7 +133,7 @@ void console_eline(char const* mode) {
 }
 
 /* Print a message */
-void print(enum print_lvl level, char const *fmt, ...) {
+void print(int alert, char const *fmt, ...) {
 	va_list argv;
 	va_start(argv, fmt);
 	
@@ -148,12 +148,8 @@ void print(enum print_lvl level, char const *fmt, ...) {
 		
 		console_setpos(1, 1);
 	}
-	if(level == p_alert) {
+	if(alert) {
 		console_state = s_alert;
-	}
-	
-	if(level != p_debug) {
-		printf("%s\n", buf);
 	}
 	
 	va_end(argv);

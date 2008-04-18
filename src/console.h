@@ -55,12 +55,6 @@
 #define ELINE_TOSTART	"1"
 #define ELINE_ALL	"2"
 
-enum print_lvl {
-	p_debug,
-	p_info,
-	p_alert
-};
-
 void console_init(void);
 void console_setpos(int row, int column);
 void console_clear(void);
@@ -70,6 +64,6 @@ void console_attrib(int attrib);
 void console_getsize(int* rows, int* cols);
 void console_eline(char const* mode);
 
-void print(enum print_lvl level, char const *fmt, ...);
+void print(int alert, char const *fmt, ...);
 
 #endif /* !KEXEC_LOADER_CONSOLE_H */
