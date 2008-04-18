@@ -37,9 +37,17 @@
 #include <sys/ioctl.h>
 #include <poll.h>
 #include <sys/klog.h>
+#include <stdarg.h>
 
 #include "../config.h"
 #include "misc.h"
+#include "console.h"
+
+static enum {
+	s_undef,
+	s_msg,
+	s_alert
+} console_state = s_msg;
 
 /* Initialize console(s) */
 void console_init(void) {
@@ -81,14 +89,15 @@ void console_setpos(int row, int column) {
 
 /* Clear the console */
 void console_clear(void) {
-	if(printm_called) {
-		printf("Press any key to continue...\n");
+	if(printm_called || console_state == s_alert) {
+		printf("\nPress any key to continue...\n");
 		getchar();
 		
 		printm_called = 0;
 	}
 	
 	printf("%c[2J", 0x1B);
+	console_state = s_undef;
 }
 
 /* Set foreground (text) colour */
@@ -121,4 +130,31 @@ void console_getsize(int* rows, int* cols) {
 /* Erase the current line */
 void console_eline(char const* mode) {
 	printf("%c[%sK", 0x1B, mode);
+}
+
+/* Print a message */
+void print(enum print_lvl level, char const *fmt, ...) {
+	va_list argv;
+	va_start(argv, fmt);
+	
+	char buf[vsnprintf(NULL, 0, fmt, argv)+1];
+	vsprintf(buf, fmt, argv);
+	
+	debug("%s\n", buf);
+	
+	if(console_state == s_undef) {
+		printf("%c[2J", 0x1B);
+		console_state = s_msg;
+		
+		console_setpos(1, 1);
+	}
+	if(level == p_alert) {
+		console_state = s_alert;
+	}
+	
+	if(level != p_debug) {
+		printf("%s\n", buf);
+	}
+	
+	va_end(argv);
 }
