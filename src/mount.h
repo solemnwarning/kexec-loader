@@ -36,5 +36,6 @@ int mount_config(void);
 int mount_list(kl_mount* mounts);
 void unmount_list(kl_mount *mounts);
 char* detect_fstype(char const *device);
+int check_device(char const *device);
 
 #endif /* !KEXEC_LOADER_MOUNT_H */

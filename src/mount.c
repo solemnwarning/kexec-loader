@@ -274,3 +274,37 @@ char* detect_fstype(char const *device) {
 	
 	return retval;
 }
+
+/* Check if a device is listed in /proc/diskstats
+ * Returns 1 if the device is listed, zero otherwise.
+ *
+ * The supplied device may or may not have the /dev/ prefix.
+*/
+int check_device(char const *device) {
+	char buf[512], *name;
+	int rval = 0;
+	
+	if(strncmp(device, "/dev/", 5) == 0) {
+		device += 5;
+	}
+	
+	FILE *disks = fopen("/proc/diskstats", "r");
+	if(!disks) {
+		debug("Can't open /proc/diskstats: %s\n", strerror(errno));
+		return 0;
+	}
+	
+	while(fgets(buf, 512, disks)) {
+		strtok(buf, " \t");
+		strtok(NULL, " \t");
+		name = strtok(NULL, " \t");
+		
+		if(strcmp(name, device) == 0) {
+			rval = 1;
+			break;
+		}
+	}
+	
+	fclose(disks);
+	return rval;
+}
