@@ -88,7 +88,7 @@ int mount_config(void) {
 		devname = devices[++devnum];
 	}
 	
-	if(rtime > 4) {
+	if(rtime < 4) {
 		print(0, "Can't find disk containing " CONFIG_FILE);
 		print(0, "Retrying in %u seconds...", rtime);
 		
