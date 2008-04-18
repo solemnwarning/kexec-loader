@@ -325,12 +325,10 @@ static void draw_tbline(int rnum) {
  * This only returns on error
 */
 static void target_run(kl_target *target) {
-	debug("Attempting to run '%s'\n", target->name);
-	
 	console_clear();
 	console_setpos(1,1);
 	
-	printm("Loading %s...", target->name);
+	print(0, "Loading %s...", target->name);
 	
 	if(!mount_list(target->mounts)) {
 		return;
@@ -351,8 +349,7 @@ static void target_run(kl_target *target) {
 	
 	int err = errno;
 	
-	debug("Can't execute kernel: %s\n", strerror(err));
-	printm("Can't execute kernel: %s", strerror(err));
+	print(1, "Can't execute kernel: %s", strerror(err));
 }
 
 /* Display a list of devices from /proc/diskstats */
@@ -380,18 +377,18 @@ static void list_devices(void) {
 	
 	FILE *disks = fopen("/proc/diskstats", "r");
 	if(!disks) {
-		printm("Can't open /proc/diskstats: %s", strerror(errno));
+		print(1, "Can't open /proc/diskstats: %s", strerror(errno));
 	}
 	
-	printm("The following disks have been detected by Linux:");
-	printm("");
+	print(1, "The following disks have been detected by Linux:");
+	print(1, "");
 	
 	while(fgets(buf, STACK_BUF, disks)) {
 		major = atoi(strtok(buf, " \t"));
 		minor = atoi(strtok(NULL, " \t"));
 		name = strtok(NULL, " \t");
 		
-		printm("/dev/%s\t(%d, %d)", name, major, minor);
+		print(1, "/dev/%s\t(%d, %d)", name, major, minor);
 	}
 	
 	fclose(disks);

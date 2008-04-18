@@ -40,6 +40,7 @@
 #include "misc.h"
 #include "../config.h"
 #include "config.h"
+#include "console.h"
 
 #define MAGIC_BUF_SIZE (0x1003A)
 
@@ -78,8 +79,7 @@ int mount_config(void) {
 		devname = devices[++devnum];
 	}
 	
-	debug("Can't find disk containing " CONFIG_FILE "\n");
-	printm("Can't find disk containing " CONFIG_FILE);
+	print(1, "Can't find disk containing " CONFIG_FILE);
 	return 0;
 }
 
@@ -103,9 +103,7 @@ int mount_list(kl_mount* mounts) {
 			if(str_compare(fstype, "auto", 0)) {
 				fstype = detect_fstype(mptr->device);
 				if(!fstype) {
-					debug("Unknown filesystem on %s\n", mptr->device);
-					printm("Unknown filesystem on %s", mptr->device);
-					
+					print(1, "Unknown filesystem on %s", mptr->device);
 					break;
 				}
 			}
@@ -113,11 +111,7 @@ int mount_list(kl_mount* mounts) {
 			debug("Mounting %s at %s, depth %d\n", mptr->device, mpoint, depth);
 			
 			if(mount(mptr->device, mpoint, fstype, MS_RDONLY, NULL) == -1) {
-				int err = errno;
-				
-				debug("Can't mount %s: %s\n", mpoint, strerror(err));
-				printm("Can't mount %s: %s", mpoint, strerror(err));
-				
+				print(1, "Can't mount %s: %s", mpoint, strerror(errno));
 				break;
 			}
 			
@@ -218,7 +212,7 @@ char* detect_fstype(char const *device) {
 			continue;
 		}
 		
-		printm("Can't open %s: %s", device, strerror(errno));
+		print(1, "Can't open %s: %s", device, strerror(errno));
 		return NULL;
 	}
 	
@@ -275,7 +269,7 @@ char* detect_fstype(char const *device) {
 			continue;
 		}
 		
-		printm("Can't close %s: %s", device, strerror(errno));
+		print(1, "Can't close %s: %s", device, strerror(errno));
 	}
 	
 	return retval;

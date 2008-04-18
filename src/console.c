@@ -89,11 +89,9 @@ void console_setpos(int row, int column) {
 
 /* Clear the console */
 void console_clear(void) {
-	if(printm_called || console_state == s_alert) {
+	if(console_state == s_alert) {
 		printf("\nPress any key to continue...\n");
 		getchar();
-		
-		printm_called = 0;
 	}
 	
 	printf("%c[2J", 0x1B);

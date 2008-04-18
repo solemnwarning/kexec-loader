@@ -41,8 +41,6 @@
 #include "../config.h"
 #include "console.h"
 
-int printm_called = 0;
-
 /* Error checking malloc() wrapper, also zeros memory */
 void* allocate_r(char const* file, unsigned int line, size_t size) {
 	void* ptr = malloc(size);
@@ -72,19 +70,6 @@ void fatal(char const* fmt, ...) {
 	while(1) {
 		sleep(9999);
 	}
-}
-
-/* Print a message to the console */
-void printm(char const* fmt, ...) {
-	va_list argv;
-	va_start(argv, fmt);
-	
-	vprintf(fmt, argv);
-	putchar('\n');
-	
-	va_end(argv);
-	
-	printm_called = 1;
 }
 
 /* Write a message to the debug console */

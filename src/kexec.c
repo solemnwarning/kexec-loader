@@ -40,6 +40,7 @@
 #include "kexec.h"
 #include "misc.h"
 #include "../config.h"
+#include "console.h"
 
 #define argv_append(str) kexec_argv[argn++] = str;
 
@@ -50,14 +51,14 @@
 static int run_kexec(char** kexec_argv) {
 	pid_t newpid = fork();
 	if(newpid == -1) {
-		printm("Can't fork: %s", strerror(errno));
+		print(1, "Can't fork: %s", strerror(errno));
 		return(-1);
 	}
 	if(newpid == 0) {
 		kexec_argv[0] = KEXEC_PATH;
 		execv(KEXEC_PATH, kexec_argv);
 		
-		printm("Can't run kexec: %s", strerror(errno));
+		print(1, "Can't run kexec: %s", strerror(errno));
 		exit(-1);
 	}
 	
@@ -95,7 +96,7 @@ int load_kernel(char const* kernel, char const* append, char const* initrd) {
 	}
 	
 	if(run_kexec(kexec_argv) != 0) {
-		printm("run_kexec() returned nonzero");
+		print(1, "run_kexec() returned nonzero");
 		return(0);
 	}
 	
