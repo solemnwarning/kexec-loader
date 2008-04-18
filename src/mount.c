@@ -58,10 +58,19 @@ int mount_config(void) {
 		NULL
 	};
 	
-	unsigned int devnum = 0;
-	char const* devname = devices[0];
+	unsigned int devnum, rtime = 1;
+	char const* devname;
+	
+	RETRY:
+	devnum = 0;
+	devname = devices[0];
 	
 	while(devname) {
+		if(!check_device(devname)) {
+			debug("Skipping %s (Unknown device)\n", devname);
+			goto ENDLOOP;
+		}
+		
 		if(mount(devname, "/mnt", BOOTFS_TYPE, MS_RDONLY, NULL) == -1) {
 			debug("Can't mount %s at /mnt: %s\n", devname, strerror(errno));
 			goto ENDLOOP;
@@ -79,7 +88,18 @@ int mount_config(void) {
 		devname = devices[++devnum];
 	}
 	
+	if(rtime > 4) {
+		print(0, "Can't find disk containing " CONFIG_FILE);
+		print(0, "Retrying in %u seconds...", rtime);
+		
+		sleep(rtime);
+		rtime *= 2;
+		
+		goto RETRY;
+	}
+	
 	print(1, "Can't find disk containing " CONFIG_FILE);
+	print(1, "Giving up, configuration not loaded");
 	return 0;
 }
 
