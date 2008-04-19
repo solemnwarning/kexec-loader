@@ -82,7 +82,6 @@ int main(int argc, char** argv) {
 	
 	kmsg_monitor();
 	console_init();
-	config_load();
 	
 	console_getsize(&rows, &cols);
 	erow = rows-5;
@@ -92,12 +91,18 @@ int main(int argc, char** argv) {
 	debug("srow = %d, erow = %d\n", srow, erow);
 	debug("scol = %d, ecol = %d\n", scol, ecol);
 	
-	main_menu();
+	while(1) {
+		config_load();
+		main_menu();
+	}
+	
 	return 1;
 }
 
 /* Display main menu
- * This function never returns
+ *
+ * This function returns when the configuration should be reloaded, call
+ * config_load() then call main_menu() again.
 */
 static void main_menu(void) {
 	draw_skel();
@@ -263,6 +268,11 @@ static void main_menu(void) {
 			
 			continue;
 		}
+		if(key == 'r' || key == 'R') {
+			console_clear();
+			console_setpos(1,1);
+			return;
+		}
 	}
 }
 
@@ -302,7 +312,7 @@ static void draw_skel(void) {
 	}
 	
 	console_setpos(rows-1, 2);
-	printf("Press L to list detected devices");
+	printf("Press L to list detected devices, R to reload configuration");
 }
 
 /* Draw a +----+ line along one row */
