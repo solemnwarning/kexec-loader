@@ -51,14 +51,14 @@
 static int run_kexec(char** kexec_argv) {
 	pid_t newpid = fork();
 	if(newpid == -1) {
-		print(1, "Can't fork: %s", strerror(errno));
+		printD("Can't fork: %s", strerror(errno));
 		return(-1);
 	}
 	if(newpid == 0) {
 		kexec_argv[0] = KEXEC_PATH;
 		execv(KEXEC_PATH, kexec_argv);
 		
-		print(1, "Can't run kexec: %s", strerror(errno));
+		printD("Can't run kexec: %s", strerror(errno));
 		exit(-1);
 	}
 	
@@ -96,7 +96,7 @@ int load_kernel(char const* kernel, char const* append, char const* initrd) {
 	}
 	
 	if(run_kexec(kexec_argv) != 0) {
-		print(1, "run_kexec() returned nonzero");
+		printD("run_kexec() returned nonzero");
 		return(0);
 	}
 	

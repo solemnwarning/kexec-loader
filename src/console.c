@@ -133,29 +133,6 @@ void console_eline(char const* mode) {
 	printf("%c[%sK", 0x1B, mode);
 }
 
-/* Print a message */
-void print(int alert, char const *fmt, ...) {
-	va_list argv;
-	va_start(argv, fmt);
-	
-	char buf[vsnprintf(NULL, 0, fmt, argv)+1];
-	vsprintf(buf, fmt, argv);
-	
-	debug("%s\n", buf);
-	
-	if(console_state == s_undef) {
-		printf("%c[2J", 0x1B);
-		console_state = s_msg;
-		
-		console_setpos(1, 1);
-	}
-	if(alert) {
-		console_state = s_alert;
-	}
-	
-	va_end(argv);
-}
-
 /* Print output */
 void print2(int flags, char const *fmt, ...) {
 	va_list argv;

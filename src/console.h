@@ -73,7 +73,6 @@ void console_attrib(int attrib);
 void console_getsize(int* rows, int* cols);
 void console_eline(char const* mode);
 
-void print(int alert, char const *fmt, ...);
 void print2(int flags, char const *fmt, ...);
 
 #endif /* !KEXEC_LOADER_CONSOLE_H */

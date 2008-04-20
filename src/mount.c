@@ -121,15 +121,16 @@ int mount_list(kl_mount* mounts) {
 			if(str_compare(fstype, "auto", 0)) {
 				fstype = detect_fstype(mptr->device);
 				if(!fstype) {
-					print(1, "Unknown filesystem on %s", mptr->device);
+					printD("Unknown filesystem on %s", mptr->device);
 					break;
 				}
 			}
 			
 			debug("Mounting %s at %s, depth %d\n", mptr->device, mptr->mpoint, depth);
+			printm("Mounting %s at %s...", mptr->device, mptr->mpoint);
 			
 			if(mount(mptr->device, mptr->mpoint, fstype, MS_RDONLY, NULL) == -1) {
-				print(1, "Can't mount %s: %s", mptr->mpoint, strerror(errno));
+				printD("Can't mount %s: %s", mptr->mpoint, strerror(errno));
 				break;
 			}
 			
@@ -202,6 +203,8 @@ void unmount_list(kl_mount *mounts) {
 	while(depth >= 0) {
 		if(mptr->depth == depth) {
 			debug("Unmounting %s, depth %d\n", mptr->mpoint, depth);
+			printm("Unmounting %s...", mptr->mpoint);
+			
 			if(umount(mptr->mpoint) == -1) {
 				debug("Can't unmount %s: %s\n", mptr->mpoint, strerror(errno));
 			}
@@ -225,7 +228,7 @@ char* detect_fstype(char const *device) {
 			continue;
 		}
 		
-		print(1, "Can't open %s: %s", device, strerror(errno));
+		printD("Can't open %s: %s", device, strerror(errno));
 		return NULL;
 	}
 	
@@ -282,7 +285,7 @@ char* detect_fstype(char const *device) {
 			continue;
 		}
 		
-		print(1, "Can't close %s: %s", device, strerror(errno));
+		printD("Can't close %s: %s", device, strerror(errno));
 	}
 	
 	return retval;

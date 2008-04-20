@@ -322,7 +322,7 @@ static void target_run(kl_target *target) {
 	console_clear();
 	console_setpos(1,1);
 	
-	print(0, "Loading %s...", target->name);
+	printd("Loading %s...", target->name);
 	
 	if(!mount_list(target->mounts)) {
 		return;
@@ -341,9 +341,7 @@ static void target_run(kl_target *target) {
 		LINUX_REBOOT_CMD_KEXEC, NULL
 	);
 	
-	int err = errno;
-	
-	print(1, "Can't execute kernel: %s", strerror(err));
+	printD("Can't execute kernel: %s", strerror(errno));
 }
 
 /* Display a list of devices from /proc/diskstats */
@@ -358,18 +356,18 @@ static void list_devices(void) {
 	
 	FILE *disks = fopen("/proc/diskstats", "r");
 	if(!disks) {
-		print(1, "Can't open /proc/diskstats: %s", strerror(errno));
+		printD("Can't open /proc/diskstats: %s", strerror(errno));
 	}
 	
-	print(1, "The following disks have been detected by Linux:");
-	print(1, "");
+	printM("The following disks have been detected by Linux:");
+	printM("");
 	
 	while(fgets(buf, STACK_BUF, disks)) {
 		major = atoi(strtok(buf, " \t"));
 		minor = atoi(strtok(NULL, " \t"));
 		name = strtok(NULL, " \t");
 		
-		print(1, "/dev/%s\t(%d, %d)", name, major, minor);
+		printM("/dev/%s\t(%d, %d)", name, major, minor);
 	}
 	
 	fclose(disks);
