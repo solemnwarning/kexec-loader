@@ -52,6 +52,7 @@ static void draw_skel(void);
 static void draw_tbline(int rnum);
 static void target_run(kl_target *target);
 static void list_devices(void);
+static void print_header(void);
 
 static int rows = 25, cols = 80;
 static int srow = 4, erow = 0;
@@ -278,23 +279,10 @@ static void main_menu(void) {
 
 /* Clear the screen and draw the menu skeleton */
 static void draw_skel(void) {
-	int rnum, cnum;
+	int rnum;
 	
 	console_clear();
-	console_attrib(CONS_INVERT);
-	
-	console_setpos(1, 1);
-	for(cnum = 1; cnum <= cols; cnum++) {
-		putchar(' ');
-	}
-	
-	console_setpos(1, 2);
-	printf("kexec-loader " VERSION);
-	
-	console_setpos(1, cols-strlen(COPYRIGHT)-1);
-	printf(COPYRIGHT);
-	
-	console_attrib(CONS_RESET);
+	print_header();
 	
 	draw_tbline(srow-1);
 	draw_tbline(erow+1);
@@ -362,23 +350,10 @@ static void target_run(kl_target *target) {
 static void list_devices(void) {
 	char buf[STACK_BUF];
 	char *name;
-	int major, minor, cnum;
+	int major, minor;
 	
 	console_clear();
-	console_attrib(CONS_INVERT);
-	
-	console_setpos(1, 1);
-	for(cnum = 1; cnum <= cols; cnum++) {
-		putchar(' ');
-	}
-	
-	console_setpos(1, 2);
-	printf("kexec-loader " VERSION);
-	
-	console_setpos(1, cols-strlen(COPYRIGHT)-1);
-	printf(COPYRIGHT);
-	
-	console_attrib(CONS_RESET);
+	print_header();
 	console_setpos(3, 1);
 	
 	FILE *disks = fopen("/proc/diskstats", "r");
@@ -398,4 +373,33 @@ static void list_devices(void) {
 	}
 	
 	fclose(disks);
+}
+
+/* Print version/copyright header at row 1 */
+static void print_header(void) {
+	int cnum, n = 0;
+	
+	char *version = "kexec-loader " VERSION;
+	char *copyright = COPYRIGHT;
+	
+	size_t version_l = strlen(version);
+	size_t copyright_l = strlen(copyright);
+	
+	console_attrib(CONS_INVERT);
+	console_setpos(1, 1);
+	
+	for(cnum = 1; cnum <= cols; cnum++) {
+		if(cnum > 1 && (cnum-1) <= version_l) {
+			putchar(version[cnum-1]);
+			continue;
+		}
+		if(cnum != cols && (cnum+copyright_l) >= cols) {
+			putchar(copyright[n++]);
+			continue;
+		}
+		
+		putchar(' ');
+	}
+	
+	console_attrib(CONS_RESET);
 }
