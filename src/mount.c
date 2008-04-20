@@ -76,7 +76,7 @@ int mount_config(void) {
 			goto ENDLOOP;
 		}
 		if(access("/mnt/" CONFIG_FILE, F_OK) == 0) {
-			debug("Found " CONFIG_FILE " on %s\n", devname);
+			printd("Found " CONFIG_FILE " on %s", devname);
 			return 1;
 		}
 		
@@ -89,8 +89,8 @@ int mount_config(void) {
 	}
 	
 	if(rtime < 4) {
-		print(0, "Can't find disk containing " CONFIG_FILE);
-		print(0, "Retrying in %u seconds...", rtime);
+		printd("Can't find disk containing " CONFIG_FILE);
+		printd("Retrying in %u seconds...", rtime);
 		
 		sleep(rtime);
 		rtime *= 2;
@@ -98,8 +98,10 @@ int mount_config(void) {
 		goto RETRY;
 	}
 	
-	print(1, "Can't find disk containing " CONFIG_FILE);
-	print(1, "Giving up, configuration not loaded");
+	printd("Can't find disk containing " CONFIG_FILE);
+	printd("Giving up, configuration not loaded");
+	anykey();
+	
 	return 0;
 }
 

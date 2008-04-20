@@ -44,8 +44,16 @@
 #include "mount.h"
 #include "console.h"
 
+#define cfg_error(...) \
+do { \
+	printd(__VA_ARGS__); \
+	do_anykey = 1; \
+} while(0);
+
 struct kl_config config = CONFIG_DEFAULTS_DEFINE;
 static struct kl_target target = TARGET_DEFAULTS_DEFINE;
+
+static int do_anykey;
 
 /* Add a mount
  * This changes the device string passed to it
@@ -62,7 +70,7 @@ static void config_add_mount(unsigned int lnum, char* device, char* mpoint) {
 	
 	kl_mount *nptr = malloc(sizeof(kl_mount));
 	if(!nptr) {
-		print(1, "config:%u: Can't allocate memory", lnum);
+		cfg_error("config:%u: Can't allocate memory", lnum);
 		
 		return;
 	}
@@ -98,17 +106,17 @@ static void config_add_mount(unsigned int lnum, char* device, char* mpoint) {
 /* Add a target to config.targets */
 static void cfg_add_target(void) {
 	if(target.kernel[0] == '\0') {
-		print(1, "Target %s has no kernel, not adding", target.name);
+		cfg_error("Target %s has no kernel, not adding", target.name);
 		goto END;
 	}
 	if(!target.mounts) {
-		print(1, "Target %s has no mounts, not adding", target.name);
+		cfg_error("Target %s has no mounts, not adding", target.name);
 		goto END;
 	}
 	
 	kl_target *nptr = malloc(sizeof(kl_target));
 	if(!nptr) {
-		debug("Can't malloc() %u bytes\n", sizeof(kl_target));
+		cfg_error("Can't malloc() %u bytes\n", sizeof(kl_target));
 		goto END;
 	}
 	
@@ -142,23 +150,20 @@ static void cfg_add_target(void) {
  * or may not be loaded.
 */
 void config_load(void) {
+	do_anykey = 0;
+	
 	if(!mount_config()) {
 		return;
 	}
 	
 	TARGET_DEFAULTS(&target);
 	
-	FILE* cfg_handle = NULL;
-	while(cfg_handle == NULL) {
-		if((cfg_handle = fopen("/mnt/" CONFIG_FILE, "r")) != NULL) {
-			break;
-		}
-		if(errno == EINTR) {
-			continue;
-		}
+	FILE* cfg_handle = fopen("/mnt/" CONFIG_FILE, "r");
+	if(!cfg_handle) {
+		printd("Can't open " CONFIG_FILE ": %s", strerror(errno));
+		anykey();
 		
-		debug("Can't open " CONFIG_FILE ": %s\n", strerror(errno));
-		return;
+		goto UMOUNT;
 	}
 	
 	config.timeout = 0;
@@ -182,8 +187,13 @@ void config_load(void) {
 		return;
 	}
 	
+	UMOUNT:
 	if(umount("/mnt") == -1) {
 		debug("Can't unmount /mnt: %s\n", strerror(errno));
+	}
+	
+	if(do_anykey) {
+		anykey();
 	}
 }
 
@@ -220,8 +230,7 @@ void config_parse(char* line, unsigned int lnum) {
 		}
 		
 		if(value[0] == '\0') {
-			print(1, "config:%u: Title requires an argument", lnum);
-			
+			cfg_error("config:%u: Title requires an argument", lnum);
 			return;
 		}
 		
@@ -231,8 +240,7 @@ void config_parse(char* line, unsigned int lnum) {
 	}
 	if(str_compare(name, "kernel", STR_NOCASE)) {
 		if(value[0] == '\0') {
-			print(1, "config:%u: Kernel requires an argument", lnum);
-			
+			cfg_error("config:%u: Kernel requires an argument", lnum);
 			return;
 		}
 		
@@ -242,7 +250,7 @@ void config_parse(char* line, unsigned int lnum) {
 	}
 	if(str_compare(name, "initrd", STR_NOCASE)) {
 		if(value[0] == '\0') {
-			print(1, "config:%u: initrd requires an argument", lnum);
+			cfg_error("config:%u: initrd requires an argument", lnum);
 			return;
 		}
 		
@@ -252,7 +260,7 @@ void config_parse(char* line, unsigned int lnum) {
 	}
 	if(str_compare(name, "append", STR_NOCASE)) {
 		if(value[0] == '\0') {
-			print(1, "config:%u: Append requires an argument", lnum);
+			cfg_error("config:%u: Append requires an argument", lnum);
 			return;
 		}
 		
@@ -266,7 +274,7 @@ void config_parse(char* line, unsigned int lnum) {
 	}
 	if(str_compare(name, "rootfs", STR_NOCASE)) {
 		if(value[0] == '\0') {
-			print(1, "config:%u: RootFS requires an argument", lnum);
+			cfg_error("config:%u: RootFS requires an argument", lnum);
 			return;
 		}
 		
@@ -276,14 +284,14 @@ void config_parse(char* line, unsigned int lnum) {
 	if(str_compare(name, "mount", STR_NOCASE)) {
 		char* mpoint = strchr(value, ' ');
 		if(mpoint == NULL) {
-			print(1, "config:%u: Invalid mount", lnum);
+			cfg_error("config:%u: Invalid mount", lnum);
 			return;
 		}
 		mpoint[0] = '\0';
 		mpoint += (strspn(mpoint+1, " \t")+1);
 		
 		if(value[0] == '\0' || mpoint[0] == '\0') {
-			print(1, "config:%u: Invalid mount", lnum);
+			cfg_error("config:%u: Invalid mount", lnum);
 			return;
 		}
 		
@@ -291,7 +299,7 @@ void config_parse(char* line, unsigned int lnum) {
 		return;
 	}
 	
-	print(1, "config:%u: Unknown directive '%s'", lnum, name);
+	cfg_error("config:%u: Unknown directive '%s'", lnum, name);
 }
 
 /* Add the remaining target, if it exists */

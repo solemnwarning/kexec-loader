@@ -40,6 +40,18 @@
 #define STR_WILDCARD1	8	/* Parse wildcard characters * and ? in str1 */
 #define STR_WILDCARD2	16	/* Parse wildcard characters * and ? in str2 */
 
+#define printd(fmt, ...) \
+do { \
+	debug(fmt "\n", ## __VA_ARGS__); \
+	printf(fmt "\n", ## __VA_ARGS__); \
+} while(0);
+
+#define anykey() \
+do { \
+	printf("\nPress any key to continue..."); \
+	getchar(); \
+} while(0);
+
 #define allocate(size) allocate_r(__FILE__, __LINE__, size)
 void* allocate_r(char const* file, unsigned int line, size_t size);
 
