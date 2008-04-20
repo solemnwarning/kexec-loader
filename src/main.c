@@ -301,14 +301,10 @@ static void draw_skel(void) {
 	
 	for(rnum = srow; rnum <= erow; rnum++) {
 		console_setpos(rnum, 1);
+		putchar('|');
 		
-		for(cnum = 1; cnum <= cols; cnum++) {
-			if(cnum == 1 || cnum == cols) {
-				putchar('|');
-			}else{
-				putchar(' ');
-			}
-		}
+		console_setpos(rnum, rows);
+		putchar('|');
 	}
 	
 	console_setpos(rows-1, 2);
