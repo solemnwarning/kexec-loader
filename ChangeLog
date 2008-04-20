@@ -21,6 +21,12 @@ Version x.y:
 	
 	Updated config_mount() to retry finding the configuration disk upto 3
 	times upon failure with delay increasing with each attempt.
+	
+	Optimised some of the screen drawing code to not write pointless
+	characters to the console.
+	
+	Implemented new console output API: printm(), printM(), printd() and
+	printD() which are macro wrappers around print2().
 
 Version 1.1:
 	Removed directives for creating devices, all devices inodes should be
