@@ -49,6 +49,8 @@ static enum {
 	s_alert
 } console_state = s_msg;
 
+static int alert = 0;
+
 /* Initialize console(s) */
 void console_init(void) {
 	debug("Disabling printk() to console...\n");
@@ -89,13 +91,14 @@ void console_setpos(int row, int column) {
 
 /* Clear the console */
 void console_clear(void) {
-	if(console_state == s_alert) {
-		printf("\nPress any key to continue...\n");
+	if(console_state == s_alert || alert) {
+		printf("\nPress any key to continue...\a");
 		getchar();
 	}
 	
 	printf("%c[2J", 0x1B);
 	console_state = s_undef;
+	alert = 0;
 }
 
 /* Set foreground (text) colour */
@@ -151,4 +154,25 @@ void print(int alert, char const *fmt, ...) {
 	}
 	
 	va_end(argv);
+}
+
+/* Print output */
+void print2(int flags, char const *fmt, ...) {
+	va_list argv;
+	va_start(argv, fmt);
+	
+	char msg[vsnprintf(NULL, 0, fmt, argv)];
+	vsprintf(msg, fmt, argv);
+	
+	va_end(argv);
+	
+	if(flags & P2_DEBUG) {
+		debug("%s\n", msg);
+	}
+	
+	if(flags & P2_ALERT) {
+		alert = 1;
+	}
+	
+	puts(msg);
 }

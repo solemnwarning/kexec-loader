@@ -98,9 +98,8 @@ int mount_config(void) {
 		goto RETRY;
 	}
 	
-	printd("Can't find disk containing " CONFIG_FILE);
-	printd("Giving up, configuration not loaded");
-	anykey();
+	printD("Can't find disk containing " CONFIG_FILE);
+	printD("Giving up, configuration not loaded");
 	
 	return 0;
 }

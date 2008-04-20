@@ -55,6 +55,15 @@
 #define ELINE_TOSTART	"1"
 #define ELINE_ALL	"2"
 
+/* Flags for print2() */
+#define P2_DEBUG	(1<<0)
+#define P2_ALERT	(1<<1)
+
+#define printd(...) print2(P2_DEBUG, __VA_ARGS__);
+#define printD(...) print2(P2_DEBUG | P2_ALERT, __VA_ARGS__);
+#define printm(...) print2(0, __VA_ARGS__);
+#define printM(...) print2(P2_ALERT, __VA_ARGS__);
+
 void console_init(void);
 void console_setpos(int row, int column);
 void console_clear(void);
@@ -65,5 +74,6 @@ void console_getsize(int* rows, int* cols);
 void console_eline(char const* mode);
 
 void print(int alert, char const *fmt, ...);
+void print2(int flags, char const *fmt, ...);
 
 #endif /* !KEXEC_LOADER_CONSOLE_H */
