@@ -53,6 +53,7 @@ static void draw_tbline(int rnum);
 static void target_run(kl_target *target);
 static void list_devices(void);
 static void print_header(void);
+static void prepare_text(void);
 
 static int rows = 25, cols = 80;
 static int srow = 4, erow = 0;
@@ -206,6 +207,7 @@ static void main_menu(void) {
 			if(--tremain == 0) {
 				debug("Timeout reached\n");
 				
+				prepare_text();
 				target_run(target);
 				draw_skel();
 				continue;
@@ -224,6 +226,7 @@ static void main_menu(void) {
 				goto MENU_INPUT;
 			}
 			
+			prepare_text();
 			target_run(target);
 			draw_skel();
 			continue;
@@ -264,14 +267,14 @@ static void main_menu(void) {
 		}
 		
 		if(key == 'l' || key == 'L') {
+			prepare_text();
 			list_devices();
 			draw_skel();
 			
 			continue;
 		}
 		if(key == 'r' || key == 'R') {
-			console_clear();
-			console_setpos(1,1);
+			prepare_text();
 			return;
 		}
 	}
@@ -319,9 +322,6 @@ static void draw_tbline(int rnum) {
  * This only returns on error
 */
 static void target_run(kl_target *target) {
-	console_clear();
-	console_setpos(1,1);
-	
 	printd("Loading %s...", target->name);
 	
 	if(!mount_list(target->mounts)) {
@@ -349,10 +349,6 @@ static void list_devices(void) {
 	char buf[STACK_BUF];
 	char *name;
 	int major, minor;
-	
-	console_clear();
-	print_header();
-	console_setpos(3, 1);
 	
 	FILE *disks = fopen("/proc/diskstats", "r");
 	if(!disks) {
@@ -400,4 +396,12 @@ static void print_header(void) {
 	}
 	
 	console_attrib(CONS_RESET);
+}
+
+/* Prepare the console for basic text usage */
+static void prepare_text(void) {
+	console_clear();
+	print_header();
+	
+	console_setpos(3,1);
 }
