@@ -43,12 +43,6 @@
 #include "misc.h"
 #include "console.h"
 
-static enum {
-	s_undef,
-	s_msg,
-	s_alert
-} console_state = s_msg;
-
 static int alert = 0;
 
 /* Initialize console(s) */
@@ -91,13 +85,12 @@ void console_setpos(int row, int column) {
 
 /* Clear the console */
 void console_clear(void) {
-	if(console_state == s_alert || alert) {
+	if(alert) {
 		printf("\nPress any key to continue...\a");
 		getchar();
 	}
 	
 	printf("%c[2J", 0x1B);
-	console_state = s_undef;
 	alert = 0;
 }
 
