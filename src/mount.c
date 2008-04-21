@@ -111,7 +111,7 @@ int mount_config(void) {
 */
 int mount_list(kl_mount* mounts) {
 	kl_mount *mptr = mounts;
-	int depth = 0, n = 0, n2 = 0;
+	int depth = 0, n = 0, n2 = 0, errnum;
 	char *fstype;
 	
 	while(1) {
@@ -127,11 +127,20 @@ int mount_list(kl_mount* mounts) {
 			}
 			
 			debug("Mounting %s at %s, depth %d\n", mptr->device, mptr->mpoint, depth);
-			printm("Mounting %s at %s...", mptr->device, mptr->mpoint);
+			printf("Mounting %s at %s... ", mptr->device, mptr->mpoint);
 			
 			if(mount(mptr->device, mptr->mpoint, fstype, MS_RDONLY, NULL) == -1) {
-				printD("Can't mount %s: %s", mptr->mpoint, strerror(errno));
+				errnum = errno;
+				
+				debug(
+					"Can't mount %s: %s\n",
+					mptr->mpoint, strerror(errnum)
+				);
+				
+				printM("%s", strerror(errnum));
 				break;
+			}else{
+				printm("OK");
 			}
 			
 			n++;
