@@ -64,6 +64,10 @@
 #define printm(...) print2(0, __VA_ARGS__);
 #define printM(...) print2(P2_ALERT, __VA_ARGS__);
 
+#define TEXT_RED() console_fgcolour(CONS_RED);
+#define TEXT_GREEN() console_fgcolour(CONS_GREEN);
+#define TEXT_WHITE() console_fgcolour(CONS_WHITE);
+
 void console_init(void);
 void console_setpos(int row, int column);
 void console_clear(void);

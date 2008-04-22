@@ -111,36 +111,41 @@ int mount_config(void) {
 */
 int mount_list(kl_mount* mounts) {
 	kl_mount *mptr = mounts;
-	int depth = 0, n = 0, n2 = 0, errnum;
+	int depth = 0, n = 0, n2 = 0;
 	char *fstype;
 	
 	while(1) {
 		if(mptr->depth == depth) {
+			TEXT_GREEN();
+			printd("> Mounting %s at %s", mptr->device, mptr->mpoint);
+			
+			if(!check_device(mptr->device)) {
+				TEXT_RED();
+				printD(">> Device does not exist");
+				
+				break;
+			}
+			
 			fstype = mptr->fstype;
 			
 			if(str_compare(fstype, "auto", 0)) {
 				fstype = detect_fstype(mptr->device);
 				if(!fstype) {
-					printD("Unknown filesystem on %s", mptr->device);
+					TEXT_RED();
+					printD(">> Unknown filesystem on %s", mptr->device);
+					
 					break;
+				}else{
+					TEXT_GREEN();
+					printd(">> Filesystem type is %s", fstype);
 				}
 			}
 			
-			debug("Mounting %s at %s, depth %d\n", mptr->device, mptr->mpoint, depth);
-			printf("Mounting %s at %s... ", mptr->device, mptr->mpoint);
-			
 			if(mount(mptr->device, mptr->mpoint, fstype, MS_RDONLY, NULL) == -1) {
-				errnum = errno;
+				TEXT_RED();
+				printD(">> Mount failed: %s", strerror(errno));
 				
-				debug(
-					"Can't mount %s: %s\n",
-					mptr->mpoint, strerror(errnum)
-				);
-				
-				printM("%s", strerror(errnum));
 				break;
-			}else{
-				printm("OK");
 			}
 			
 			n++;
@@ -148,6 +153,7 @@ int mount_list(kl_mount* mounts) {
 		
 		if((mptr = mptr->next) == NULL) {
 			if(n == 0) {
+				TEXT_WHITE();
 				return 1;
 			}
 			
@@ -171,9 +177,12 @@ int mount_list(kl_mount* mounts) {
 				goto DDEPTH;
 			}
 			
-			debug("Unmounting %s, depth %d\n", mptr->mpoint, depth);
+			TEXT_GREEN();
+			printd("> Unmounting %s", mptr->mpoint);
+			
 			if(umount(mptr->mpoint) == -1) {
-				debug("Can't unmount %s: %s\n", mptr->mpoint, strerror(errno));
+				TEXT_RED();
+				printD(">> Unmount failed: %s", strerror(errno));
 			}
 			
 			n2++;
@@ -189,6 +198,7 @@ int mount_list(kl_mount* mounts) {
 		}
 	}
 	
+	TEXT_WHITE();
 	return 0;
 }
 
@@ -211,11 +221,12 @@ void unmount_list(kl_mount *mounts) {
 	
 	while(depth >= 0) {
 		if(mptr->depth == depth) {
-			debug("Unmounting %s, depth %d\n", mptr->mpoint, depth);
-			printm("Unmounting %s...", mptr->mpoint);
+			TEXT_GREEN();
+			printD("> Unmounting %s", mptr->mpoint);
 			
 			if(umount(mptr->mpoint) == -1) {
-				debug("Can't unmount %s: %s\n", mptr->mpoint, strerror(errno));
+				TEXT_RED();
+				printD(">> Unmount failed: %s", strerror(errno));
 			}
 		}
 		
@@ -224,6 +235,8 @@ void unmount_list(kl_mount *mounts) {
 			mptr = mounts;
 		}
 	}
+	
+	TEXT_WHITE();
 }
 
 /* Attempt to detect the filesystem format of a device or file
@@ -237,7 +250,10 @@ char* detect_fstype(char const *device) {
 			continue;
 		}
 		
-		printD("Can't open %s: %s", device, strerror(errno));
+		TEXT_RED();
+		printD(">> Can't open device: %s", strerror(errno));
+		TEXT_WHITE();
+		
 		return NULL;
 	}
 	
@@ -294,9 +310,11 @@ char* detect_fstype(char const *device) {
 			continue;
 		}
 		
-		printD("Can't close %s: %s", device, strerror(errno));
+		TEXT_RED();
+		printD(">> Can't close device: %s", strerror(errno));
 	}
 	
+	TEXT_WHITE();
 	return retval;
 }
 

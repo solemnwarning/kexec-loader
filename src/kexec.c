@@ -51,14 +51,20 @@
 static int run_kexec(char** kexec_argv) {
 	pid_t newpid = fork();
 	if(newpid == -1) {
-		printD("Can't fork: %s", strerror(errno));
+		TEXT_RED();
+		printD(">> Can't fork: %s", strerror(errno));
+		TEXT_WHITE();
+		
 		return(-1);
 	}
 	if(newpid == 0) {
 		kexec_argv[0] = KEXEC_PATH;
 		execv(KEXEC_PATH, kexec_argv);
 		
-		printD("Can't run kexec: %s", strerror(errno));
+		TEXT_RED();
+		printD(">> Can't run kexec: %s", strerror(errno));
+		TEXT_WHITE();
+		
 		exit(-1);
 	}
 	
@@ -86,21 +92,24 @@ int load_kernel(char const* kernel, char const* append, char const* initrd) {
 	argv_append("-l");
 	argv_append((char*)kernel);
 	
-	printd("Loading kernel...");
-	printd("\tkernel: %s", kernel);
+	TEXT_GREEN();
+	printd("> Loading kernel...");
+	printd(">> kernel: %s", kernel);
 	
 	if(append[0] != '\0') {
 		snprintf(append_arg, STACK_BUF, "--append=%s", append);
 		argv_append(append_arg);
 		
-		printd("\tappend: %s", append);
+		printd(">> append: %s", append);
 	}
 	if(initrd[0] != '\0') {
 		snprintf(initrd_arg, STACK_BUF, "--initrd=%s", initrd);
 		argv_append(initrd_arg);
 		
-		printd("\tinitrd: %s", initrd);
+		printd(">> initrd: %s", initrd);
 	}
+	
+	TEXT_WHITE();
 	
 	if(run_kexec(kexec_argv) != 0) {
 		return 0;

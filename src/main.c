@@ -323,6 +323,7 @@ static void draw_tbline(int rnum) {
 */
 static void target_run(kl_target *target) {
 	printd("Loading %s...", target->name);
+	printm("");
 	
 	if(!mount_list(target->mounts)) {
 		return;
@@ -335,13 +336,19 @@ static void target_run(kl_target *target) {
 	
 	unmount_list(target->mounts);
 	
+	console_fgcolour(CONS_GREEN);
+	printd("> Executing kernel...");
+	console_fgcolour(CONS_WHITE);
+	
 	syscall(
 		__NR_reboot,
 		LINUX_REBOOT_MAGIC1, LINUX_REBOOT_MAGIC2,
 		LINUX_REBOOT_CMD_KEXEC, NULL
 	);
 	
-	printD("Can't execute kernel: %s", strerror(errno));
+	console_fgcolour(CONS_RED);
+	printD(">> Reboot failed: %s", strerror(errno));
+	console_fgcolour(CONS_WHITE);
 }
 
 /* Display a list of devices from /proc/diskstats */
