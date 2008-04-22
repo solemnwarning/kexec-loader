@@ -27,6 +27,8 @@ Version x.y:
 	
 	Implemented new console output API: printm(), printM(), printd() and
 	printD() which are macro wrappers around print2().
+	
+	Improved status messages displayed while loading a target.
 
 Version 1.1:
 	Removed directives for creating devices, all devices inodes should be
