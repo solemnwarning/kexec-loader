@@ -294,7 +294,7 @@ static void draw_skel(void) {
 		console_setpos(rnum, 1);
 		putchar('|');
 		
-		console_setpos(rnum, rows);
+		console_setpos(rnum, cols);
 		putchar('|');
 	}
 	
