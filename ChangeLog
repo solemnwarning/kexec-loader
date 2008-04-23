@@ -29,6 +29,9 @@ Version x.y:
 	printD() which are macro wrappers around print2().
 	
 	Improved status messages displayed while loading a target.
+	
+	Updated list_devices() to display the filesystem type of all devices
+	found in /proc/diskstats.
 
 Version 1.1:
 	Removed directives for creating devices, all devices inodes should be

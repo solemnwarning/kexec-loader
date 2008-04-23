@@ -250,10 +250,7 @@ char* detect_fstype(char const *device) {
 			continue;
 		}
 		
-		TEXT_RED();
-		printD(">> Can't open device: %s", strerror(errno));
-		TEXT_WHITE();
-		
+		debug("Can't open %s: %s\n", device, strerror(errno));
 		return NULL;
 	}
 	
@@ -310,11 +307,9 @@ char* detect_fstype(char const *device) {
 			continue;
 		}
 		
-		TEXT_RED();
-		printD(">> Can't close device: %s", strerror(errno));
+		debug("Can't close %s: %s\n", device, strerror(errno));
 	}
 	
-	TEXT_WHITE();
 	return retval;
 }
 

@@ -354,7 +354,8 @@ static void target_run(kl_target *target) {
 /* Display a list of devices from /proc/diskstats */
 static void list_devices(void) {
 	char buf[STACK_BUF];
-	char *name;
+	char filename[256];
+	char *name, *fstype;
 	int major, minor;
 	
 	FILE *disks = fopen("/proc/diskstats", "r");
@@ -370,7 +371,12 @@ static void list_devices(void) {
 		minor = atoi(strtok(NULL, " \t"));
 		name = strtok(NULL, " \t");
 		
-		printM("/dev/%s\t(%d, %d)", name, major, minor);
+		snprintf(filename, 256, "/dev/%s", name);
+		if(!(fstype = detect_fstype(filename))) {
+			fstype = "Unknown filesystem";
+		}
+		
+		printM("/dev/%s\t(%d, %d, %s)", name, major, minor, fstype);
 	}
 	
 	fclose(disks);
