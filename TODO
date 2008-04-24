@@ -1,2 +1,3 @@
-- Write some real documentation
 - Implement a shell like GRUB has?
+- Support for reopening the menu?
+- Load config file from /dev/hdx?
