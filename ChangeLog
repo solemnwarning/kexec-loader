@@ -1,4 +1,4 @@
-Version x.y:
+Version 1.2:
 	Rewrote fatal() function and removed pointless calls to it.
 	
 	Fixed bug: main_menu() no longer crashes if you have zero targets.
@@ -35,6 +35,10 @@ Version x.y:
 	
 	Updated build system to download and patch kexec-tools then build the
 	kexec program into kexec-loader like busybox to save space.
+	
+	Removed HOST and CC variables from root Makefile and added ifdef to set
+	the CC and configure options as required if a HOST variable is passed
+	in the environment.
 
 Version 1.1:
 	Removed directives for creating devices, all devices inodes should be
