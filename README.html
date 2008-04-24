@@ -28,26 +28,54 @@ h3 {
 <p>&copy; 2008 Daniel Collins<br />&copy; 2008 Philip Kent</p>
 <h2>1. Compliation</h2>
 <h3>1.1. Introduction</h3>
-<p>kexec-loader is a boot loader which loads a Linux kernel, then displays a GRUB-like menu so you can select a kernel to boot using kexec. It is designed for systems where the BIOS does not support booting from some devices (e.g. your kernel is on a USB memory key which the BIOS does not support).<br />
-If you have downloaded one of the pre-built disk images, you do not need to read the rest of this section, and you can skip to Section 2.</p>
+<p>kexec-loader is a boot loader which loads a Linux kernel, then displays a GRUB-like menu so you can select a kernel to boot 
+
+using kexec. It is designed for systems where the BIOS does not support booting from some devices (e.g. your kernel is on a USB 
+
+memory key which the BIOS does not support).<br />
+If you have downloaded one of the pre-built disk images, you do not need to read the rest of this section, and you can skip to 
+
+Section 2.</p>
 <h3>1.2. Requirements</h3>
 <p>To build kexec-loader, you require the following tools.</p>
 <ul>
   <li>gcc C compiler</li>
+  <li>bourne shell</li>
   <li>make</li>
   <li>binutils</li>
   <li>coreutils</li>
   <li>cpio</li>
 </ul>
 <h3>1.3. Build Instructions</h3>
-<p>In order to build kexec-loader, you first need a Linux kernel with support for the hardware you want to boot from. This kernel will  need fit onto the device that will be used to boot, with sufficient space left  for other files that will need to be on the device (such as kexec-loader itself and the boot loader).<br />
-  <strong>Write this.</strong></p>
+<p>In order to build kexec-loader, you first need a Linux kernel with support for the hardware you want to boot from. This kernel 
+
+will  need fit onto the device that will be used to boot, with sufficient space left  for other files that will need to be on the 
+
+device (such as kexec-loader itself and the boot loader).<br />
+Once you have your kernel, simply run "make" from the root of the kexec-loader source to build the kexec-loader binary. Then run 
+
+mkinitramfs.sh from the root of the script to build an initramfs containing kexec-loader.</p>
 <h3>1.4. Creating a Disk Image</h3>
-<p><strong>Write this.</strong></p>
+<p>Once you have a kernel and initramfs, you can then build a disk image. There are two ways to assemble the disk, which are 
+
+below.</p>
+<ol>
+<li>Embed your initramfs inside your kernel (this is what is done by the prebuilt images) using menuconfig. You will have to 
+
+rebuild your kernel.</li>
+<li>Just load it as an initramfs along with your kernel with a boot loader.</li>
+</ol>
+<p>Regardless of the method you choose, you will need a bootloader such as syslinux. Build your image using your favourite method 
+
+(such as using dd to produce an empty floppy image, formatting it then loop mounting it), put the kernel and initramfs (if any) on 
+
+the disk, along with any boot loader configuration, install the boot loader and your disk is prepared.</p>
 <h2>2. Usage</h2>
 <h3>2.1. Configuration File</h3>
-<p>kexec-loader uses a GRUB-like configuration file to find what menu options it needs to show. If you have downloaded one of the pre-made disk images, a sample configuration is stored on the disk that might be able to boot a Debian system.<br />
-  kexec-loader will attempt to find a configuration in the  ollowing places in order:</p>
+<p>kexec-loader uses a GRUB-like configuration file to find what menu options it needs to show. If you have downloaded one of the 
+
+pre-made disk images, a sample configuration is stored on the disk that might be able to boot a Debian system.<br />
+  kexec-loader will attempt to find a configuration in the following places in order:</p>
 <ul>
   <li>/dev/fd0</li>
   <li>/dev/fd1</li>
@@ -56,15 +84,25 @@ If you have downloaded one of the pre-built disk images, you do not need to read
   <li>/dev/scd</li>
   <li>/dev/sdd</li>
 </ul>
-<p>The configuration must be called kexec-loader.conf and  stored in the root of the filesystem and it must contain at least one section starting  “title”, or else it will have no kernels to load. You can put whitespace  between the directives and their variables. Empty lines and lines beginning  with a hash (#) are ignored.<br />
+<p>The configuration must be called kexec-loader.conf and stored in the root of the filesystem and it must contain at least one 
+
+section starting "title", or else it will have no kernels to load. You can put whitespace between the directives and their 
+
+variables. Empty lines and lines beginning  with a hash (#) are ignored.<br />
 The directives are as follows.</p>
 <ul>
   <li><strong>Timeout &lt;integer&gt;</strong>
-  <br />Amount of seconds to wait till the kernel marked default is loaded. If no kernel is marked as default, the first kernel in the list will be loaded.</li>
+  <br />Amount of seconds to wait till the kernel marked default is loaded. If no kernel is marked as default, the first kernel in 
+
+the list will be loaded.</li>
   <li><strong>Title &lt;text&gt;</strong>
-  <br />Title of the entry. This starts an item on the list, and all following directives will be processed as a part of this entry until the next title directive.</li>
+  <br />Title of the entry. This starts an item on the list, and all following directives will be processed as a part of this 
+
+entry until the next title directive.</li>
   <li><strong>Kernel &lt;filename&gt;</strong>
-  <br />Filename of the kernel in the rootfs (see below). Do not put / or else it will not find the kernel. If the kernel is in a subdirectory, do directory/kernel.bin.</li>
+  <br />Filename of the kernel in the rootfs (see below). Do not put / or else it will not find the kernel. If the kernel is in a 
+
+subdirectory, do directory/kernel.bin.</li>
   <li><strong>Initrd &lt;filename&gt;</strong>
   <br />As above but for the initrd.</li>
   <li><strong>Append &lt;text&gt;</strong>
@@ -72,12 +110,16 @@ The directives are as follows.</p>
   <li><strong>Rootfs [fstype:]&lt;device&gt;</strong>
   <br />Device to mount as / so as to find the kernel and initrd to load.</li>
   <li><strong>Mount [fstype:]&lt;device&gt;  &lt;mountpoint&gt;</strong>
-  <br />Device to mount at a certain mountpoint. This is not for filesystems to load under the new kernel, just any other filesystems that may be needed to start the new kernel running (e.g. if the initrd is stored on another filesystem).</li>
+  <br />Device to mount at a certain mountpoint. This is not for filesystems to load under the new kernel, just any other 
+
+filesystems that may be needed to start the new kernel running (e.g. if the initrd is stored on another filesystem).</li>
   <li><strong>Default</strong>
   <br />Make this kernel the default kernel to boot  if the timeout expires.</li>
 </ul>
-<p>Where parameters are shown in &lt;angled brackets&gt;, they are required for that directive. Ones in [square brackets] are optional. For mount and rootfs, if you do specify a fstype, it should be specified as ext2:/dev/hda1 for example.<br />
-Normally kexec-loader can detect the filesystem type, but if  you wish to override it, the following options are available.</p>
+<p>Where parameters are shown in &lt;angled brackets&gt;, they are required for that directive. Ones in [square brackets] are 
+
+optional. For mount and rootfs, if you do specify a fstype, it should be specified as ext2:/dev/hda1 for example.<br />
+Normally kexec-loader can detect the filesystem type, it supports autodetection for the following types.</p>
 <ul>
   <li>Ext2</li>
   <li>Ext3</li>
@@ -87,18 +129,38 @@ Normally kexec-loader can detect the filesystem type, but if  you wish to overri
   <li>FAT</li>
   <li>NTFS</li>
 </ul>
-<p>Specifying no filesystem or “auto” will result in auto detection.</p>
+<p>Specifying no filesystem or "auto" will result in auto detection. For manual specification, enter the name of any filesystem 
+
+that your kernel supports.</p>
 <h3>2.2. Using the Menu</h3>
-<p>To navigate the kexec-loader menu, use your arrow keys to select an item and press enter to boot it. A number of functions are available; press L to list the detected devices and R to re-read the configuration file. Press enter if you are on the device screen or an error and you want to escape.<br />
-Upon asking a kernel to boot, it may take a few seconds for it to load the kernel and switch to it. After switching, your new kernel will start and the boot process will happen as it would normally.</p>
+<p>To navigate the kexec-loader menu, use your arrow keys to select an item and press enter to boot it. A number of functions are 
+
+available; press L to list the detected devices and R to re-read the configuration file. Press enter if you are on the device 
+
+screen or an error and you want to escape.<br />
+Upon asking a kernel to boot, it may take a few seconds for it to load the kernel and switch to it. After switching, your new 
+
+kernel will start and the boot process will happen as it would normally.</p>
 <h3>2.3. Debug Console</h3>
-<p>Once kexec-loader has started all debugging messages, as well as Linux kernel messages are sent to a seperate debug console. By default the debug console is /dev/tty2, this can be changed at boot by using the Linux cmdline, for example kexec_debug=/dev/ttyS0 writes all debug messages and kernel messages to the first serial port.</p>
+<p>Once kexec-loader has started all debugging messages, as well as Linux kernel messages are sent to a seperate debug console. By 
+
+default the debug console is /dev/tty2, this can be changed at boot by using the Linux cmdline, for example kexec_debug=/dev/ttyS0 
+
+writes all debug messages and kernel messages to the first serial port.</p>
 <h2>3. Support</h2>
 <h3>3.1. Website</h3>
-<p>For information on kexec-loader, including current development and latest releases, please see its website at <a href="http://www.solemnwarning.net">http://www.solemnwarning.net</a>.</p>
+<p>For information on kexec-loader, including current development and latest releases, please see its website at <a 
+
+href="http://www.solemnwarning.net">http://www.solemnwarning.net</a>.</p>
 <h3>3.2. Forum</h3>
-<p>A discussion board is available for kexec-loader and other projects, it can be found at <a href="http://www.solemnwarning.net/punbb">http://www.solemnwarning.net/punbb</a>. No registration is required.</p>
+<p>A discussion board is available for kexec-loader and other projects, it can be found at <a 
+
+href="http://www.solemnwarning.net/punbb">http://www.solemnwarning.net/punbb</a>. No registration is required.</p>
 <h3>3.3. Developer</h3>
-<p>The developer of kexec-loader, Daniel Collins (aka solemnwarning), can often be found on other discussion sites, such as the “Microsuck” forums and on freenode IRC. To contact solemnwarning, you can use the following e-mail address: <em>solemnwarning@solemnwarning.net</em>.</p>
+<p>The developer of kexec-loader, Daniel Collins (aka solemnwarning), can often be found on other discussion sites, such as the 
+
+“Microsuck” forums and on freenode IRC. To contact solemnwarning, you can use the following e-mail address: 
+
+<em>solemnwarning@solemnwarning.net</em>.</p>
 </body>
 </html>
