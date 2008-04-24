@@ -35,13 +35,30 @@ export CC=i386-linux-uclibc-gcc
 export CFLAGS=-Wall -static -DVERSION=\"$(VERSION)\"
 export INCLUDES=
 export LIBS=
+export HOST=i386-linux-uclibc
+export KLBASE=$(PWD)
 
-all:
+KEXEC_TOOLS_VER=1.101
+KEXEC_TOOLS_URL=http://www.xmission.com/~ebiederm/files/kexec/kexec-tools-$(KEXEC_TOOLS_VER).tar.gz
+
+all: kexec
 	@$(MAKE) -C src/
 
 clean:
 	@$(MAKE) -C src/ clean
+	rm -rf kexec-tools-1.101/
 
 check:
 	@$(MAKE) -C src/ clean
 	@$(MAKE) -C src/
+
+kexec:
+	wget -nc $(KEXEC_TOOLS_URL)
+	tar -xzf kexec-tools-$(KEXEC_TOOLS_VER).tar.gz
+	if [ ! -f src/kexec_build ]; then \
+	cd kexec-tools-$(KEXEC_TOOLS_VER)/ && \
+	./configure --host=$(HOST) && \
+	patch -Np1 -i $(KLBASE)/patches/kexec-tools-1.101-merge.diff && \
+	patch -Np1 -i $(KLBASE)/patches/kexec-tools-1.101-mini.diff && \
+	make; \
+fi

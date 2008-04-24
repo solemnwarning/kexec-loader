@@ -31,10 +31,11 @@ all: kexec-loader
 
 clean:
 	rm -f *.o kexec-loader
+	rm -f kexec/*.o kexec_libs kexec_build
 
 kexec-loader: main.o mount.o config.o console.o misc.o kexec.o
 	$(CC) $(CFLAGS) $(LIBS) -o kexec-loader main.o mount.o config.o \
-		console.o misc.o kexec.o
+		console.o misc.o kexec.o kexec/*.o `cat kexec_libs`
 
 main.o: main.c
 	$(CC) $(CFLAGS) $(INCLUDES) -c -o main.o main.c

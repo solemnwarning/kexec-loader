@@ -47,6 +47,8 @@
 #include "kexec.h"
 #include "misc.h"
 
+int kexec_main(int argc, char **argv);
+
 static void main_menu(void);
 static void draw_skel(void);
 static void draw_tbline(int rnum);
@@ -60,6 +62,10 @@ static int srow = 4, erow = 0;
 static int scol = 3, ecol = 0;
 
 int main(int argc, char** argv) {
+	if(strcmp(argv[0], "kexec") == 0) {
+		return kexec_main(argc, argv);
+	}
+	
 	if(mount("proc", "/proc", "proc", 0, NULL) == -1) {
 		fatal("Can't mount /proc filesystem: %s", strerror(errno));
 	}

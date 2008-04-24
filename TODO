@@ -1,11 +1,5 @@
 version 1.2:
 	Write script to create floppy images
-	
-	Create patch to allow /sbin/kexec to be included in the kexec-loader
-	program (Maybe busybox style?)
-	
-	Write script to download, patch and merge kexec-tools with the
-	kexec-loader sources.
 
 Maybe:
 	Implement a shell like GRUB has?
