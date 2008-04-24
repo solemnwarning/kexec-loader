@@ -1,3 +1,6 @@
 - Implement a shell like GRUB has?
 - Support for reopening the menu?
 - Load config file from /dev/hdx?
+- Write script to create floppy images?
+- Create patch to allow kexec binary to be included as part of kexec-loader?
+- Write script to download and build kexec-tools?
