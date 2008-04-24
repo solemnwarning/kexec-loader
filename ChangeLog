@@ -39,6 +39,9 @@ Version 1.2:
 	Removed HOST and CC variables from root Makefile and added ifdef to set
 	the CC and configure options as required if a HOST variable is passed
 	in the environment.
+	
+	Updated mount_config() to check for the kernel option kexec_config and
+	replace the list of default devices with the single supplied device.
 
 Version 1.1:
 	Removed directives for creating devices, all devices inodes should be

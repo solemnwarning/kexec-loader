@@ -61,6 +61,11 @@ int mount_config(void) {
 	unsigned int devnum, rtime = 1;
 	char const* devname;
 	
+	if((devname = get_cmdline("kexec_config"))) {
+		devices[0] = devname;
+		devices[1] = NULL;
+	}
+	
 	RETRY:
 	devnum = 0;
 	devname = devices[0];
