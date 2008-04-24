@@ -31,12 +31,19 @@
 #
 VERSION=r$(shell svn info -r HEAD | grep 'Revision:' | sed -e 's/Revision: //')
 
-export CC=i386-linux-uclibc-gcc
-export CFLAGS=-Wall -static -DVERSION=\"$(VERSION)\"
+export CFLAGS=-Wall -DVERSION=\"$(VERSION)\"
 export INCLUDES=
 export LIBS=
-export HOST=i386-linux-uclibc
 export KLBASE=$(PWD)
+
+ifdef HOST
+	export CC=$(HOST)-gcc
+	KT_CONFIGURE := --host=$(HOST)
+else
+	export CC=gcc
+	KT_CONFIGURE :=
+	
+endif
 
 KEXEC_TOOLS_VER=1.101
 KEXEC_TOOLS_URL=http://www.xmission.com/~ebiederm/files/kexec/kexec-tools-$(KEXEC_TOOLS_VER).tar.gz
@@ -57,7 +64,7 @@ kexec:
 	tar -xzf kexec-tools-$(KEXEC_TOOLS_VER).tar.gz
 	if [ ! -f src/kexec_build ]; then \
 	cd kexec-tools-$(KEXEC_TOOLS_VER)/ && \
-	./configure --host=$(HOST) && \
+	./configure $(KT_CONFIGURE) && \
 	patch -Np1 -i $(KLBASE)/patches/kexec-tools-1.101-merge.diff && \
 	patch -Np1 -i $(KLBASE)/patches/kexec-tools-1.101-mini.diff && \
 	make; \
