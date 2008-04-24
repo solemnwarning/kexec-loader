@@ -32,6 +32,9 @@ Version x.y:
 	
 	Updated list_devices() to display the filesystem type of all devices
 	found in /proc/diskstats.
+	
+	Updated build system to download and patch kexec-tools then build the
+	kexec program into kexec-loader like busybox to save space.
 
 Version 1.1:
 	Removed directives for creating devices, all devices inodes should be
