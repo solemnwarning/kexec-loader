@@ -42,6 +42,9 @@ Version 1.2:
 	
 	Updated mount_config() to check for the kernel option kexec_config and
 	replace the list of default devices with the single supplied device.
+	
+	Updated mount_config() to detect the filesystem type using
+	detect_fstype() instead of using the hardcoded BOOTFS_TYPE macro.
 
 Version 1.1:
 	Removed directives for creating devices, all devices inodes should be

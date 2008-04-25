@@ -34,7 +34,6 @@
 #define COPYRIGHT "Copyright (C) 2007,2008 Daniel Collins"
 
 #define CONFIG_FILE "kexec-loader.conf"
-#define BOOTFS_TYPE "vfat"
 
 #define KEXEC_PATH "/sbin/kexec"
 

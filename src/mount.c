@@ -60,6 +60,7 @@ int mount_config(void) {
 	
 	unsigned int devnum, rtime = 1;
 	char const* devname;
+	char *fstype;
 	
 	if((devname = get_cmdline("kexec_config"))) {
 		devices[0] = devname;
@@ -75,8 +76,12 @@ int mount_config(void) {
 			debug("Skipping %s (Unknown device)\n", devname);
 			goto ENDLOOP;
 		}
+		if(!(fstype = detect_fstype(devname))) {
+			debug("Skipping %s (Unknown filesystem)\n", devname);
+			goto ENDLOOP;
+		}
 		
-		if(mount(devname, "/mnt", BOOTFS_TYPE, MS_RDONLY, NULL) == -1) {
+		if(mount(devname, "/mnt", fstype, MS_RDONLY, NULL) == -1) {
 			debug("Can't mount %s at /mnt: %s\n", devname, strerror(errno));
 			goto ENDLOOP;
 		}
