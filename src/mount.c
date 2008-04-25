@@ -55,6 +55,7 @@ int mount_config(void) {
 		"/dev/sdb",
 		"/dev/sdc",
 		"/dev/sdd",
+		NULL,
 		NULL
 	};
 	
@@ -63,8 +64,14 @@ int mount_config(void) {
 	char *fstype;
 	
 	if((devname = get_cmdline("kexec_config"))) {
+		for(devnum = 0; devices[devnum]; devnum++) {}
+		
+		while(devnum > 0) {
+			devices[devnum] = devices[devnum-1];
+			devnum--;
+		}
+		
 		devices[0] = devname;
-		devices[1] = NULL;
 	}
 	
 	RETRY:

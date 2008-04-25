@@ -41,7 +41,7 @@ Version 1.2:
 	in the environment.
 	
 	Updated mount_config() to check for the kernel option kexec_config and
-	replace the list of default devices with the single supplied device.
+	insert the supplied device at the start of the devices list.
 	
 	Updated mount_config() to detect the filesystem type using
 	detect_fstype() instead of using the hardcoded BOOTFS_TYPE macro.
