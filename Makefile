@@ -31,22 +31,20 @@
 #
 VERSION=r$(shell svn info -r HEAD | grep 'Revision:' | sed -e 's/Revision: //')
 
-export CFLAGS=-Wall -DVERSION=\"$(VERSION)\"
-export INCLUDES=
-export LIBS=
-export KLBASE=$(PWD)
+export CC := gcc
+export CFLAGS := -Wall -DVERSION=\"$(VERSION)\"
+export INCLUDES :=
+export LIBS :=
+export KLBASE := $(PWD)
+
+KT_VER := 1.101
+KT_URL := http://www.xmission.com/~ebiederm/files/kexec/kexec-tools-$(KT_VER).tar.gz
+KT_CONFIGURE :=
 
 ifdef HOST
-	export CC=$(HOST)-gcc
+	export CC := $(HOST)-gcc
 	KT_CONFIGURE := --host=$(HOST)
-else
-	export CC=gcc
-	KT_CONFIGURE :=
-	
 endif
-
-KEXEC_TOOLS_VER=1.101
-KEXEC_TOOLS_URL=http://www.xmission.com/~ebiederm/files/kexec/kexec-tools-$(KEXEC_TOOLS_VER).tar.gz
 
 all: kexec
 	@$(MAKE) -C src/
@@ -60,10 +58,10 @@ check:
 	@$(MAKE) -C src/
 
 kexec:
-	wget -nc $(KEXEC_TOOLS_URL)
-	tar -xzf kexec-tools-$(KEXEC_TOOLS_VER).tar.gz
+	wget -nc $(KT_URL)
+	tar -xzf kexec-tools-$(KT_VER).tar.gz
 	if [ ! -f src/kexec_build ]; then \
-	cd kexec-tools-$(KEXEC_TOOLS_VER)/ && \
+	cd kexec-tools-$(KT_VER)/ && \
 	./configure $(KT_CONFIGURE) && \
 	patch -Np1 -i $(KLBASE)/patches/kexec-tools-1.101-merge.diff && \
 	patch -Np1 -i $(KLBASE)/patches/kexec-tools-1.101-mini.diff && \
