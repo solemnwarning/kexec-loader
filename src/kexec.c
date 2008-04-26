@@ -58,7 +58,7 @@ static int run_kexec(char** kexec_argv) {
 		return(-1);
 	}
 	if(newpid == 0) {
-		kexec_argv[0] = KEXEC_PATH;
+		kexec_argv[0] = "kexec";
 		execv(KEXEC_PATH, kexec_argv);
 		
 		TEXT_RED();
