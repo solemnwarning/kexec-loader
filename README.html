@@ -48,7 +48,7 @@ using kexec. It is designed for systems where the BIOS does not support booting 
 <h3>1.3. Build Instructions</h3>
 <p>In order to build kexec-loader, you first need a Linux kernel with support for the hardware you want to boot from. This kernel will need fit onto the device that will be used to boot, with sufficient space left for other files that will need to be on the device (such as kexec-loader itself and the boot loader).</p>
 <p>Once you have your kernel, simply run "make" from the root of the kexec-loader source to build the kexec-loader binary. This will include downloading and building kexec-tools. It is recommended that you build a uclibc toolchain prior to this, then building kexec-loader using it, as this will make the resulting file smaller. To use a uclibc toolchain, do "HOST=i386-linux-uclibc make" instead of make.</p>
-<p>Then run mkinitramfs.sh from the root of the script to build an initramfs containing kexec-loader.</p>
+<p>Then run mkinitramfs.sh from the root directory of the distribution to build an initramfs containing kexec-loader.</p>
 <h3>1.4. Creating a Disk Image</h3>
 <p>Once you have a kernel and initramfs, you can then build a disk image. There are two ways to assemble the disk, which are below.</p>
 <ol>
@@ -77,7 +77,7 @@ using kexec. It is designed for systems where the BIOS does not support booting 
   <li><strong>title &lt;text&gt;</strong>
   <br />Title of the entry. This starts an item on the list, and all following directives will be processed as a part of this entry until the next title directive.</li>
   <li><strong>kernel &lt;filename&gt;</strong>
-  <br />Filename of the kernel in the rootfs (see below). Do not put / or else it will not find the kernel. If the kernel is in a subdirectory, do directory/kernel.bin.</li>
+  <br />Filename of the kernel in the rootfs (see below).</li>
   <li><strong>initrd &lt;filename&gt;</strong>
   <br />As above but for the initrd.</li>
   <li><strong>append &lt;text&gt;</strong>
