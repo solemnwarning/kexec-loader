@@ -346,6 +346,7 @@ static void target_run(kl_target *target) {
 	printd("> Executing kernel...");
 	console_fgcolour(CONS_WHITE);
 	
+	sync();
 	syscall(
 		__NR_reboot,
 		LINUX_REBOOT_MAGIC1, LINUX_REBOOT_MAGIC2,
