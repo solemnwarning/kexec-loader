@@ -404,7 +404,7 @@ static void print_header(void) {
 	
 	for(cnum = 1; cnum <= cols; cnum++) {
 		if(cnum > 1 && (cnum-1) <= version_l) {
-			putchar(version[cnum-1]);
+			putchar(version[cnum-2]);
 			continue;
 		}
 		if(cnum != cols && (cnum+copyright_l) >= cols) {
