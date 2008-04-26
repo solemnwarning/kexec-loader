@@ -29,7 +29,7 @@
 
 # This should be "vN.N" releases
 #
-VERSION=r$(shell svn info -r HEAD | grep 'Revision:' | sed -e 's/Revision: //')
+VERSION=r$(shell svn info | grep 'Revision:' | sed -e 's/Revision: //')
 
 export CC := gcc
 export CFLAGS := -Wall -DVERSION=\"$(VERSION)\"
