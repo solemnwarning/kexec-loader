@@ -156,6 +156,9 @@ void config_load(void) {
 	}
 	
 	config.timeout = 0;
+	config.grub_config = NULL;
+	config.grub_devices = NULL;
+	config.grub_first = hdx;
 	config.targets = NULL; /* BUG: Memory leak! */
 	
 	unsigned int lnum = 1;
@@ -281,6 +284,23 @@ void config_parse(char* line, unsigned int lnum) {
 		}
 		
 		config_add_mount(lnum, value, mpoint);
+		return;
+	}
+	if(str_compare(name, "grub_config", STR_NOCASE)) {
+		config.grub_config = strclone(value, 9999);
+	}
+	if(str_compare(name, "grub_devices", STR_NOCASE)) {
+		config.grub_devices = strclone(value, 9999);
+	}
+	if(str_compare(name, "grub_first", STR_NOCASE)) {
+		if(str_compare(value, "hdx", 0)) {
+			config.grub_first = hdx;
+		}else if(str_compare(value, "sdx", 0)) {
+			config.grub_first = sdx;
+		}else{
+			printD("config:%u: Value must be hdx or sdx", lnum);
+		}
+		
 		return;
 	}
 	
