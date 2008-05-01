@@ -80,13 +80,17 @@ struct kl_target {
 	struct kl_target* next;
 };
 
-#define CONFIG_DEFAULTS_DEFINE {0,NULL,NULL,hdx,NULL};
+#define CONFIG_DEFAULTS_DEFINE {0,{'\0'},{'\0'},{'\0'},{'\0'},hdx,NULL};
 
 struct kl_config {
 	unsigned int timeout;
 	
-	char *grub_config;
-	char *grub_devices;
+	char gcfg_device[DEVICE_SIZE];
+	char gcfg_file[2048];
+	
+	char gdev_device[DEVICE_SIZE];
+	char gdev_file[2048];
+	
 	enum {hdx,sdx} grub_first;
 	
 	struct kl_target* targets;
