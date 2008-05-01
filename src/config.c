@@ -137,6 +137,20 @@ static void cfg_add_target(void) {
 	TARGET_DEFAULTS(&target);
 }
 
+static char *next_value(char *value) {
+	char *rval = value+strcspn(value, " \t\r\n");
+	
+	if(rval[0] != '\0') {
+		rval[0] = '\0';
+		rval++;
+		
+		rval = rval+strspn(rval, " \t");
+		rval[strcspn(rval, "\r\n")] = '\0';
+	}
+	
+	return rval;
+}
+
 /* Read configuration file, one line at a time and call config_parse() for each
  * individual line, in the event of an error an incomplete configuration may,
  * or may not be loaded.
@@ -190,15 +204,7 @@ void config_load(void) {
 */
 void config_parse(char* line, unsigned int lnum) {
 	char *name = line+strspn(line, " \t\r\n");
-	char *value = name+strcspn(name, " \t\r\n");
-	
-	if(value[0] != '\0') {
-		value[0] = '\0';
-		value++;
-		
-		value = value+strspn(value, " \t");
-		value[strcspn(value, "\r\n")] = '\0';
-	}
+	char *value = next_value(name);
 	
 	/* Skip line if it's a comment, or empty */
 	if(name[0] == '#' || name[0] == '\0') {
