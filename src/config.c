@@ -160,10 +160,7 @@ void config_load(void) {
 	}
 	
 	config.timeout = 0;
-	config.gcfg_device[0] = '\0';
-	config.gcfg_file[0] = '\0';
-	config.gdev_device[0] = '\0';
-	config.gdev_file[0] = '\0';
+	config.grub_root[0] = '\0';
 	config.grub_first = hdx;
 	config.targets = NULL; /* BUG: Memory leak! */
 	
@@ -278,24 +275,13 @@ void config_parse(char* line, unsigned int lnum) {
 		return;
 	}
 	if(str_compare(name, "grub_config", STR_NOCASE)) {
-		value2 = next_value(value);
-		if(value[0] == '\0' || value2[0] == '\0') {
-			printD("config:%u: grub_config requires 2 arguments", lnum);
+		if(value[0] == '\0') {
+			printD("config:%u: grub_root requires an argument", lnum);
 			return;
 		}
 		
-		snprintf(config.gcfg_device, DEVICE_SIZE, "/dev/%s", value);
-		snprintf(config.gcfg_file, 2048, "/mnt/%s/%s", value, value2);
-	}
-	if(str_compare(name, "grub_devices", STR_NOCASE)) {
-		value2 = next_value(value);
-		if(value[0] == '\0' || value2[0] == '\0') {
-			printD("config:%u: grub_devices requires 2 arguments", lnum);
-			return;
-		}
-		
-		snprintf(config.gdev_device, DEVICE_SIZE, "/dev/%s", value);
-		snprintf(config.gdev_file, 2048, "/mnt/%s/%s", value, value2);
+		strncpy(config.grub_root, value, DEVICE_SIZE);
+		config.grub_root[DEVICE_SIZE-1] = '\0';
 	}
 	if(str_compare(name, "grub_first", STR_NOCASE)) {
 		if(str_compare(value, "hdx", 0)) {
