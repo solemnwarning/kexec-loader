@@ -69,7 +69,7 @@ static void config_add_mount(unsigned int lnum, char* device, char* mpoint) {
 	MOUNT_DEFAULTS(nptr);
 	
 	strncpy(nptr->device, device, DEVICE_SIZE-1);
-	strncpy(nptr->mpoint, "/mnt/", MPOINT_SIZE-1);
+	strncpy(nptr->mpoint, "/mnt/target/", MPOINT_SIZE-1);
 	strncpy(nptr->fstype, fstype, 63);
 	
 	char *mptok = strtok(mpoint, "/");
@@ -162,7 +162,7 @@ void config_load(void) {
 	
 	TARGET_DEFAULTS(&target);
 	
-	FILE* cfg_handle = fopen("/mnt/" CONFIG_FILE, "r");
+	FILE* cfg_handle = fopen("/mnt/config/" CONFIG_FILE, "r");
 	if(!cfg_handle) {
 		printD("Can't open " CONFIG_FILE ": %s", strerror(errno));
 		
@@ -196,8 +196,8 @@ void config_load(void) {
 	}
 	
 	UMOUNT:
-	if(umount("/mnt") == -1) {
-		debug("Can't unmount /mnt: %s\n", strerror(errno));
+	if(umount("/mnt/config") == -1) {
+		debug("Can't unmount /mnt/config: %s\n", strerror(errno));
 	}
 }
 
@@ -240,7 +240,7 @@ void config_parse(char* line, unsigned int lnum) {
 			return;
 		}
 		
-		snprintf(target.kernel, KERNEL_SIZE, "/mnt/%s", value);
+		snprintf(target.kernel, KERNEL_SIZE, "/mnt/target/%s", value);
 		
 		return;
 	}
@@ -250,7 +250,7 @@ void config_parse(char* line, unsigned int lnum) {
 			return;
 		}
 		
-		snprintf(target.initrd, INITRD_SIZE, "/mnt/%s", value);
+		snprintf(target.initrd, INITRD_SIZE, "/mnt/target/%s", value);
 		
 		return;
 	}

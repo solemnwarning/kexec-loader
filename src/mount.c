@@ -88,17 +88,17 @@ int mount_config(void) {
 			goto ENDLOOP;
 		}
 		
-		if(mount(devname, "/mnt", fstype, MS_RDONLY, NULL) == -1) {
-			debug("Can't mount %s at /mnt: %s\n", devname, strerror(errno));
+		if(mount(devname, "/mnt/config", fstype, MS_RDONLY, NULL) == -1) {
+			debug("Can't mount %s at /mnt/config: %s\n", devname, strerror(errno));
 			goto ENDLOOP;
 		}
-		if(access("/mnt/" CONFIG_FILE, F_OK) == 0) {
+		if(access("/mnt/config/" CONFIG_FILE, F_OK) == 0) {
 			printd("Found " CONFIG_FILE " on %s", devname);
 			return 1;
 		}
 		
-		if(umount("/mnt") == -1) {
-			debug("Can't unmount /mnt: %s\n", strerror(errno));
+		if(umount("/mnt/config") == -1) {
+			debug("Can't unmount /mnt/config: %s\n", strerror(errno));
 		}
 		
 		ENDLOOP:
@@ -157,6 +157,12 @@ int mount_list(kl_mount* mounts) {
 					printd(">> Filesystem type is %s", fstype);
 				}
 			}
+			
+			/* Creates mount points such as /mnt/hda1 when needed
+			 * Filesystems are mounted read-only, so this won't
+			 * create directories on mounted filesystems
+			*/
+			mkdir(mptr->mpoint);
 			
 			if(mount(mptr->device, mptr->mpoint, fstype, MS_RDONLY, NULL) == -1) {
 				TEXT_RED();
