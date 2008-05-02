@@ -32,5 +32,6 @@
 #define KEXEC_LOADER_GRUB_H
 
 void grub_loadcfg(void);
+char *grub_cdevice(char const *gdev);
 
 #endif /* !KEXEC_LOADER_GRUB_H */

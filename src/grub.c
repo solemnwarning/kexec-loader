@@ -131,3 +131,26 @@ static void free_devices(void) {
 		free(dptr);
 	}
 }
+
+/* Attempt to convert a GRUB device to a Linux device name
+ * Returns NULL if the conversion fails
+*/
+char *grub_cdevice(char const *gdev) {
+	struct grub_device *ptr = grub_devices;
+	while(ptr) {
+		if(str_compare(ptr->device, gdev, 0)) {
+			return strclone(ptr->fname, 9999);
+		}
+		
+		ptr = ptr->next;
+	}
+	
+	if(str_compare("(fd0)", gdev, 0)) {
+		return "/dev/fd0";
+	}
+	if(str_compare("(fd1)", gdev, 0)) {
+		return "/dev/fd1";
+	}
+	
+	return NULL;
+}
