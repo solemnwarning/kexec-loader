@@ -46,6 +46,7 @@
 #include "config.h"
 #include "kexec.h"
 #include "misc.h"
+#include "grub.h"
 
 int kexec_main(int argc, char **argv);
 
@@ -101,6 +102,7 @@ int main(int argc, char** argv) {
 	
 	while(1) {
 		config_load();
+		grub_loadcfg();
 		main_menu();
 	}
 	

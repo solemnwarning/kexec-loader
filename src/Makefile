@@ -33,9 +33,10 @@ clean:
 	rm -f *.o kexec-loader
 	rm -f kexec/*.o kexec_libs kexec_build
 
-kexec-loader: main.o mount.o config.o console.o misc.o kexec.o
+kexec-loader: main.o mount.o config.o console.o misc.o kexec.o grub.o
 	$(CC) $(CFLAGS) $(LIBS) -static -o kexec-loader main.o mount.o \
-		config.o console.o misc.o kexec.o kexec/*.o `cat kexec_libs`
+		config.o console.o misc.o kexec.o grub.o kexec/*.o \
+		`cat kexec_libs`
 
 main.o: main.c
 	$(CC) $(CFLAGS) $(INCLUDES) -c -o main.o main.c
@@ -54,3 +55,6 @@ misc.o: misc.c misc.h
 
 kexec.o: kexec.c kexec.h misc.o
 	$(CC) $(CFLAGS) $(INCLUDES) -c -o kexec.o kexec.c
+
+grub.o: grub.c grub.h
+	$(CC) $(CFLAGS) $(INCLUDES) -c -o grub.o grub.c
