@@ -60,8 +60,7 @@ int mount_config(void) {
 	};
 	
 	unsigned int devnum, rtime = 1;
-	char const* devname;
-	char *fstype;
+	char const* devname, *errmsg;
 	
 	if((devname = get_cmdline("kexec_config"))) {
 		for(devnum = 0; devices[devnum]; devnum++) {}
@@ -79,19 +78,11 @@ int mount_config(void) {
 	devname = devices[0];
 	
 	while(devname) {
-		if(!check_device(devname)) {
-			debug("Skipping %s (Unknown device)\n", devname);
-			goto ENDLOOP;
-		}
-		if(!(fstype = detect_fstype(devname))) {
-			debug("Skipping %s (Unknown filesystem)\n", devname);
+		if((errmsg = mount_dev(devname, "/mnt/config"))) {
+			debug("Can't mount %s at /mnt/config: %s\n", devname, errmsg);
 			goto ENDLOOP;
 		}
 		
-		if(mount(devname, "/mnt/config", fstype, MS_RDONLY, NULL) == -1) {
-			debug("Can't mount %s at /mnt/config: %s\n", devname, strerror(errno));
-			goto ENDLOOP;
-		}
 		if(access("/mnt/config/" CONFIG_FILE, F_OK) == 0) {
 			printd("Found " CONFIG_FILE " on %s", devname);
 			return 1;
@@ -129,44 +120,16 @@ int mount_config(void) {
 int mount_list(kl_mount* mounts) {
 	kl_mount *mptr = mounts;
 	int depth = 0, n = 0, n2 = 0;
-	char *fstype;
+	char const *errmsg;
 	
 	while(1) {
 		if(mptr->depth == depth) {
 			TEXT_GREEN();
 			printd("> Mounting %s at %s", mptr->device, mptr->mpoint);
 			
-			if(!check_device(mptr->device)) {
+			if((errmsg = mount_dev(mptr->device, mptr->mpoint))) {
 				TEXT_RED();
-				printD(">> Device does not exist");
-				
-				break;
-			}
-			
-			fstype = mptr->fstype;
-			
-			if(str_compare(fstype, "auto", 0)) {
-				fstype = detect_fstype(mptr->device);
-				if(!fstype) {
-					TEXT_RED();
-					printD(">> Unknown filesystem on %s", mptr->device);
-					
-					break;
-				}else{
-					TEXT_GREEN();
-					printd(">> Filesystem type is %s", fstype);
-				}
-			}
-			
-			/* Creates mount points such as /mnt/hda1 when needed
-			 * Filesystems are mounted read-only, so this won't
-			 * create directories on mounted filesystems
-			*/
-			mkdir(mptr->mpoint);
-			
-			if(mount(mptr->device, mptr->mpoint, fstype, MS_RDONLY, NULL) == -1) {
-				TEXT_RED();
-				printD(">> Mount failed: %s", strerror(errno));
+				printD(">> Mount failed: %s", errmsg);
 				
 				break;
 			}
@@ -368,4 +331,45 @@ int check_device(char const *device) {
 	
 	fclose(disks);
 	return rval;
+}
+
+/* Mount a device
+ * Returns NULL on success, or an error string upon failure
+*/
+char const *mount_dev(char const *device, char const *mpoint) {
+	char *fstype = NULL, fsbuf[16];
+	size_t fslen;
+	
+	if(strchr(device, ':')) {
+		fslen = strcspn(device, ":");
+		
+		strncpy(fsbuf, device, (fslen < 16 ? fslen : 15));
+		fsbuf[(fslen < 16 ? fslen : 16)] = '\0';
+		
+		device += (fslen+1);
+		fstype = fsbuf;
+	}
+	
+	if(!check_device(device)) {
+		return "Device not found";
+	}
+	
+	if(!fstype || str_compare(fstype, "auto", 0)) {
+		fstype = detect_fstype(device);
+		if(!fstype) {
+			return "Unknown filesystem format";
+		}
+	}
+	
+	/* Creates mount points such as /mnt/hda1 when needed
+	 * Filesystems are mounted read-only, so this won't
+	 * create directories on mounted filesystems
+	*/
+	mkdir(mpoint, 0700);
+	
+	if(mount(device, mpoint, fstype, MS_RDONLY, NULL) == -1) {
+		return strerror(errno);
+	}
+	
+	return NULL;
 }

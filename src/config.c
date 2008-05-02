@@ -51,15 +51,6 @@ static struct kl_target target = TARGET_DEFAULTS_DEFINE;
  * This changes the device string passed to it
 */
 static void config_add_mount(unsigned int lnum, char* device, char* mpoint) {
-	char* fstype = "auto";
-	
-	if(strchr(device, ':')) {
-		fstype = device;
-		device = strchr(device, ':');
-		device[0] = '\0';
-		device++;
-	}
-	
 	kl_mount *nptr = malloc(sizeof(kl_mount));
 	if(!nptr) {
 		printD("config:%u: Can't allocate memory", lnum);
@@ -70,7 +61,6 @@ static void config_add_mount(unsigned int lnum, char* device, char* mpoint) {
 	
 	strncpy(nptr->device, device, DEVICE_SIZE-1);
 	strncpy(nptr->mpoint, "/mnt/target/", MPOINT_SIZE-1);
-	strncpy(nptr->fstype, fstype, 63);
 	
 	char *mptok = strtok(mpoint, "/");
 	while(mptok) {
