@@ -278,16 +278,9 @@ void config_parse(char* line, unsigned int lnum) {
 		return;
 	}
 	if(str_compare(name, "mount", STR_NOCASE)) {
-		char* mpoint = strchr(value, ' ');
-		if(mpoint == NULL) {
-			printD("config:%u: Invalid mount", lnum);
-			return;
-		}
-		mpoint[0] = '\0';
-		mpoint += (strspn(mpoint+1, " \t")+1);
-		
+		char* mpoint = next_value(value);
 		if(value[0] == '\0' || mpoint[0] == '\0') {
-			printD("config:%u: Invalid mount", lnum);
+			printD("config:%u: mount requires 2 arguments", lnum);
 			return;
 		}
 		
