@@ -59,6 +59,7 @@ static int c_flags = 0;
 static void load_devices(void);
 static void free_devices(void);
 static void load_menu(void);
+static void add_target(void);
 
 /* Reload GRUB menu.lst and device.map */
 void grub_loadcfg(void) {
@@ -228,14 +229,12 @@ static void load_menu(void) {
 			dnum = atoi(value);
 		}
 		if(str_compare(name, "title", 0)) {
+			if(c_title[0] != '\0') {
+				add_target();
+			}
+			
 			strncpy(c_title, value, NAME_SIZE);
 			c_title[NAME_SIZE-1] = '\0';
-			
-			c_root[0] = '\0';
-			c_kernel[0] = '\0';
-			c_append[0] = '\0';
-			c_initrd[0] = '\0';
-			c_flags = 0;
 			
 			if(++tnum == dnum) {
 				c_flags = TARGET_DEFAULT;
@@ -252,6 +251,89 @@ static void load_menu(void) {
 			tnum++;
 		}
 	}
+	if(c_title[0] != '\0') {
+		add_target();
+	}
 	
 	fclose(fh);
+}
+
+/* Add new target and zero the c_ variables */
+static void add_target(void) {
+	char *kernel = c_kernel, k_device[DEVICE_SIZE];
+	char *initrd = c_initrd, i_device[DEVICE_SIZE];
+	size_t len;
+	
+	if(kernel[0] == '(') {
+		if((len = strcspn(kernel, ")")+1) > DEVICE_SIZE) {
+			len = DEVICE_SIZE;
+		}
+		
+		strncpy(k_device, kernel, len);
+		k_device[len] = '\0';
+		kernel += len;
+	}else{
+		strcpy(k_device, c_root);
+	}
+	
+	if(initrd[0] == '(') {
+		if((len = strcspn(initrd, ")")+1) > DEVICE_SIZE) {
+			len = DEVICE_SIZE;
+		}
+		
+		strncpy(i_device, initrd, len);
+		i_device[len] = '\0';
+		initrd += len;
+	}else{
+		strcpy(i_device, c_root);
+	}
+	
+	if(kernel[0] == '\0') {
+		printD("No kernel specified for '%s'", c_title);
+		goto END;
+	}
+	
+	kl_target *nptr = allocate(sizeof(kl_target));
+	TARGET_DEFAULTS(nptr);
+	
+	strcpy(nptr->name, c_title);
+	nptr->flags = c_flags;
+	snprintf(nptr->kernel, KERNEL_SIZE, "/mnt/grub/%s", kernel);
+	strcpy(nptr->append, c_append);
+	
+	nptr->mounts = allocate(sizeof(kl_mount));
+	MOUNT_DEFAULTS(nptr->mounts);
+	strcpy(nptr->mounts->device, k_device);
+	strcpy(nptr->mounts->mpoint, "/mnt/grub");
+	
+	if(initrd[0] != '\0') {
+		if(str_compare(i_device, k_device, 0)) {
+			snprintf(nptr->initrd, INITRD_SIZE, "/mnt/grub/%s", initrd);
+		}else{
+			nptr->mounts->next = allocate(sizeof(kl_mount));
+			MOUNT_DEFAULTS(nptr->mounts->next);
+			strcpy(nptr->mounts->next->device, i_device);
+			strcpy(nptr->mounts->next->mpoint, "/mnt/grub_i");
+			
+			snprintf(nptr->initrd, INITRD_SIZE, "/mnt/grub_i/%s", initrd);
+		}
+	}
+	
+	kl_target *eptr = config.targets;
+	if(!config.targets) {
+		config.targets = nptr;
+	}else{
+		while(eptr->next) {
+			eptr = eptr->next;
+		}
+		
+		eptr->next = nptr;
+	}
+	
+	END:
+	c_root[0] = '\0';
+	c_kernel[0] = '\0';
+	c_append[0] = '\0';
+	c_initrd[0] = '\0';
+	c_flags = 0;
 }
