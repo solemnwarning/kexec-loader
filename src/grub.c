@@ -49,8 +49,16 @@ static struct grub_device {
 	struct grub_device *next;
 } *grub_devices = NULL;
 
+static char c_title[NAME_SIZE] = {'\0'};
+static char c_root[DEVICE_SIZE] = {'\0'};
+static char c_kernel[KERNEL_SIZE] = {'\0'};
+static char c_append[APPEND_SIZE] = {'\0'};
+static char c_initrd[INITRD_SIZE] = {'\0'};
+static int c_flags = 0;
+
 static void load_devices(void);
 static void free_devices(void);
+static void load_menu(void);
 
 /* Reload GRUB menu.lst and device.map */
 void grub_loadcfg(void) {
@@ -63,6 +71,7 @@ void grub_loadcfg(void) {
 	}
 	
 	load_devices();
+	load_menu();
 	
 	if(umount("/mnt/grub") == -1) {
 		debug("Can't unmount /mnt/grub: %s", strerror(errno));
@@ -153,4 +162,96 @@ char *grub_cdevice(char const *gdev) {
 	}
 	
 	return NULL;
+}
+
+/* Load targets from menu.lst */
+static void load_menu(void) {
+	char *menu = NULL;
+	char line[1024], *name, *value;
+	int dnum = -1, tnum = 0;
+	size_t len;
+	
+	if(access("/mnt/grub/grub/menu.lst", F_OK) == 0) {
+		menu = "/mnt/grub/grub/menu.lst";
+	}
+	if(access("/mnt/grub/boot/grub/menu.lst", F_OK) == 0) {
+		menu = "/mnt/grub/boot/grub/menu.lst";
+	}
+	if(!menu) {
+		printD("menu.lst not found");
+		return;
+	}
+	
+	FILE *fh = fopen(menu, "r");
+	if(!fh) {
+		printD("Can't open menu.lst: %s", strerror(errno));
+		return;
+	}
+	
+	while(fgets(line, 1024, fh)) {
+		name = line+strspn(line, " \t\r\n");
+		value = name+strcspn(name, " \t\r\n");
+		
+		if(value[0] != '\0') {
+			value[0] = '\0';
+			value++;
+			
+			value += strspn(value, " \t");
+			value[strcspn(value, "\n\r")] = '\0';
+		}
+		
+		if(str_compare(name, "root", 0)) {
+			strncpy(c_root, value, DEVICE_SIZE);
+			c_root[DEVICE_SIZE-1] = '\0';
+		}
+		if(str_compare(name, "kernel", 0)) {
+			if((len = strcspn(value, " \t")) > NAME_SIZE) {
+				len = NAME_SIZE;
+			}
+			
+			strncpy(c_kernel, value, len);
+			c_kernel[len-1] = '\0';
+			
+			value += strcspn(value, " \t");
+			value += strspn(value, " \t");
+			
+			if(value[0] != '\0') {
+				strncpy(c_append, value, APPEND_SIZE);
+				c_append[APPEND_SIZE-1] = '\0';
+			}
+		}
+		if(str_compare(name, "initrd", 0)) {
+			strncpy(c_initrd, value, INITRD_SIZE);
+			c_initrd[INITRD_SIZE-1] = '\0';
+		}
+		if(str_compare(name, "default", 0)) {
+			dnum = atoi(value);
+		}
+		if(str_compare(name, "title", 0)) {
+			strncpy(c_title, value, NAME_SIZE);
+			c_title[NAME_SIZE-1] = '\0';
+			
+			c_root[0] = '\0';
+			c_kernel[0] = '\0';
+			c_append[0] = '\0';
+			c_initrd[0] = '\0';
+			c_flags = 0;
+			
+			if(++tnum == dnum) {
+				c_flags = TARGET_DEFAULT;
+			}
+		}
+		if(str_compare(name, "chainloader", 0)) {
+			c_title[0] = '\0';
+			c_root[0] = '\0';
+			c_kernel[0] = '\0';
+			c_append[0] = '\0';
+			c_initrd[0] = '\0';
+			c_flags = 0;
+			
+			tnum++;
+		}
+	}
+	
+	fclose(fh);
 }
