@@ -35,12 +35,14 @@
 #include <errno.h>
 #include <string.h>
 #include <stdio.h>
+#include <stdlib.h>
 
 #include "mount.h"
 #include "misc.h"
 #include "../config.h"
 #include "config.h"
 #include "console.h"
+#include "grub.h"
 
 #define MAGIC_BUF_SIZE (0x1003A)
 
@@ -338,6 +340,8 @@ int check_device(char const *device) {
 */
 char const *mount_dev(char const *device, char const *mpoint) {
 	char *fstype = NULL, fsbuf[16];
+	char *idev, devbuf[DEVICE_SIZE];
+	char *errmsg = NULL;
 	size_t fslen;
 	
 	if(strchr(device, ':')) {
@@ -350,14 +354,31 @@ char const *mount_dev(char const *device, char const *mpoint) {
 		fstype = fsbuf;
 	}
 	
+	idev = (char*)device;
+	
+	if(device[0] == '(') {
+		device = grub_cdevice(device);
+		
+		if(!device) {
+			errmsg = "grub_cdevice() == NULL";
+			goto END;
+		}
+	}
+	if(device[0] != '/') {
+		snprintf(devbuf, DEVICE_SIZE, "/dev/%s", device);
+		device = devbuf;
+	}
+	
 	if(!check_device(device)) {
-		return "Device not found";
+		errmsg = "Device not found";
+		goto END;
 	}
 	
 	if(!fstype || str_compare(fstype, "auto", 0)) {
 		fstype = detect_fstype(device);
 		if(!fstype) {
-			return "Unknown filesystem format";
+			errmsg = "Unknown filesystem format";
+			goto END;
 		}
 	}
 	
@@ -368,8 +389,13 @@ char const *mount_dev(char const *device, char const *mpoint) {
 	mkdir(mpoint, 0700);
 	
 	if(mount(device, mpoint, fstype, MS_RDONLY, NULL) == -1) {
-		return strerror(errno);
+		errmsg = strerror(errno);
+		goto END;
 	}
 	
-	return NULL;
+	END:
+	if(idev[0] == '(') {
+		free((char*)device);
+	}
+	return errmsg;
 }

@@ -156,10 +156,10 @@ char *grub_cdevice(char const *gdev) {
 	}
 	
 	if(str_compare("(fd0)", gdev, 0)) {
-		return "/dev/fd0";
+		return strclone("/dev/fd0", 99);
 	}
 	if(str_compare("(fd1)", gdev, 0)) {
-		return "/dev/fd1";
+		return strclone("/dev/fd1", 99);
 	}
 	
 	return NULL;
