@@ -360,7 +360,7 @@ char const *mount_dev(char const *device, char const *mpoint) {
 		device = grub_cdevice(device);
 		
 		if(!device) {
-			errmsg = "grub_cdevice() == NULL";
+			errmsg = "Unknown GRUB device";
 			goto END;
 		}
 	}

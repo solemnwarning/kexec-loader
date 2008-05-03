@@ -92,6 +92,7 @@ static void load_devices(void) {
 		devmap = "/mnt/grub/boot/grub/device.map";
 	}
 	if(!devmap) {
+		debug("device.map not found\n");
 		return;
 	}
 	
@@ -109,8 +110,14 @@ static void load_devices(void) {
 		}
 		
 		value = name+strcspn(name, " \t");
-		value += strspn(value, " \t");
-		value[strcspn(value, "\r\n")] = '\0';
+		
+		if(value[0] != '\0') {
+			value[0] = '\0';
+			value++;
+			
+			value += strspn(value, " \t");
+			value[strcspn(value, "\r\n")] = '\0';
+		}
 		
 		if(!(ptr = malloc(sizeof(struct grub_device)))) {
 			printD("device.map: malloc() failure, aborting");
@@ -124,6 +131,8 @@ static void load_devices(void) {
 		
 		ptr->next = grub_devices;
 		grub_devices = ptr;
+		
+		debug("Added GRUB device map: '%s' => '%s'\n", ptr->device, ptr->fname);
 	}
 	
 	fclose(fh);
@@ -211,11 +220,11 @@ static void load_menu(void) {
 			}
 			
 			strncpy(c_kernel, value, len);
-			c_kernel[len-1] = '\0';
+			c_kernel[len] = '\0';
 			
 			value += strcspn(value, " \t");
 			value += strspn(value, " \t");
-			
+				
 			if(value[0] != '\0') {
 				strncpy(c_append, value, APPEND_SIZE);
 				c_append[APPEND_SIZE-1] = '\0';

@@ -274,7 +274,7 @@ void config_parse(char* line, unsigned int lnum) {
 		config_add_mount(lnum, value, mpoint);
 		return;
 	}
-	if(str_compare(name, "grub_config", STR_NOCASE)) {
+	if(str_compare(name, "grub_root", STR_NOCASE)) {
 		if(value[0] == '\0') {
 			printD("config:%u: grub_root requires an argument", lnum);
 			return;
@@ -282,6 +282,7 @@ void config_parse(char* line, unsigned int lnum) {
 		
 		strncpy(config.grub_root, value, DEVICE_SIZE);
 		config.grub_root[DEVICE_SIZE-1] = '\0';
+		return;
 	}
 	if(str_compare(name, "grub_first", STR_NOCASE)) {
 		if(str_compare(value, "hdx", 0)) {
