@@ -92,7 +92,7 @@ using kexec. It is designed for systems where the BIOS does not support booting 
   <li><strong>grub_root [fstype:]&lt;device&gt;</strong>
   <br />Device containing the grub menu.lst (in either /boot/grub/menu.lst or /grub/menu.lst).</li>
   <li><strong>grub_first &lt;hdx/sdx&gt;</strong>
-  <br />Default is hdx. If hdx is specified, (hd0) will be hda, then all devices will follow as normal, with sd devices following at the end. If it's sdx, then it will reverse, (hd0) will be sda, followed by all other sd devices, then hd devices following at the end.</li>
+  <br />Default is hdx. If hdx is specified, (hd0) will be hda, then all devices will follow as normal, with sd devices following at the end. If it's sdx, then it will reverse, (hd0) will be sda, followed by all other sd devices, then hd devices following at the end. <b>If a device.map was found, this directive is ignored.</b></li>
 </ul>
 <p>Where parameters are shown in &lt;angled brackets&gt;, they are required for that directive. Ones in [square brackets] are optional. For mount and rootfs, if you do specify a fstype, it should be specified as ext2:/dev/hda1 for example.</p>
 <p>Normally kexec-loader can detect the filesystem type, it supports autodetection for the following types.</p>
