@@ -171,7 +171,68 @@ char *grub_cdevice(char const *gdev) {
 		return strclone("/dev/fd1", 99);
 	}
 	
-	return NULL;
+	if(!str_compare("(hd*)", gdev, STR_WILDCARD1)) {
+		return NULL;
+	}
+	
+	int disknum = atoi(gdev+3), partnum = -1;
+	if(strchr(gdev, ',')) {
+		partnum = atoi(strchr(gdev, ',')+1);
+	}
+	
+	FILE *fh = fopen("/proc/diskstats", "r");
+	if(!fh) {
+		debug("Can't open /proc/diskstats: %s\n", strerror(errno));
+		return NULL;
+	}
+	
+	int step = config.grub_first, count = -1, n = -1, last = -1, i;
+	char line[256], *device, devbuf[DEVICE_SIZE], devbuf2[DEVICE_SIZE];
+	
+	RLOOP:
+	rewind(fh);
+	
+	while(fgets(line, 256, fh)) {
+		device = line+strspn(line, " \t1234567890");
+		device[strcspn(device, " \t")] = '\0';
+		
+		if(
+			(step == 0 && !str_compare(device, "hd?", STR_WILDCARD2)) ||
+			(step == 1 && !str_compare(device, "sd?", STR_WILDCARD2))
+		) {
+			continue;
+		}
+		
+		i = device[2]-48;
+		
+		if(i > last && (i < n || n == last)) {
+			snprintf(devbuf, DEVICE_SIZE, "/dev/%s", device);
+			n = i;
+		}
+	}
+	if(n == last) {
+		if(step == config.grub_first) {
+			step = (step ? 0 : 1);
+			n = last = -1;
+			
+			goto RLOOP;
+		}else{
+			fclose(fh);
+			return NULL;
+		}
+	}
+	if(++count != disknum) {
+		last = n;
+		goto RLOOP;
+	}
+	
+	if(partnum != -1) {
+		strcpy(devbuf2, devbuf);
+		snprintf(devbuf, DEVICE_SIZE, "%s%d", devbuf2, partnum+1);
+	}
+	
+	fclose(fh);
+	return strclone(devbuf, 9999);
 }
 
 /* Load targets from menu.lst */
