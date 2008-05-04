@@ -155,9 +155,20 @@ static void free_devices(void) {
  * Returns NULL if the conversion fails
 */
 char *grub_cdevice(char const *gdev) {
+	char devbuf[DEVICE_SIZE];
+	
 	struct grub_device *ptr = grub_devices;
 	while(ptr) {
 		if(str_compare(ptr->device, gdev, 0)) {
+			return strclone(ptr->fname);
+		}
+		
+		if(
+			str_compare("(hd*,*)", gdev, STR_WILDCARD1) &&
+			str_compare("(hd*)", ptr->device, STR_WILDCARD1) &&
+			atoi(gdev+3) == atoi(ptr->device+3)
+		) {
+			snprintf(devbuf, DEVICE_SIZE, "%s%d", ptr->fname, atoi(strchr(gdev, ',')+1)+1);
 			return strclone(ptr->fname);
 		}
 		
@@ -187,7 +198,7 @@ char *grub_cdevice(char const *gdev) {
 	}
 	
 	int step = config.grub_first, count = -1, n = -1, last = -1, i;
-	char line[256], *device, devbuf[DEVICE_SIZE], devbuf2[DEVICE_SIZE];
+	char line[256], *device, devbuf2[DEVICE_SIZE];
 	
 	RLOOP:
 	rewind(fh);
