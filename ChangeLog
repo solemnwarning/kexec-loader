@@ -1,5 +1,7 @@
 Version 1.3:
 	Created mount_dev() function to cut down on duplicate mounting code.
+	
+	Added support for reading GRUB menu.lst and device.map files.
 
 Version 1.2:
 	Rewrote fatal() function and removed pointless calls to it.

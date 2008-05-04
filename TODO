@@ -1,6 +1,3 @@
-Version 1.3:
-	Support reading GRUB configuration files.
-
 Future/maybe:
 	Console for configuring and booting targets on the fly, like GRUB?
 	
