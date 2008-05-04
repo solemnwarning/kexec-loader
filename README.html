@@ -70,7 +70,7 @@ using kexec. It is designed for systems where the BIOS does not support booting 
 </ul>
 <p>If you specify a device as a variable called kexec_config on the boot line (e.g. kexec_config=/dev/hda), then the named device will be put on the top of the list. Failing to load from that one, it will then go through the list.</p>
 <p>The configuration must be called kexec-loader.conf and stored in the root of the filesystem and it must contain at least one section starting "title" OR have a grub_root to load a grub config file, or else it will have no kernels to load. You can put whitespace between the directives and their variables. Empty lines and lines beginning with a hash (#) are ignored.</p>
-<p>As of kexec-loader 1.3, reading a grub configuraiton file is supported. The entries in the grub configuration file will be placed above all other entries). To use grub, use the relevent directives.</p>
+<p>As of kexec-loader 1.3, reading a grub configuraiton file is supported. The entries in the grub configuration file will be placed below all other entries). To use grub, use the relevent directives.</p>
 <p>The directives are as follows.</p>
 <ul>
   <li><strong>timeout &lt;integer&gt;</strong>
@@ -92,7 +92,7 @@ using kexec. It is designed for systems where the BIOS does not support booting 
   <li><strong>grub_root [fstype:]&lt;device&gt;</strong>
   <br />Device containing the grub menu.lst (in either /boot/grub/menu.lst or /grub/menu.lst).</li>
   <li><strong>grub_first &lt;hdx/sdx&gt;</strong>
-  <br />Default is hdx. If hdx is specified, (hd0) will be hda, then all devices will follow as normal, with sd devices following at the end. If it's sdx, then it will reverse, (hd0) will be sda, followed by all other sd devices, then hd devices following at the end. <b>If a device.map was found, this directive is ignored.</b></li>
+  <br />Default is hdx. If hdx is specified, (hd0) will be hda, then all devices will follow as normal, with sd devices following at the end. If it's sdx, then it will reverse, (hd0) will be sda, followed by all other sd devices, then hd devices following at the end. <b>If a device.map was found:</b> kexec-loader will attempt to load settings from this, before failing back to this directive</b></li>
 </ul>
 <p>Where parameters are shown in &lt;angled brackets&gt;, they are required for that directive. Ones in [square brackets] are optional. For mount and rootfs, if you do specify a fstype, it should be specified as ext2:/dev/hda1 for example.</p>
 <p>Normally kexec-loader can detect the filesystem type, it supports autodetection for the following types.</p>
