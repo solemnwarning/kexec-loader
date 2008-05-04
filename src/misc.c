@@ -100,17 +100,10 @@ void debug(char const* fmt, ...) {
 }
 
 /* Copy a string */
-char* strclone(char const* string, size_t maxlen) {
-	size_t len = 0;
-	while(len < maxlen) {
-		if(string[len] == '\0') {
-			break;
-		}
-		len++;
-	}
+char* strclone(char const* string) {
+	char* dest = allocate(strlen(string)+1);
+	strcpy(dest, string);
 	
-	char* dest = allocate(len+1);
-	strncpy(dest, string, len);
 	return(dest);
 }
 
@@ -227,10 +220,10 @@ char *get_cmdline(char const *name) {
 	
 	if(tok) {
 		if((val = strchr(tok, '='))) {
-			return strclone(val+1, 9999);
+			return strclone(val+1);
 		}
 		
-		return strclone("", 1);
+		return strclone("");
 	}
 	
 	return NULL;

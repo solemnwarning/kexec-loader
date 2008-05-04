@@ -158,17 +158,17 @@ char *grub_cdevice(char const *gdev) {
 	struct grub_device *ptr = grub_devices;
 	while(ptr) {
 		if(str_compare(ptr->device, gdev, 0)) {
-			return strclone(ptr->fname, 9999);
+			return strclone(ptr->fname);
 		}
 		
 		ptr = ptr->next;
 	}
 	
 	if(str_compare("(fd0)", gdev, 0)) {
-		return strclone("/dev/fd0", 99);
+		return strclone("/dev/fd0");
 	}
 	if(str_compare("(fd1)", gdev, 0)) {
-		return strclone("/dev/fd1", 99);
+		return strclone("/dev/fd1");
 	}
 	
 	if(!str_compare("(hd*)", gdev, STR_WILDCARD1)) {
@@ -232,7 +232,7 @@ char *grub_cdevice(char const *gdev) {
 	}
 	
 	fclose(fh);
-	return strclone(devbuf, 9999);
+	return strclone(devbuf);
 }
 
 /* Load targets from menu.lst */
