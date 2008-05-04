@@ -320,6 +320,9 @@ static void load_menu(void) {
 			
 			tnum++;
 		}
+		if(str_compare(name, "timeout", 0) && !config.timeout) {
+			config.timeout = strtoul(value, NULL, 10);
+		}
 	}
 	if(c_title[0] != '\0') {
 		add_target();

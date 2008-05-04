@@ -102,7 +102,6 @@ int main(int argc, char** argv) {
 	
 	while(1) {
 		config_load();
-		grub_loadcfg();
 		main_menu();
 	}
 	

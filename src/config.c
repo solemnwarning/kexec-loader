@@ -43,6 +43,7 @@
 #include "misc.h"
 #include "mount.h"
 #include "console.h"
+#include "grub.h"
 
 struct kl_config config = CONFIG_DEFAULTS_DEFINE;
 static struct kl_target target = TARGET_DEFAULTS_DEFINE;
@@ -171,6 +172,7 @@ void config_load(void) {
 	}
 	
 	config_finish();
+	grub_loadcfg();
 	
 	while(fclose(cfg_handle) != 0) {
 		if(errno == EINTR) {
