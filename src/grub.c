@@ -169,7 +169,7 @@ char *grub_cdevice(char const *gdev) {
 			atoi(gdev+3) == atoi(ptr->device+3)
 		) {
 			snprintf(devbuf, DEVICE_SIZE, "%s%d", ptr->fname, atoi(strchr(gdev, ',')+1)+1);
-			return strclone(ptr->fname);
+			return strclone(devbuf);
 		}
 		
 		ptr = ptr->next;
