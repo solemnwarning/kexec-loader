@@ -99,12 +99,10 @@ echo "Creating $initramfs tree..."
 mkdir -p -m 0755 "$initramfs/"{dev,mnt,proc,sbin} || exit 1
 
 echo "Copying programs..."
-install -m 0755 src/kexec-loader "$initramfs/sbin/kexec-loader" || exit 1
-ln -sf "sbin/kexec-loader" "$initramfs/init" || exit 1
-ln -sf "kexec-loader" "$initramfs/sbin/kexec" || exit 1
+install -m 0755 src/kexec-loader.static "$initramfs/init" || exit 1
 
 echo "Stripping symbols..."
-strip -s "$initramfs/sbin/kexec-loader"
+strip -s "$initramfs/init"
 
 echo "Creating devices..."
 mknod -m 0600 "$initramfs/dev/console" c 5 1 || exit 1

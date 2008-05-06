@@ -1,6 +1,6 @@
 diff -ru kexec-tools-1.101.orig/kexec/kexec.c kexec-tools-1.101.merge/kexec/kexec.c
 --- kexec-tools-1.101.orig/kexec/kexec.c	2005-01-13 13:24:29.000000000 +0000
-+++ kexec-tools-1.101.merge/kexec/kexec.c	2008-04-24 17:42:20.000000000 +0100
++++ kexec-tools-1.101.merge/kexec/kexec.c	2008-05-06 11:48:19.000000000 +0100
 @@ -687,7 +687,7 @@
  	printf("\n");
  }
@@ -12,33 +12,31 @@ diff -ru kexec-tools-1.101.orig/kexec/kexec.c kexec-tools-1.101.merge/kexec/kexe
  	int do_exec = 0;
 diff -ru kexec-tools-1.101.orig/kexec/Makefile kexec-tools-1.101.merge/kexec/Makefile
 --- kexec-tools-1.101.orig/kexec/Makefile	2004-12-21 19:36:39.000000000 +0000
-+++ kexec-tools-1.101.merge/kexec/Makefile	2008-04-24 17:41:02.000000000 +0100
++++ kexec-tools-1.101.merge/kexec/Makefile	2008-05-06 11:55:30.000000000 +0100
 @@ -26,7 +26,7 @@
  KEXEC_SRCS:= $(KEXEC_C_SRCS) $(KEXEC_S_SRCS)
  KEXEC_OBJS:= $(KEXEC_C_OBJS) $(KEXEC_S_OBJS)
  KEXEC_DEPS:= $(KEXEC_C_DEPS) $(KEXEC_S_DEPS)
 -KEXEC:= $(SBINDIR)/kexec
-+KEXEC:= $(KLBASE)/src/kexec_build
++KEXEC:= $(KLBASE)/src/kexec.a
  
  include $(KEXEC_DEPS)
  
-@@ -47,8 +47,11 @@
+@@ -47,8 +47,9 @@
  	$(CC) $(KCFLAGS) -o $@ -c $<
  
  $(KEXEC): $(KEXEC_OBJS) $(UTIL_LIB)
 -	mkdir -p $(@D)
 -	$(CC) $(KCFLAGS) -o $@ $(KEXEC_OBJS) $(UTIL_LIB) $(LIBS)
-+	mkdir -p $(KLBASE)/src/kexec/
-+	cp $(KEXEC_OBJS) $(KLBASE)/src/kexec/
-+	
-+	echo "$(UTIL_LIB) $(LIBS)" > $(KLBASE)/src/kexec_libs
-+	touch $(KEXEC)
++	echo "$(LIBS)" > $(KLBASE)/src/kexec_libs
++	cp $(UTIL_LIB) $(KLBASE)/src/kexec.a
++	ar -r $(KEXEC) $(KEXEC_OBJS)
  
  echo::
  	@echo "KEXEC_C_SRCS $(KEXEC_C_SRCS)"
 diff -ru kexec-tools-1.101.orig/Makefile kexec-tools-1.101.merge/Makefile
 --- kexec-tools-1.101.orig/Makefile	2005-02-18 12:26:09.000000000 +0000
-+++ kexec-tools-1.101.merge/Makefile	2008-04-24 17:41:58.000000000 +0100
++++ kexec-tools-1.101.merge/Makefile	2008-05-06 11:49:14.000000000 +0100
 @@ -42,12 +42,7 @@
  PKGLIBDIR=$(LIBDIR)/$(PACKAGE)
  PKGINCLUDEIR=$(INCLUDEDIR)/$(PACKAGE)
@@ -49,7 +47,7 @@ diff -ru kexec-tools-1.101.orig/Makefile kexec-tools-1.101.merge/Makefile
 -BINARIES:=$(SBINDIR)/kexec $(SBINDIR)/kdump $(BINARIES_$(ARCH)) 
 -
 -TARGETS:=$(BINARIES) $(MAN_PAGES)
-+TARGETS:=$(KLBASE)/src/kexec_build
++TARGETS:=$(KLBASE)/src/kexec.a
  
  all: $(TARGETS)
  
