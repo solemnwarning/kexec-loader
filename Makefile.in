@@ -56,6 +56,9 @@ distclean: clean
 	rm -f kexec-tools-$(KT_VER).tar.gz
 	rm -f kexec-tools-$(KT_VER).spec
 
+dist: distclean
+	tar --exclude='*.svn' -C ../ -cpf ../kexec-loader-$(VERSION).tar $(shell basename $(KLBASE))
+
 kexec:
 	wget -nc $(KT_URL)
 	tar -xzf kexec-tools-$(KT_VER).tar.gz
