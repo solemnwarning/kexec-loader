@@ -48,6 +48,7 @@ clean:
 	@$(MAKE) -C src/ clean
 
 distclean: clean
+	@$(MAKE) -C src/ distclean
 
 dist: distclean
 	tar --exclude='*.svn' -C ../ -cpf ../kexec-loader-$(VERSION).tar $(shell basename $(KLBASE))

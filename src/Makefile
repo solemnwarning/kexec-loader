@@ -51,8 +51,10 @@ clean:
 	rm -f kexec.a kexec_libs
 	
 	rm -rf kexec-tools-$(KT_VER)/
-	rm -f kexec-tools-$(KT_VER).tar.gz
 	rm -f kexec-tools-$(KT_VER).spec
+
+distclean: clean
+	rm -f kexec-tools-$(KT_VER).tar.gz
 
 kexec-loader: $(DEPS)
 	$(CC) $(CFLAGS) $(LIBS) -o kexec-loader $(OBJS)
@@ -82,10 +84,8 @@ grub.o: grub.c grub.h
 kexec.a:
 	wget -nc $(KT_URL)
 	tar -xzf kexec-tools-$(KT_VER).tar.gz
-	if [ ! -f src/kexec_build ]; then \
 	cd kexec-tools-$(KT_VER)/ && \
 	./configure $(KT_CONFIGURE) && \
 	patch -Np1 -i $(KLBASE)/patches/kexec-tools-1.101-merge.diff && \
 	patch -Np1 -i $(KLBASE)/patches/kexec-tools-1.101-mini.diff && \
-	make; \
-fi
+	make
