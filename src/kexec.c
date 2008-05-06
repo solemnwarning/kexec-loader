@@ -42,7 +42,11 @@
 #include "../config.h"
 #include "console.h"
 
-#define argv_append(str) kexec_argv[argn++] = str;
+#define argv_append(str) kexec_argv[argc++] = str;
+
+int kexec_main(int argc, char **argv);
+
+static int argc;
 
 /* Run the kexec program
  *
@@ -58,7 +62,8 @@ static int run_kexec(char** kexec_argv) {
 		return(-1);
 	}
 	if(newpid == 0) {
-		kexec_argv[0] = "kexec";
+		#if KEXEC_PATH
+		kexec_argv[0] = KEXEC_PATH;
 		execv(KEXEC_PATH, kexec_argv);
 		
 		TEXT_RED();
@@ -66,6 +71,11 @@ static int run_kexec(char** kexec_argv) {
 		TEXT_WHITE();
 		
 		exit(-1);
+		#else
+		
+		kexec_argv[0] = "kexec";
+		exit(kexec_main(argc, kexec_argv));
+		#endif
 	}
 	
 	int status = 0;
@@ -87,7 +97,7 @@ int load_kernel(char const* kernel, char const* append, char const* initrd) {
 	char initrd_arg[STACK_BUF];
 	
 	char* kexec_argv[6] = {NULL};
-	int argn = 1;
+	argc = 1;
 	
 	argv_append("-l");
 	argv_append((char*)kernel);

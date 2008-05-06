@@ -36,10 +36,15 @@ export CFLAGS := -Wall -DVERSION=\"$(VERSION)\" @CFLAGS@
 export INCLUDES := @INCLUDES@
 export LIBS := @LIBS@
 export KLBASE := $(PWD)
+export HOST := @HOST@
 
 KT_VER := 1.101
 KT_URL := http://www.xmission.com/~ebiederm/files/kexec/kexec-tools-$(KT_VER).tar.gz
 KT_CONFIGURE :=
+
+ifdef HOST
+	KT_CONFIGURE += --host=$(HOST)
+endif
 
 all: kexec
 	@$(MAKE) -C src/
