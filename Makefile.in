@@ -46,11 +46,15 @@ all: kexec
 
 clean:
 	@$(MAKE) -C src/ clean
-	rm -rf kexec-tools-1.101/
 
-check:
-	@$(MAKE) -C src/ clean
-	@$(MAKE) -C src/
+distclean: clean
+	rm -f Makefile
+	rm -f config.status config.log
+	rm -rf autom4te.cache/
+	
+	rm -rf kexec-tools-$(KT_VER)/
+	rm -f kexec-tools-$(KT_VER).tar.gz
+	rm -f kexec-tools-$(KT_VER).spec
 
 kexec:
 	wget -nc $(KT_URL)
