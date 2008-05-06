@@ -62,7 +62,7 @@ static int run_kexec(char** kexec_argv) {
 		return(-1);
 	}
 	if(newpid == 0) {
-		#if KEXEC_PATH
+		#ifdef KEXEC_PATH
 		kexec_argv[0] = KEXEC_PATH;
 		execv(KEXEC_PATH, kexec_argv);
 		

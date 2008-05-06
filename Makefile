@@ -1,4 +1,4 @@
-# kexec-loader - ./configure source
+# kexec-loader - Root makefile
 # Copyright (C) 2007,2008 Daniel Collins <solemnwarning@solemnwarning.net>
 # All rights reserved.
 #
@@ -27,13 +27,27 @@
 # NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE,
 # EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-AC_INIT(src/main.c)
-AC_PROG_CC
-AC_LANG_C
+# This should be "vN.N" releases
+#
+VERSION=r$(shell svn info | grep 'Revision:' | sed -e 's/Revision: //')
 
-AC_SUBST(CC)
-AC_SUBST(CFLAGS)
-AC_SUBST(INCLUDES)
-AC_SUBST(LIBS)
-AC_SUBST(HOST, $host)
-AC_OUTPUT(Makefile)
+export CC := gcc
+export CFLAGS := -Wall -DVERSION=\"$(VERSION)\"
+export INCLUDES :=
+export LIBS :=
+export KLBASE := $(PWD)
+
+ifdef HOST
+	CC := $(HOST)-gcc
+endif
+
+all:
+	@$(MAKE) -C src/
+
+clean:
+	@$(MAKE) -C src/ clean
+
+distclean: clean
+
+dist: distclean
+	tar --exclude='*.svn' -C ../ -cpf ../kexec-loader-$(VERSION).tar $(shell basename $(KLBASE))

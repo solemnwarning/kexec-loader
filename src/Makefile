@@ -27,17 +27,36 @@
 # NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE,
 # EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
+OBJS := main.o mount.o config.o console.o misc.o kexec.o grub.o
+DEPS := $(OBJS)
+ifdef KEXEC
+	CFLAGS += -DKEXEC_PATH=\"$(KEXEC)\"
+else
+	OBJS += kexec.a `cat kexec_libs`
+	DEPS += kexec.a
+endif
+
+KT_VER := 1.101
+KT_URL := http://www.xmission.com/~ebiederm/files/kexec/kexec-tools-$(KT_VER).tar.gz
+KT_CONFIGURE :=
+
+ifdef HOST
+	KT_CONFIGURE += --host=$(HOST)
+endif
+
 all: kexec-loader
 
 clean:
-	rm -f *.o kexec-loader
+	rm -f *.o kexec-loader kexec-loader.static
 	rm -f kexec.a kexec_libs
+	
+	rm -rf kexec-tools-$(KT_VER)/
+	rm -f kexec-tools-$(KT_VER).tar.gz
+	rm -f kexec-tools-$(KT_VER).spec
 
-kexec-loader: main.o mount.o config.o console.o misc.o kexec.o grub.o
-	$(CC) $(CFLAGS) $(LIBS) -o kexec-loader main.o mount.o config.o console.o \
-		misc.o kexec.o grub.o kexec.a `cat kexec_libs`
-	$(CC) $(CFLAGS) $(LIBS) -static -o kexec-loader.static main.o mount.o \
-		config.o console.o misc.o kexec.o grub.o kexec.a `cat kexec_libs`
+kexec-loader: $(DEPS)
+	$(CC) $(CFLAGS) $(LIBS) -o kexec-loader $(OBJS)
+	$(CC) $(CFLAGS) $(LIBS) -static -o kexec-loader.static $(OBJS)
 
 main.o: main.c
 	$(CC) $(CFLAGS) $(INCLUDES) -c -o main.o main.c
@@ -59,3 +78,14 @@ kexec.o: kexec.c kexec.h misc.o
 
 grub.o: grub.c grub.h
 	$(CC) $(CFLAGS) $(INCLUDES) -c -o grub.o grub.c
+
+kexec.a:
+	wget -nc $(KT_URL)
+	tar -xzf kexec-tools-$(KT_VER).tar.gz
+	if [ ! -f src/kexec_build ]; then \
+	cd kexec-tools-$(KT_VER)/ && \
+	./configure $(KT_CONFIGURE) && \
+	patch -Np1 -i $(KLBASE)/patches/kexec-tools-1.101-merge.diff && \
+	patch -Np1 -i $(KLBASE)/patches/kexec-tools-1.101-mini.diff && \
+	make; \
+fi
