@@ -1,5 +1,5 @@
 # kexec-loader - Root makefile
-# Copyright (C) 2007, Daniel Collins <solemnwarning@solemnwarning.net>
+# Copyright (C) 2007,2008 Daniel Collins <solemnwarning@solemnwarning.net>
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -31,20 +31,15 @@
 #
 VERSION=r$(shell svn info | grep 'Revision:' | sed -e 's/Revision: //')
 
-export CC := gcc
-export CFLAGS := -Wall -DVERSION=\"$(VERSION)\"
-export INCLUDES :=
-export LIBS :=
+export CC := @CC@
+export CFLAGS := -Wall -DVERSION=\"$(VERSION)\" @CFLAGS@
+export INCLUDES := @INCLUDES@
+export LIBS := @LIBS@
 export KLBASE := $(PWD)
 
 KT_VER := 1.101
 KT_URL := http://www.xmission.com/~ebiederm/files/kexec/kexec-tools-$(KT_VER).tar.gz
 KT_CONFIGURE :=
-
-ifdef HOST
-	export CC := $(HOST)-gcc
-	KT_CONFIGURE := --host=$(HOST)
-endif
 
 all: kexec
 	@$(MAKE) -C src/
