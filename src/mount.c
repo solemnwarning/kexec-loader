@@ -343,6 +343,7 @@ char const *mount_dev(char const *device, char const *mpoint) {
 	char *idev, devbuf[DEVICE_SIZE];
 	char *errmsg = NULL;
 	size_t fslen;
+	int flags = MS_RDONLY;
 	
 	if(strchr(device, ':')) {
 		fslen = strcspn(device, ":");
@@ -381,6 +382,9 @@ char const *mount_dev(char const *device, char const *mpoint) {
 			goto END;
 		}
 	}
+	if(str_compare(fstype, "bind", 0)) {
+		flags |= MS_BIND;
+	}
 	
 	/* Creates mount points such as /mnt/hda1 when needed
 	 * Filesystems are mounted read-only, so this won't
@@ -388,7 +392,7 @@ char const *mount_dev(char const *device, char const *mpoint) {
 	*/
 	mkdir(mpoint, 0700);
 	
-	if(mount(device, mpoint, fstype, MS_RDONLY, NULL) == -1) {
+	if(mount(device, mpoint, fstype, flags, NULL) == -1) {
 		errmsg = strerror(errno);
 		goto END;
 	}
