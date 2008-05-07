@@ -48,6 +48,7 @@
 #include "misc.h"
 #include "grub.h"
 
+static void do_init(void);
 static void main_menu(void);
 static void draw_skel(void);
 static void draw_tbline(int rnum);
@@ -61,8 +62,11 @@ static int srow = 4, erow = 0;
 static int scol = 3, ecol = 0;
 
 int main(int argc, char** argv) {
-	if(mount("proc", "/proc", "proc", 0, NULL) == -1) {
-		fatal("Can't mount /proc filesystem: %s", strerror(errno));
+	if(strrchr(argv[0], '/')) {
+		argv[0] = strrchr(argv[0], '/')+1;
+	}
+	if(strcmp(argv[0], "init") == 0) {
+		do_init();
 	}
 	
 	struct rlimit limit = {
@@ -100,6 +104,13 @@ int main(int argc, char** argv) {
 	}
 	
 	return 1;
+}
+
+/* Stuff to do when executed as /init */
+static void do_init(void) {
+	if(mount("proc", "/proc", "proc", 0, NULL) == -1) {
+		fatal("Can't mount /proc filesystem: %s", strerror(errno));
+	}
 }
 
 /* Display main menu
