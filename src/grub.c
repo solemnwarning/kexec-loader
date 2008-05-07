@@ -65,6 +65,10 @@ static void add_target(void);
 void grub_loadcfg(void) {
 	free_devices();
 	
+	if(config.grub_root[0] == '\0') {
+		return;
+	}
+	
 	char const *errmsg;
 	if((errmsg = mount_dev(config.grub_root, "/mnt/grub"))) {
 		printD("Can't mount %s at /mnt/grub: %s", config.grub_root, errmsg);
