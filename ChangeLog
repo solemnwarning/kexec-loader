@@ -5,6 +5,9 @@ Version 1.4:
 	set, allowing kexec-loader to be built without including kexec and
 	also updated it to directly call kexec_main() instead of execv() when
 	kexec is included in the kexec-loader binary.
+	
+	Fixed bug: grub_loadcfg() now checks that grub_root is set before
+	attempting to mount it, how the hell did I overlook this?!
 
 Version 1.3:
 	Created mount_dev() function to cut down on duplicate mounting code.
