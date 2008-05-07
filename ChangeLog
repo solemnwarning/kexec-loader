@@ -1,3 +1,11 @@
+Version 1.4:
+	Made lots of small changes to the makefiles.
+	
+	Updated run_kexec() to use an external kexec binary if KEXEC_PATH is
+	set, allowing kexec-loader to be built without including kexec and
+	also updated it to directly call kexec_main() instead of execv() when
+	kexec is included in the kexec-loader binary.
+
 Version 1.3:
 	Created mount_dev() function to cut down on duplicate mounting code.
 	

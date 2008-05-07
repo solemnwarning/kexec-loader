@@ -4,6 +4,3 @@ Version 1.4:
 
 Future/maybe:
 	Console for configuring and booting targets on the fly, like GRUB?
-	
-	Improve the kexec-tools merge patch to allow kexec to be run inside the
-	main process and to use the kexec-loader console I/O functions?
