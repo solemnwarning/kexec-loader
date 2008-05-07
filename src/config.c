@@ -147,15 +147,19 @@ static char *next_value(char *value) {
  * or may not be loaded.
 */
 void config_load(void) {
-	if(!mount_config()) {
-		return;
+	if(!config.config_file) {
+		if(!mount_config()) {
+			return;
+		}
+		
+		config.config_file = "/mnt/config/" CONFIG_FILE;
 	}
 	
 	TARGET_DEFAULTS(&target);
 	
-	FILE* cfg_handle = fopen("/mnt/config/" CONFIG_FILE, "r");
+	FILE* cfg_handle = fopen(config.config_file, "r");
 	if(!cfg_handle) {
-		printD("Can't open " CONFIG_FILE ": %s", strerror(errno));
+		printD("Can't open %s: %s", config.config_file, strerror(errno));
 		
 		goto UMOUNT;
 	}

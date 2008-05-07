@@ -99,6 +99,8 @@ int main(int argc, char** argv) {
 	debug("scol = %d, ecol = %d\n", scol, ecol);
 	
 	while(1) {
+		config.config_file = (argc == 2 ? argv[1] : NULL);
+		
 		config_load();
 		main_menu();
 	}

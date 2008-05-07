@@ -78,9 +78,11 @@ struct kl_target {
 	struct kl_target* next;
 };
 
-#define CONFIG_DEFAULTS_DEFINE {0,{'\0'},hdx,NULL};
+#define CONFIG_DEFAULTS_DEFINE {NULL,0,{'\0'},hdx,NULL}
 
 struct kl_config {
+	char *config_file;
+	
 	unsigned int timeout;
 	
 	char grub_root[DEVICE_SIZE];
