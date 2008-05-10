@@ -1,6 +1,2 @@
-Version 1.4:
-	Support for running kexec-loader at the end of a system reboot in
-	order to load a new kernel without rebooting the hardware.
-
 Future/maybe:
 	Console for configuring and booting targets on the fly, like GRUB?

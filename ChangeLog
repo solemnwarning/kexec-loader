@@ -1,10 +1,8 @@
-Version 1.4:
-	Made lots of small changes to the makefiles.
+Version 1.3.1:
+	Updated makefile structure and added new targets.
 	
-	Updated run_kexec() to use an external kexec binary if KEXEC_PATH is
-	set, allowing kexec-loader to be built without including kexec and
-	also updated it to directly call kexec_main() instead of execv() when
-	kexec is included in the kexec-loader binary.
+	Updated run_kexec() to directly call kexec_main() in the child process
+	instead of calling itself with argv[0]="kexec" via execv().
 	
 	Fixed bug: grub_loadcfg() now checks that grub_root is set before
 	attempting to mount it, how the hell did I overlook this?!

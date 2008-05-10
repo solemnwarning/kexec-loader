@@ -62,20 +62,8 @@ static int run_kexec(char** kexec_argv) {
 		return(-1);
 	}
 	if(newpid == 0) {
-		#ifdef KEXEC_PATH
-		kexec_argv[0] = KEXEC_PATH;
-		execv(KEXEC_PATH, kexec_argv);
-		
-		TEXT_RED();
-		printD(">> Can't run kexec: %s", strerror(errno));
-		TEXT_WHITE();
-		
-		exit(-1);
-		#else
-		
 		kexec_argv[0] = "kexec";
 		exit(kexec_main(argc, kexec_argv));
-		#endif
 	}
 	
 	int status = 0;
