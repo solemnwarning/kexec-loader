@@ -41,6 +41,8 @@ ifdef HOST
 	CC := $(HOST)-gcc
 endif
 
+TARFILE := kexec-loader-$(shell echo $(VERSION) | sed -e 's/^v//').tar
+
 all:
 	@$(MAKE) -C src/
 
@@ -51,4 +53,4 @@ distclean: clean
 	@$(MAKE) -C src/ distclean
 
 dist: distclean
-	tar --exclude='*.svn' -C ../ -cpf ../kexec-loader-$(VERSION).tar $(shell basename $(KLBASE))
+	tar --exclude='*.svn' -cpf ../$(TARFILE) -C ../ $(shell basename $(KLBASE))
