@@ -315,15 +315,15 @@ static void load_menu(void) {
 		}
 		if(str_compare(name, "title", 0)) {
 			if(c_title[0] != '\0') {
+				if(tnum++ == dnum) {
+					c_flags = TARGET_DEFAULT;
+				}
+				
 				add_target();
 			}
 			
 			strncpy(c_title, value, NAME_SIZE);
 			c_title[NAME_SIZE-1] = '\0';
-			
-			if(++tnum == dnum) {
-				c_flags = TARGET_DEFAULT;
-			}
 		}
 		if(str_compare(name, "chainloader", 0)) {
 			c_title[0] = '\0';

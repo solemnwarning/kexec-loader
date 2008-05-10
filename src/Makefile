@@ -27,14 +27,8 @@
 # NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE,
 # EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-OBJS := main.o mount.o config.o console.o misc.o kexec.o grub.o
-DEPS := $(OBJS)
-ifdef KEXEC
-	CFLAGS += -DKEXEC_PATH=\"$(KEXEC)\"
-else
-	OBJS += kexec.a `cat kexec_libs`
-	DEPS += kexec.a
-endif
+DEPS := main.o mount.o config.o console.o misc.o kexec.o grub.o kexec.a
+OBJS := $(DEPS) `cat kexec_libs`
 
 KT_VER := 1.101
 KT_URL := http://www.xmission.com/~ebiederm/files/kexec/kexec-tools-$(KT_VER).tar.gz
