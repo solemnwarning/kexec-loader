@@ -153,7 +153,7 @@ void config_load(void) {
 	
 	TARGET_DEFAULTS(&target);
 	
-	FILE* cfg_handle = fopen(CONFIG_FILE, "r");
+	FILE* cfg_handle = fopen("/mnt/config/" CONFIG_FILE, "r");
 	if(!cfg_handle) {
 		printD("Can't open " CONFIG_FILE ": %s", strerror(errno));
 		
