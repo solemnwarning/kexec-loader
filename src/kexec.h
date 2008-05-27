@@ -30,7 +30,8 @@
 
 #ifndef KEXEC_LOADER_KEXEC_H
 #define KEXEC_LOADER_KEXEC_H
+#include "config.h"
 
-int load_kernel(char const* kernel, char const* append, char const* initrd, char const *cmdline);
+int load_kernel(kl_target *target);
 
 #endif /* !KEXEC_LOADER_KEXEC_H */

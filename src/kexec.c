@@ -41,8 +41,23 @@
 #include "misc.h"
 #include "../config.h"
 #include "console.h"
+#include "config.h"
 
 #define argv_append(str) kexec_argv[argc++] = str; kexec_argv[argc] = NULL;
+
+#define argv_appendf(str, ...) \
+	if(!(str = malloc(snprintf(NULL, 0, __VA_ARGS__)+1))) {\
+		RETURN(1);\
+	}\
+	\
+	sprintf(str, __VA_ARGS__);\
+	argv_append(str);
+
+#define RETURN(x) \
+	free(append);\
+	free(cmdline);\
+	free(initrd);\
+	return x;
 
 int kexec_main(int argc, char **argv);
 
@@ -80,45 +95,42 @@ static int run_kexec(char** kexec_argv) {
  *
  * Returns 1 on success, zero on error
 */
-int load_kernel(char const* kernel, char const* append, char const* initrd, char const *cmdline) {
-	char append_arg[STACK_BUF];
-	char cmdline_arg[STACK_BUF];
-	char initrd_arg[STACK_BUF];
+int load_kernel(kl_target *target) {
+	char *append = NULL;
+	char *cmdline = NULL;
+	char *initrd = NULL;
 	
 	char* kexec_argv[7] = {NULL};
 	argc = 1;
 	
 	argv_append("-l");
-	argv_append((char*)kernel);
+	argv_append(target->kernel);
 	
 	TEXT_GREEN();
 	printd("> Loading kernel...");
-	printd(">> kernel: %s", kernel);
+	printd(">> kernel: %s", target->kernel);
 	
-	if(append[0] != '\0') {
-		snprintf(append_arg, STACK_BUF, "--append=%s", append);
-		argv_append(append_arg);
+	if(target->append[0] != '\0') {
+		argv_appendf(append, "--append=%s", target->append);
 		
-		printd(">> append: %s", append);
+		printd(">> append: %s", target->append);
 	}
-	if(cmdline[0] != '\0') {
-		snprintf(cmdline_arg, STACK_BUF, "--command-line=%s", cmdline);
-		argv_append(cmdline_arg);
+	if(target->cmdline[0] != '\0') {
+		argv_appendf(cmdline, "--command-line=%s", target->cmdline);
 		
-		printd(">> cmdline: %s", cmdline);
+		printd(">> cmdline: %s", target->cmdline);
 	}
-	if(initrd[0] != '\0') {
-		snprintf(initrd_arg, STACK_BUF, "--initrd=%s", initrd);
-		argv_append(initrd_arg);
+	if(target->initrd[0] != '\0') {
+		argv_appendf(initrd, "--initrd=%s", target->initrd);
 		
-		printd(">> initrd: %s", initrd);
+		printd(">> initrd: %s", target->initrd);
 	}
 	
 	TEXT_WHITE();
 	
 	if(run_kexec(kexec_argv) != 0) {
-		return 0;
+		RETURN(0);
 	}
 	
-	return 1;
+	RETURN(1);
 }
