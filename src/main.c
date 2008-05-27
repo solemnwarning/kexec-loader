@@ -75,7 +75,6 @@ int main(int argc, char** argv) {
 	}
 	
 	debug("STACK_LIMIT = %d\n", STACK_LIMIT);
-	debug("STACK_BUF = %d\n", STACK_BUF);
 	debug("DEVICE_SIZE = %d\n", DEVICE_SIZE);
 	debug("MPOINT_SIZE = %d\n", MPOINT_SIZE);
 	debug("NAME_SIZE = %d\n", NAME_SIZE);
@@ -355,8 +354,8 @@ static void target_run(kl_target *target) {
 
 /* Display a list of devices from /proc/diskstats */
 static void list_devices(void) {
-	char buf[STACK_BUF];
-	char filename[256];
+	char buf[256];
+	char filename[32];
 	char *name, *fstype;
 	int major, minor;
 	
@@ -368,12 +367,12 @@ static void list_devices(void) {
 	printM("The following disks have been detected by Linux:");
 	printM("");
 	
-	while(fgets(buf, STACK_BUF, disks)) {
+	while(fgets(buf, 256, disks)) {
 		major = atoi(strtok(buf, " \t"));
 		minor = atoi(strtok(NULL, " \t"));
 		name = strtok(NULL, " \t");
 		
-		snprintf(filename, 256, "/dev/%s", name);
+		snprintf(filename, 32, "/dev/%s", name);
 		if(!(fstype = detect_fstype(filename))) {
 			fstype = "Unknown filesystem";
 		}

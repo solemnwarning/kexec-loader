@@ -57,8 +57,8 @@ void fatal(char const* fmt, ...) {
 	va_list argv;
 	va_start(argv, fmt);
 	
-	char buf[STACK_BUF];
-	vsnprintf(buf, STACK_BUF, fmt, argv);
+	char buf[256];
+	vsnprintf(buf, 256, fmt, argv);
 	
 	console_setpos(1, 1);
 	printf("%c[2J", 0x1B);
@@ -189,14 +189,14 @@ int str_compare(char const* str1, char const* str2, int flags, ...) {
 char *get_cmdline(char const *name) {
 	FILE *fh;
 	char *tok, *val;
-	char cmdline[STACK_BUF];
+	char cmdline[1024];
 	size_t len;
 	
 	if(!(fh = fopen("/proc/cmdline", "r"))) {
 		return NULL;
 	}
 	
-	if(!fgets(cmdline, STACK_BUF, fh)) {
+	if(!fgets(cmdline, 1024, fh)) {
 		return NULL;
 	}
 	cmdline[strcspn(cmdline, "\n")] = '\0';

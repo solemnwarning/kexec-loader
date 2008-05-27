@@ -167,8 +167,8 @@ void config_load(void) {
 	config.targets = NULL; /* BUG: Memory leak! */
 	
 	unsigned int lnum = 1;
-	char line[STACK_BUF] = {'\0'};
-	while(fgets(line, STACK_BUF, cfg_handle) != NULL) {
+	char line[1024] = {'\0'};
+	while(fgets(line, 1024, cfg_handle) != NULL) {
 		config_parse(line, lnum++);
 	}
 	

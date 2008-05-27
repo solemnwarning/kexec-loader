@@ -1,3 +1,12 @@
+Version 1.4:
+	Added cmdline configuration directive.
+	
+	Updated load_kernel() to take a kl_target as its argument and store the
+	argument strings in dynamic memory.
+	
+	Removed STACK_BUF macro and replaced it with fixed buffers of smaller
+	sizes since 2048 is overkill for any of them.
+
 Version 1.3.1:
 	Updated makefile structure and added new targets.
 	
