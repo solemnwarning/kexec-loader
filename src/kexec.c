@@ -42,7 +42,7 @@
 #include "../config.h"
 #include "console.h"
 
-#define argv_append(str) kexec_argv[argc++] = str;
+#define argv_append(str) kexec_argv[argc++] = str; kexec_argv[argc] = NULL;
 
 int kexec_main(int argc, char **argv);
 
@@ -80,11 +80,12 @@ static int run_kexec(char** kexec_argv) {
  *
  * Returns 1 on success, zero on error
 */
-int load_kernel(char const* kernel, char const* append, char const* initrd) {
+int load_kernel(char const* kernel, char const* append, char const* initrd, char const *cmdline) {
 	char append_arg[STACK_BUF];
+	char cmdline_arg[STACK_BUF];
 	char initrd_arg[STACK_BUF];
 	
-	char* kexec_argv[6] = {NULL};
+	char* kexec_argv[7] = {NULL};
 	argc = 1;
 	
 	argv_append("-l");
@@ -99,6 +100,12 @@ int load_kernel(char const* kernel, char const* append, char const* initrd) {
 		argv_append(append_arg);
 		
 		printd(">> append: %s", append);
+	}
+	if(cmdline[0] != '\0') {
+		snprintf(cmdline_arg, STACK_BUF, "--command-line=%s", cmdline);
+		argv_append(cmdline_arg);
+		
+		printd(">> cmdline: %s", cmdline);
 	}
 	if(initrd[0] != '\0') {
 		snprintf(initrd_arg, STACK_BUF, "--initrd=%s", initrd);

@@ -111,6 +111,7 @@ static void cfg_add_target(void) {
 	strcpy(nptr->kernel, target.kernel);
 	strcpy(nptr->initrd, target.initrd);
 	strcpy(nptr->append, target.append);
+	strcpy(nptr->cmdline, target.cmdline);
 	nptr->mounts = target.mounts;
 	
 	if(!config.targets) {
@@ -250,6 +251,16 @@ void config_parse(char* line, unsigned int lnum) {
 		}
 		
 		strncpy(target.append, value, APPEND_SIZE-1);
+		
+		return;
+	}
+	if(str_compare(name, "cmdline", STR_NOCASE)) {
+		if(value[0] == '\0') {
+			printD("config:%u: cmdline requires an argument", lnum);
+			return;
+		}
+		
+		strncpy(target.cmdline, value, APPEND_SIZE-1);
 		
 		return;
 	}

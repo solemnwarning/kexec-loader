@@ -61,10 +61,11 @@ struct kl_mount {
 	memset((ptr)->kernel, '\0', KERNEL_SIZE);\
 	memset((ptr)->initrd, '\0', INITRD_SIZE);\
 	memset((ptr)->append, '\0', APPEND_SIZE);\
+	memset((ptr)->cmdline, '\0', APPEND_SIZE);\
 	(ptr)->mounts = NULL;\
 	(ptr)->next = NULL;
 
-#define TARGET_DEFAULTS_DEFINE {{'\0'},0,{'\0'},{'\0'},{'\0'},NULL,NULL}
+#define TARGET_DEFAULTS_DEFINE {{'\0'},0,{'\0'},{'\0'},{'\0'},{'\0'},NULL,NULL}
 
 struct kl_target {
 	char name[NAME_SIZE];
@@ -73,6 +74,7 @@ struct kl_target {
 	char kernel[KERNEL_SIZE];
 	char initrd[INITRD_SIZE];
 	char append[APPEND_SIZE];
+	char cmdline[APPEND_SIZE];
 	
 	struct kl_mount* mounts;
 	struct kl_target* next;

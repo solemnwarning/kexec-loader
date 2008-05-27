@@ -330,7 +330,7 @@ static void target_run(kl_target *target) {
 		return;
 	}
 	
-	if(!load_kernel(target->kernel, target->append, target->initrd)) {
+	if(!load_kernel(target->kernel, target->append, target->initrd, target->cmdline)) {
 		unmount_list(target->mounts);
 		return;
 	}
