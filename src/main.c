@@ -440,6 +440,9 @@ static void console_main(void) {
 	size_t len;
 	int c;
 	
+	kl_mount *mounts = NULL;
+	kl_mount *nmount;
+	
 	READLINE:
 	cmdbuf[0] = '\0';
 	len = 0;
@@ -476,11 +479,54 @@ static void console_main(void) {
 	
 	if(len == 0) {
 	CONSOLE_CMD("exit")
+		while(mounts) {
+			nmount = mounts->next;
+			free(mounts);
+			
+			mounts = nmount;
+		}
+		
 		return;
+	CONSOLE_CMD("mount")
+		char *device = cmdbuf+strcspn(cmdbuf, " ");
+		device += strspn(device, " ");
+		
+		char *mpoint = cmdbuf+strcspn(cmdbuf, " ");
+		device += strspn(device, " ");
+		
+		if(!strstr(cmdbuf, " ") || !strstr(device, " ")) {
+			printm("Usage: mount [<fstype>:]<device> <mount point>");
+			goto ENDCMD;
+		}
+		
+		if(!(nmount = malloc(sizeof(struct kl_mount)))) {
+			printd("malloc: %s", strerror(errno));
+			goto ENDCMD;
+		}
+		MOUNT_DEFAULTS(nmount);
+		
+		device[strcspn(device, " ")] = '\0';
+		
+		strncpy(nmount->device, device, DEVICE_SIZE-1);
+		strncpy(nmount->mpoint, mpoint, MPOINT_SIZE-1);
+		
+		if(!mount_list(nmount)) {
+			free(nmount);
+			goto ENDCMD;
+		}
+		
+		nmount->next = mounts;
+		mounts = nmount;
+	CONSOLE_CMD("disks")
+		list_devices();
+	CONSOLE_CMD("help")
+		printm("Available commands:");
+		printm("exit mount disks help");
 	}else{
-		printf("Unknown command: %s\n", cmdbuf);
+		printd("Unknown command: %s", cmdbuf);
 	}
 	
+	ENDCMD:
 	putchar('\n');
 	goto READLINE;
 }
