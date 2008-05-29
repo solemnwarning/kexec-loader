@@ -250,3 +250,15 @@ void kmsg_monitor(void) {
 	
 	exit(0);
 }
+
+/* Free a list of kl_mount structures */
+void free_mounts(kl_mount *mounts) {
+	kl_mount *dptr;
+	
+	while(mounts) {
+		dptr = mounts;
+		mounts = mounts->next;
+		
+		free(dptr);
+	}
+}

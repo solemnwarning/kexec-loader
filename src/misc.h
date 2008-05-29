@@ -52,4 +52,6 @@ int str_compare(char const*, char const*, int, ...);
 char *get_cmdline(char const *name);
 void kmsg_monitor(void);
 
+void free_mounts(kl_mount *mounts);
+
 #endif /* !KEXEC_LOADER_MISC_H */

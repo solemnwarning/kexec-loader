@@ -64,6 +64,8 @@ static int rows = 25, cols = 80;
 static int srow = 4, erow = 0;
 static int scol = 3, ecol = 0;
 
+static kl_target cons_target;
+
 int main(int argc, char** argv) {
 	if(mount("proc", "/proc", "proc", 0, NULL) == -1) {
 		fatal("Can't mount /proc filesystem: %s", strerror(errno));
@@ -440,7 +442,7 @@ static void console_main(void) {
 	size_t len;
 	int c;
 	
-	kl_mount *mounts = NULL;
+	TARGET_DEFAULTS(&cons_target);
 	kl_mount *nmount;
 	
 	READLINE:
@@ -479,14 +481,8 @@ static void console_main(void) {
 	
 	if(len == 0) {
 	CONSOLE_CMD("exit")
-		unmount_list(mounts);
-		
-		while(mounts) {
-			nmount = mounts->next;
-			free(mounts);
-			
-			mounts = nmount;
-		}
+		unmount_list(cons_target.mounts);
+		free_mounts(cons_target.mounts);
 		
 		return;
 	CONSOLE_CMD("mount")
@@ -517,13 +513,64 @@ static void console_main(void) {
 			goto ENDCMD;
 		}
 		
-		nmount->next = mounts;
-		mounts = nmount;
+		nmount->next = cons_target.mounts;
+		cons_target.mounts = nmount;
 	CONSOLE_CMD("disks")
 		list_devices();
 	CONSOLE_CMD("help")
 		printm("Available commands:");
 		printm("exit mount disks help");
+	CONSOLE_CMD("kernel")
+		char *kernel = cmdbuf+strcspn(cmdbuf, " ");
+		kernel += strspn(kernel, " ");
+		
+		if(kernel[0] == '\0') {
+			printm("Usage: kernel <filename>");
+			goto ENDCMD;
+		}
+		
+		strncpy(cons_target.kernel, kernel, KERNEL_SIZE-1);
+	CONSOLE_CMD("initrd")
+		char *initrd = cmdbuf+strcspn(cmdbuf, " ");
+		initrd += strspn(initrd, " ");
+		
+		if(initrd[0] == '\0') {
+			printm("Usage: initrd <filename>");
+			goto ENDCMD;
+		}
+		
+		strncpy(cons_target.initrd, initrd, INITRD_SIZE-1);
+	CONSOLE_CMD("append")
+		char *append = cmdbuf+strcspn(cmdbuf, " ");
+		append += strspn(append, " ");
+		
+		strncpy(cons_target.append, append, APPEND_SIZE-1);
+	CONSOLE_CMD("cmdline")
+		char *cmdline = cmdbuf+strcspn(cmdbuf, " ");
+		cmdline += strspn(cmdline, " ");
+		
+		strncpy(cons_target.cmdline, cmdline, APPEND_SIZE-1);
+	CONSOLE_CMD("boot")
+		if(!load_kernel(&cons_target)) {
+			goto ENDCMD;
+		}
+		
+		unmount_list(cons_target.mounts);
+		
+		console_fgcolour(CONS_GREEN);
+		printd("> Executing kernel...");
+		console_fgcolour(CONS_WHITE);
+		
+		sync();
+		syscall(
+			__NR_reboot,
+			LINUX_REBOOT_MAGIC1, LINUX_REBOOT_MAGIC2,
+			LINUX_REBOOT_CMD_KEXEC, NULL
+		);
+		
+		console_fgcolour(CONS_RED);
+		printD(">> Reboot failed: %s", strerror(errno));
+		console_fgcolour(CONS_WHITE);
 	}else{
 		printd("Unknown command: %s", cmdbuf);
 	}
