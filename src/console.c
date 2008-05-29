@@ -126,6 +126,11 @@ void console_eline(char const* mode) {
 	printf("%c[%sK", 0x1B, mode);
 }
 
+/* Move the cursor back N columns */
+void console_cback(int n) {
+	printf("%c[%dD", 0x1B, n);
+}
+
 /* Print output */
 void print2(int flags, char const *fmt, ...) {
 	va_list argv;

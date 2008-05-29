@@ -48,6 +48,9 @@
 #include "misc.h"
 #include "grub.h"
 
+#define CONSOLE_CMD(str) \
+	}else if(strcasecmp(str, cmdbuf) == 0) {
+
 static void main_menu(void);
 static void draw_skel(void);
 static void draw_tbline(int rnum);
@@ -55,6 +58,7 @@ static void target_run(kl_target *target);
 static void list_devices(void);
 static void print_header(void);
 static void prepare_text(void);
+static void console_main(void);
 
 static int rows = 25, cols = 80;
 static int srow = 4, erow = 0;
@@ -277,6 +281,13 @@ static void main_menu(void) {
 			prepare_text();
 			return;
 		}
+		if(key == 'c' || key == 'C') {
+			prepare_text();
+			console_main();
+			draw_skel();
+			
+			continue;
+		}
 	}
 }
 
@@ -298,8 +309,11 @@ static void draw_skel(void) {
 		putchar('|');
 	}
 	
-	console_setpos(rows-1, 2);
+	console_setpos(rows-2, 2);
 	printf("Press L to list detected devices, R to reload configuration");
+	
+	console_setpos(rows-1, 2);
+	printf("Press C to display console");
 }
 
 /* Draw a +----+ line along one row */
@@ -418,4 +432,55 @@ static void prepare_text(void) {
 	print_header();
 	
 	console_setpos(3,1);
+}
+
+/* Console mainloop */
+static void console_main(void) {
+	char cmdbuf[1024];
+	size_t len;
+	int c;
+	
+	READLINE:
+	cmdbuf[0] = '\0';
+	len = 0;
+	
+	printf("> ");
+	
+	while(1) {
+		c = getchar();
+		
+		if(c == '\n') {
+			putchar('\n');
+			break;
+		}
+		if(c == 0x7F) {
+			if(len > 0) {
+				console_cback(1);
+				putchar(' ');
+				console_cback(1);
+				
+				cmdbuf[--len] = '\0';
+			}
+			
+			continue;
+		}
+		if(c >= 0x20 && c <= 0x7E && len < 1023) {
+			cmdbuf[len++] = c;
+			cmdbuf[len] = '\0';
+			
+			putchar(c);
+		}
+	}
+	
+	debug("Got command: '%s'\n", cmdbuf);
+	
+	if(len == 0) {
+	CONSOLE_CMD("exit")
+		return;
+	}else{
+		printf("Unknown command: %s\n", cmdbuf);
+	}
+	
+	putchar('\n');
+	goto READLINE;
 }

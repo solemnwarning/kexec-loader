@@ -76,6 +76,7 @@ void console_bgcolour(int colour);
 void console_attrib(int attrib);
 void console_getsize(int* rows, int* cols);
 void console_eline(char const* mode);
+void console_cback(int n);
 
 void print2(int flags, char const *fmt, ...);
 
