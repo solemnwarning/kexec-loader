@@ -49,7 +49,7 @@
 #include "grub.h"
 
 #define CONSOLE_CMD(str) \
-	}else if(strcasecmp(str, cmdbuf) == 0) {
+	}else if(str_compare(str, cmdbuf, STR_NOCASE) || str_compare(str " *", cmdbuf, STR_NOCASE | STR_WILDCARD1)) {
 
 static void main_menu(void);
 static void draw_skel(void);
@@ -479,6 +479,8 @@ static void console_main(void) {
 	
 	if(len == 0) {
 	CONSOLE_CMD("exit")
+		unmount_list(mounts);
+		
 		while(mounts) {
 			nmount = mounts->next;
 			free(mounts);
@@ -491,8 +493,8 @@ static void console_main(void) {
 		char *device = cmdbuf+strcspn(cmdbuf, " ");
 		device += strspn(device, " ");
 		
-		char *mpoint = cmdbuf+strcspn(cmdbuf, " ");
-		device += strspn(device, " ");
+		char *mpoint = device+strcspn(device, " ");
+		mpoint += strspn(mpoint, " ");
 		
 		if(!strstr(cmdbuf, " ") || !strstr(device, " ")) {
 			printm("Usage: mount [<fstype>:]<device> <mount point>");
@@ -508,7 +510,7 @@ static void console_main(void) {
 		device[strcspn(device, " ")] = '\0';
 		
 		strncpy(nmount->device, device, DEVICE_SIZE-1);
-		strncpy(nmount->mpoint, mpoint, MPOINT_SIZE-1);
+		snprintf(nmount->mpoint, MPOINT_SIZE, "/mnt/target/%s", mpoint);
 		
 		if(!mount_list(nmount)) {
 			free(nmount);
