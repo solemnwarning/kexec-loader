@@ -519,7 +519,7 @@ static void console_main(void) {
 		list_devices();
 	CONSOLE_CMD("help")
 		printm("Available commands:");
-		printm("exit mount disks help");
+		printm("exit mount disks help kernel initrd append cmdline boot");
 	CONSOLE_CMD("kernel")
 		char *kernel = cmdbuf+strcspn(cmdbuf, " ");
 		kernel += strspn(kernel, " ");
@@ -529,7 +529,7 @@ static void console_main(void) {
 			goto ENDCMD;
 		}
 		
-		strncpy(cons_target.kernel, kernel, KERNEL_SIZE-1);
+		snprintf(cons_target.kernel, KERNEL_SIZE, "/mnt/target/%s", kernel);
 	CONSOLE_CMD("initrd")
 		char *initrd = cmdbuf+strcspn(cmdbuf, " ");
 		initrd += strspn(initrd, " ");
@@ -539,7 +539,7 @@ static void console_main(void) {
 			goto ENDCMD;
 		}
 		
-		strncpy(cons_target.initrd, initrd, INITRD_SIZE-1);
+		snprintf(cons_target.initrd, INITRD_SIZE, "/mnt/target/%s", initrd);
 	CONSOLE_CMD("append")
 		char *append = cmdbuf+strcspn(cmdbuf, " ");
 		append += strspn(append, " ");
