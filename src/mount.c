@@ -197,6 +197,10 @@ void unmount_list(kl_mount *mounts) {
 	kl_mount *mptr = mounts;
 	int depth = 0;
 	
+	if(!mptr) {
+		return;
+	}
+	
 	while(mptr) {
 		if(mptr->depth > depth) {
 			depth = mptr->depth;
