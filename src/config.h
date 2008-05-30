@@ -35,6 +35,7 @@
 #include "../config.h"
 
 #define TARGET_DEFAULT (1<<0)
+#define TARGET_RESET_VGA (1<<1)
 
 typedef struct kl_target kl_target;
 typedef struct kl_mount kl_mount;

@@ -130,7 +130,7 @@ void shell_main(void) {
 		list_devices();
 	CONSOLE_CMD("help")
 		printm("Available commands:");
-		printm("exit mount disks help kernel initrd append cmdline boot");
+		printm("exit mount disks help kernel initrd append cmdline boot reset-vga");
 	CONSOLE_CMD("kernel")
 		if(arg1[0] == '\0') {
 			printm("Usage: kernel <filename>");
@@ -170,6 +170,8 @@ void shell_main(void) {
 		console_fgcolour(CONS_RED);
 		printD(">> Reboot failed: %s", strerror(errno));
 		console_fgcolour(CONS_WHITE);
+	CONSOLE_CMD("reset-vga")
+		cons_target.flags |= TARGET_RESET_VGA;
 	}else{
 		printd("Unknown command: %s", cmd);
 	}

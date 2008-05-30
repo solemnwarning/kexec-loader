@@ -268,6 +268,10 @@ void config_parse(char* line, unsigned int lnum) {
 		target.flags |= TARGET_DEFAULT;
 		return;
 	}
+	if(str_compare(name, "reset-vga", STR_NOCASE)) {
+		target.flags |= TARGET_RESET_VGA;
+		return;
+	}
 	if(str_compare(name, "rootfs", STR_NOCASE)) {
 		if(value[0] == '\0') {
 			printD("config:%u: RootFS requires an argument", lnum);

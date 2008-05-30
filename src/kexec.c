@@ -100,11 +100,15 @@ int load_kernel(kl_target *target) {
 	char *cmdline = NULL;
 	char *initrd = NULL;
 	
-	char* kexec_argv[7] = {NULL};
+	char* kexec_argv[8] = {NULL};
 	argc = 1;
 	
 	argv_append("-l");
 	argv_append(target->kernel);
+	
+	if(target->flags & TARGET_RESET_VGA) {
+		argv_append("--reset-vga");
+	}
 	
 	TEXT_GREEN();
 	printd("> Loading kernel...");
