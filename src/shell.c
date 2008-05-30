@@ -43,9 +43,10 @@
 #include "kexec.h"
 
 #define CONSOLE_CMD(str) \
-	}else if(str_compare(str, cmdbuf, STR_NOCASE) || str_compare(str " *", cmdbuf, STR_NOCASE | STR_WILDCARD1)) {
+	}else if(strcasecmp(cmd, str) == 0) {
 
 void list_devices(void);
+static char *next_arg(char *args);
 
 static kl_target cons_target;
 
@@ -53,6 +54,7 @@ void shell_main(void) {
 	char cmdbuf[1024];
 	size_t len;
 	int c;
+	char *cmd, *arg1, *arg2;
 	
 	TARGET_DEFAULTS(&cons_target);
 	kl_mount *nmount;
@@ -89,22 +91,21 @@ void shell_main(void) {
 		}
 	}
 	
-	debug("Got command: '%s'\n", cmdbuf);
+	cmd = cmdbuf+strspn(cmdbuf, " ");
+	arg1 = next_arg(cmd);
 	
-	if(len == 0) {
+	debug("Shell cmd='%s' arg1='%s'\n", cmd, arg1);
+	
+	if(cmd[0] == '\0') {
 	CONSOLE_CMD("exit")
 		unmount_list(cons_target.mounts);
 		free_mounts(cons_target.mounts);
 		
 		return;
 	CONSOLE_CMD("mount")
-		char *device = cmdbuf+strcspn(cmdbuf, " ");
-		device += strspn(device, " ");
+		arg2 = next_arg(arg1);
 		
-		char *mpoint = device+strcspn(device, " ");
-		mpoint += strspn(mpoint, " ");
-		
-		if(!strstr(cmdbuf, " ") || !strstr(device, " ")) {
+		if(arg1[0] == '\0' || arg2[0] == '\0') {
 			printm("Usage: mount [<fstype>:]<device> <mount point>");
 			goto ENDCMD;
 		}
@@ -115,10 +116,8 @@ void shell_main(void) {
 		}
 		MOUNT_DEFAULTS(nmount);
 		
-		device[strcspn(device, " ")] = '\0';
-		
-		strncpy(nmount->device, device, DEVICE_SIZE-1);
-		snprintf(nmount->mpoint, MPOINT_SIZE, "/mnt/target/%s", mpoint);
+		strncpy(nmount->device, arg1, DEVICE_SIZE-1);
+		snprintf(nmount->mpoint, MPOINT_SIZE, "/mnt/target/%s", arg2);
 		
 		if(!mount_list(nmount)) {
 			free(nmount);
@@ -133,35 +132,23 @@ void shell_main(void) {
 		printm("Available commands:");
 		printm("exit mount disks help kernel initrd append cmdline boot");
 	CONSOLE_CMD("kernel")
-		char *kernel = cmdbuf+strcspn(cmdbuf, " ");
-		kernel += strspn(kernel, " ");
-		
-		if(kernel[0] == '\0') {
+		if(arg1[0] == '\0') {
 			printm("Usage: kernel <filename>");
 			goto ENDCMD;
 		}
 		
-		snprintf(cons_target.kernel, KERNEL_SIZE, "/mnt/target/%s", kernel);
+		snprintf(cons_target.kernel, KERNEL_SIZE, "/mnt/target/%s", arg1);
 	CONSOLE_CMD("initrd")
-		char *initrd = cmdbuf+strcspn(cmdbuf, " ");
-		initrd += strspn(initrd, " ");
-		
-		if(initrd[0] == '\0') {
+		if(arg1[0] == '\0') {
 			printm("Usage: initrd <filename>");
 			goto ENDCMD;
 		}
 		
-		snprintf(cons_target.initrd, INITRD_SIZE, "/mnt/target/%s", initrd);
+		snprintf(cons_target.initrd, INITRD_SIZE, "/mnt/target/%s", arg1);
 	CONSOLE_CMD("append")
-		char *append = cmdbuf+strcspn(cmdbuf, " ");
-		append += strspn(append, " ");
-		
-		strncpy(cons_target.append, append, APPEND_SIZE-1);
+		strncpy(cons_target.append, arg1, APPEND_SIZE-1);
 	CONSOLE_CMD("cmdline")
-		char *cmdline = cmdbuf+strcspn(cmdbuf, " ");
-		cmdline += strspn(cmdline, " ");
-		
-		strncpy(cons_target.cmdline, cmdline, APPEND_SIZE-1);
+		strncpy(cons_target.cmdline, arg1, APPEND_SIZE-1);
 	CONSOLE_CMD("boot")
 		if(!load_kernel(&cons_target)) {
 			goto ENDCMD;
@@ -184,10 +171,23 @@ void shell_main(void) {
 		printD(">> Reboot failed: %s", strerror(errno));
 		console_fgcolour(CONS_WHITE);
 	}else{
-		printd("Unknown command: %s", cmdbuf);
+		printd("Unknown command: %s", cmd);
 	}
 	
 	ENDCMD:
 	putchar('\n');
 	goto READLINE;
+}
+
+static char *next_arg(char *args) {
+	char *retval = args+strcspn(args, " ");
+	
+	if(retval[0] != '\0') {
+		retval[0] = '\0';
+		retval++;
+		
+		retval += strspn(retval, " ");
+	}
+	
+	return retval;
 }
