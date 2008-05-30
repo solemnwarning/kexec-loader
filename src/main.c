@@ -47,24 +47,19 @@
 #include "kexec.h"
 #include "misc.h"
 #include "grub.h"
-
-#define CONSOLE_CMD(str) \
-	}else if(str_compare(str, cmdbuf, STR_NOCASE) || str_compare(str " *", cmdbuf, STR_NOCASE | STR_WILDCARD1)) {
+#include "shell.h"
 
 static void main_menu(void);
 static void draw_skel(void);
 static void draw_tbline(int rnum);
 static void target_run(kl_target *target);
-static void list_devices(void);
+void list_devices(void);
 static void print_header(void);
 static void prepare_text(void);
-static void console_main(void);
 
 static int rows = 25, cols = 80;
 static int srow = 4, erow = 0;
 static int scol = 3, ecol = 0;
-
-static kl_target cons_target;
 
 int main(int argc, char** argv) {
 	if(mount("proc", "/proc", "proc", 0, NULL) == -1) {
@@ -283,9 +278,9 @@ static void main_menu(void) {
 			prepare_text();
 			return;
 		}
-		if(key == 'c' || key == 'C') {
+		if(key == 's' || key == 'S') {
 			prepare_text();
-			console_main();
+			shell_main();
 			draw_skel();
 			
 			continue;
@@ -315,7 +310,7 @@ static void draw_skel(void) {
 	printf("Press L to list detected devices, R to reload configuration");
 	
 	console_setpos(rows-1, 2);
-	printf("Press C to display console");
+	printf("Press S to execute shell");
 }
 
 /* Draw a +----+ line along one row */
@@ -369,7 +364,7 @@ static void target_run(kl_target *target) {
 }
 
 /* Display a list of devices from /proc/diskstats */
-static void list_devices(void) {
+void list_devices(void) {
 	char buf[256];
 	char filename[32];
 	char *name, *fstype;
@@ -434,148 +429,4 @@ static void prepare_text(void) {
 	print_header();
 	
 	console_setpos(3,1);
-}
-
-/* Console mainloop */
-static void console_main(void) {
-	char cmdbuf[1024];
-	size_t len;
-	int c;
-	
-	TARGET_DEFAULTS(&cons_target);
-	kl_mount *nmount;
-	
-	READLINE:
-	cmdbuf[0] = '\0';
-	len = 0;
-	
-	printf("> ");
-	
-	while(1) {
-		c = getchar();
-		
-		if(c == '\n') {
-			putchar('\n');
-			break;
-		}
-		if(c == 0x7F) {
-			if(len > 0) {
-				console_cback(1);
-				putchar(' ');
-				console_cback(1);
-				
-				cmdbuf[--len] = '\0';
-			}
-			
-			continue;
-		}
-		if(c >= 0x20 && c <= 0x7E && len < 1023) {
-			cmdbuf[len++] = c;
-			cmdbuf[len] = '\0';
-			
-			putchar(c);
-		}
-	}
-	
-	debug("Got command: '%s'\n", cmdbuf);
-	
-	if(len == 0) {
-	CONSOLE_CMD("exit")
-		unmount_list(cons_target.mounts);
-		free_mounts(cons_target.mounts);
-		
-		return;
-	CONSOLE_CMD("mount")
-		char *device = cmdbuf+strcspn(cmdbuf, " ");
-		device += strspn(device, " ");
-		
-		char *mpoint = device+strcspn(device, " ");
-		mpoint += strspn(mpoint, " ");
-		
-		if(!strstr(cmdbuf, " ") || !strstr(device, " ")) {
-			printm("Usage: mount [<fstype>:]<device> <mount point>");
-			goto ENDCMD;
-		}
-		
-		if(!(nmount = malloc(sizeof(struct kl_mount)))) {
-			printd("malloc: %s", strerror(errno));
-			goto ENDCMD;
-		}
-		MOUNT_DEFAULTS(nmount);
-		
-		device[strcspn(device, " ")] = '\0';
-		
-		strncpy(nmount->device, device, DEVICE_SIZE-1);
-		snprintf(nmount->mpoint, MPOINT_SIZE, "/mnt/target/%s", mpoint);
-		
-		if(!mount_list(nmount)) {
-			free(nmount);
-			goto ENDCMD;
-		}
-		
-		nmount->next = cons_target.mounts;
-		cons_target.mounts = nmount;
-	CONSOLE_CMD("disks")
-		list_devices();
-	CONSOLE_CMD("help")
-		printm("Available commands:");
-		printm("exit mount disks help kernel initrd append cmdline boot");
-	CONSOLE_CMD("kernel")
-		char *kernel = cmdbuf+strcspn(cmdbuf, " ");
-		kernel += strspn(kernel, " ");
-		
-		if(kernel[0] == '\0') {
-			printm("Usage: kernel <filename>");
-			goto ENDCMD;
-		}
-		
-		snprintf(cons_target.kernel, KERNEL_SIZE, "/mnt/target/%s", kernel);
-	CONSOLE_CMD("initrd")
-		char *initrd = cmdbuf+strcspn(cmdbuf, " ");
-		initrd += strspn(initrd, " ");
-		
-		if(initrd[0] == '\0') {
-			printm("Usage: initrd <filename>");
-			goto ENDCMD;
-		}
-		
-		snprintf(cons_target.initrd, INITRD_SIZE, "/mnt/target/%s", initrd);
-	CONSOLE_CMD("append")
-		char *append = cmdbuf+strcspn(cmdbuf, " ");
-		append += strspn(append, " ");
-		
-		strncpy(cons_target.append, append, APPEND_SIZE-1);
-	CONSOLE_CMD("cmdline")
-		char *cmdline = cmdbuf+strcspn(cmdbuf, " ");
-		cmdline += strspn(cmdline, " ");
-		
-		strncpy(cons_target.cmdline, cmdline, APPEND_SIZE-1);
-	CONSOLE_CMD("boot")
-		if(!load_kernel(&cons_target)) {
-			goto ENDCMD;
-		}
-		
-		unmount_list(cons_target.mounts);
-		
-		console_fgcolour(CONS_GREEN);
-		printd("> Executing kernel...");
-		console_fgcolour(CONS_WHITE);
-		
-		sync();
-		syscall(
-			__NR_reboot,
-			LINUX_REBOOT_MAGIC1, LINUX_REBOOT_MAGIC2,
-			LINUX_REBOOT_CMD_KEXEC, NULL
-		);
-		
-		console_fgcolour(CONS_RED);
-		printD(">> Reboot failed: %s", strerror(errno));
-		console_fgcolour(CONS_WHITE);
-	}else{
-		printd("Unknown command: %s", cmdbuf);
-	}
-	
-	ENDCMD:
-	putchar('\n');
-	goto READLINE;
 }

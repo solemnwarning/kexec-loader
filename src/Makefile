@@ -27,7 +27,7 @@
 # NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE,
 # EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-DEPS := main.o mount.o config.o console.o misc.o kexec.o grub.o kexec.a
+DEPS := main.o mount.o config.o console.o misc.o kexec.o grub.o shell.o kexec.a
 OBJS := $(DEPS) `cat kexec_libs`
 
 KT_VER := 1.101
@@ -74,6 +74,9 @@ kexec.o: kexec.c kexec.h misc.o
 
 grub.o: grub.c grub.h
 	$(CC) $(CFLAGS) $(INCLUDES) -c -o grub.o grub.c
+
+shell.o: shell.c shell.h
+	$(CC) $(CFLAGS) $(INCLUDES) -c -o shell.o shell.c
 
 kexec.a:
 	wget -nc $(KT_URL)
