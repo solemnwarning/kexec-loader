@@ -94,7 +94,7 @@ using kexec. It is designed for systems where the BIOS does not support booting 
   <li><strong>grub_first &lt;hdx/sdx&gt;</strong>
   <br />Default is hdx. If hdx is specified, (hd0) will be hda, then all devices will follow as normal, with sd devices following at the end. If it's sdx, then it will reverse, (hd0) will be sda, followed by all other sd devices, then hd devices following at the end. <b>If a device.map was found:</b> kexec-loader will attempt to load settings from this, before failing back to this directive</b></li>
   <li><strong>cmdline &lt;command line options&gt;</strong>
-  <br />Command line parameters to pass to Multiboot kernels, to have the same effect as <code>kernel mykernel.bin foo=bar</code> in GRUB, you would put <code>foo=bar</code> here. <b>This option has no effect on Linux kernels</b>.</li>
+  <br />Command line parameters to pass to the kernel, has the same effect as <code>kernel mykernel.bin foo=bar</code> in GRUB, you would put <code>foo=bar</code> here.</li>
 </ul>
 <p>Where parameters are shown in &lt;angled brackets&gt;, they are required for that directive. Ones in [square brackets] are optional. For mount and rootfs, if you do specify a fstype, it should be specified as ext2:/dev/hda1 for example.</p>
 <p>Normally kexec-loader can detect the filesystem type, it supports autodetection for the following types.</p>
