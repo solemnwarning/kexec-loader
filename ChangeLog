@@ -6,6 +6,15 @@ Version 1.4:
 	
 	Removed STACK_BUF macro and replaced it with fixed buffers of smaller
 	sizes since 2048 is overkill for any of them.
+	
+	Fixed a bug: unmount_list() now returns if mounts = NULL instead of
+	getting stuck in an infinite loop.
+	
+	Wrote shell for interactively configuring and booting targets, will be
+	improved a lot over the next versions.
+	
+	Added reset-vga directive/command which passes kexec the --reset-vga
+	argument when loading the kernel.
 
 Version 1.3.1:
 	Updated makefile structure and added new targets.
