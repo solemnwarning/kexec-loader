@@ -1,2 +1,10 @@
 Version 1.4:
 	Code cleanup
+
+Version 1.4.1:
+	Better line editing and command history for shell.
+
+Future/undecided:
+	Dynamic memory for strings other then input buffers? (Filenames, etc)
+	
+	Autocompletion of commands and filenames in shell?
