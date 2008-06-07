@@ -18,20 +18,40 @@ h2 {
 h3 {
 	color: #0033CC;
 }
+a {
+	text-decoration: none;
+	color: blue;
+}
+a:hover {
+	color: red;
+}
 -->
 </style>
 </head>
 
 <body>
 <h1>kexec-loader manual</h1>
-<p>Version: 1.4pre.</p>
+<p>Version: 1.4.</p>
 <p>&copy; 2008 Daniel Collins<br />&copy; 2008 Philip Kent</p>
 <h2>1. Compliation</h2>
 <h3>1.1. Introduction</h3>
 <p>kexec-loader is a boot loader which loads a Linux kernel, then displays a GRUB-like menu so you can select a kernel to boot
 using kexec. It is designed for systems where the BIOS does not support booting from some devices (e.g. your kernel is on a USB memory key which the BIOS does not support).</p>
 <p>If you have downloaded one of the pre-built disk images, you do not need to read the rest of this section, and you can skip to Section 2. A pre-made disk image is probably more suitable to the end user in most cases, as the provided image supports IDE, SATA and USB and is pre-compiled. You can obtain it from the project's webpage.</p>
-<h3>1.2. Requirements</h3>
+<h3>1.2. New in kexec-loader 1.4</h3>
+<p>A summary of the new features in this release of kexec-loader is below. For a more detailed changelog, please see the ChangeLog file.</p>
+<ul>
+  <li>Improved support for multiboot kernels
+	  <ul>
+	    <li>Support for multiboot cmdline</li>
+	    <li>Support for resetting the VGA adapter</li>
+	  </ul>
+	  </li>
+  <li>Built in shell</li>
+  <li>Improvements to user experience with better errors in kexec-tools</li>
+  <li>A fix for a memory leak and a few bug fixes.</li>
+</ul>
+<h3>1.3. Requirements</h3>
 <p>To build kexec-loader, you require the following tools.</p>
 <ul>
   <li>gcc C compiler</li>
@@ -45,11 +65,11 @@ using kexec. It is designed for systems where the BIOS does not support booting 
   <li>A bootloader (such as syslinux)</li>
 </ul>
 <p>kexec-tools is included and built as part of the build process.</p>
-<h3>1.3. Build Instructions</h3>
+<h3>1.4. Build Instructions</h3>
 <p>In order to build kexec-loader, you first need a Linux kernel with support for the hardware you want to boot from. This kernel will need fit onto the device that will be used to boot, with sufficient space left for other files that will need to be on the device (such as kexec-loader itself and the boot loader).</p>
 <p>Once you have your kernel, simply run "make" from the root of the kexec-loader source to build the kexec-loader binary. This will include downloading and building kexec-tools. It is recommended that you build a uclibc toolchain prior to this, then building kexec-loader using it, as this will make the resulting file smaller. To use a uclibc toolchain, do "HOST=i386-linux-uclibc make" instead of make.</p>
 <p>Then run mkinitramfs.sh from the root directory of the distribution to build an initramfs containing kexec-loader.</p>
-<h3>1.4. Creating a Disk Image</h3>
+<h3>1.5. Creating a Disk Image</h3>
 <p>Once you have a kernel and initramfs, you can then build a disk image. There are two ways to assemble the disk, which are below.</p>
 <ol>
 <li>Embed your initramfs inside your kernel (this is what is done by the prebuilt images) using menuconfig. You will have to rebuild your kernel.</li>
@@ -95,6 +115,8 @@ using kexec. It is designed for systems where the BIOS does not support booting 
   <br />Default is hdx. If hdx is specified, (hd0) will be hda, then all devices will follow as normal, with sd devices following at the end. If it's sdx, then it will reverse, (hd0) will be sda, followed by all other sd devices, then hd devices following at the end. <b>If a device.map was found:</b> kexec-loader will attempt to load settings from this, before failing back to this directive</b></li>
   <li><strong>cmdline &lt;command line options&gt;</strong>
   <br />Command line parameters to pass to the kernel, has the same effect as <code>kernel mykernel.bin foo=bar</code> in GRUB, you would put <code>foo=bar</code> here.</li>
+  <li><strong>reset-vga</strong>
+  <br />Reset the VGA adapter before starting the kernel, may be useful if you get garbled or no output on bootup.</li>
 </ul>
 <p>Where parameters are shown in &lt;angled brackets&gt;, they are required for that directive. Ones in [square brackets] are optional. For mount and rootfs, if you do specify a fstype, it should be specified as ext2:/dev/hda1 for example.</p>
 <p>Normally kexec-loader can detect the filesystem type, it supports autodetection for the following types.</p>
@@ -111,13 +133,23 @@ using kexec. It is designed for systems where the BIOS does not support booting 
 <h3>2.2. Using the Menu</h3>
 <p>To navigate the kexec-loader menu, use your arrow keys to select an item and press enter to boot it. A number of functions are available; press L to list the detected devices and their filesystems and R to re-read the configuration file. Press enter if you are on the device screen or an error and you want to escape.</p>
 <p>Upon asking a kernel to boot, it may take a few seconds for it to load the kernel and switch to it. After switching, your new kernel will start and the boot process will happen as it would normally.</p>
-<h3>2.3. Debug Console</h3>
+<h3>2.3. Built in shell</h3>
+<p>kexec-loader has a built in shell. To access it press "s" on the menu screen. This shell lets you set up a kernel to boot once kexec-loader has started. Therefore it has the same directives as mentioned above, <b>except "default" and "title"</b>.</p>
+<p>There are two further directives used to control kexec-loader, rather than swt up a kernel to boot. They are:</p>
+<ul>
+  <li><b>exit</b>
+  <br />Leave the shell and go back to the menu.</li>
+  <li><b>disks</b>
+  <br />Display a list of detected disks, like the keystroke on the graphical list.</li>
+</ul>
+<p>Please note that this shell will be improved in subsequent releases.</p>
+<h3>2.4. Debug Console</h3>
 <p>Once kexec-loader has started all debugging messages, as well as Linux kernel messages are sent to a seperate debug console. By default the debug console is /dev/tty2, this can be changed at boot by using the Linux cmdline, for example kexec_debug=/dev/ttyS0 writes all debug messages and kernel messages to the first serial port.</p>
 <h2>3. Support</h2>
 <h3>3.1. Website</h3>
 <p>For information on kexec-loader, including current development and latest releases, please see its website at <a href="http://www.solemnwarning.net">http://www.solemnwarning.net</a>.</p>
-<h3>3.2. Forum</h3>
-<p>A discussion board is available for kexec-loader and other projects, it can be found at <a href="http://www.solemnwarning.net/punbb">http://www.solemnwarning.net/punbb</a>. No registration is required.</p>
+<h3>3.2. Mailing List</h3>
+<p>A mailing is available for kexec-loader, subscription information and archives can be found at <a href="http://www.solemnwarning.net/kexec-loader/list">http://www.solemnwarning.net/kexec-loader/list</a>.</p>
 <h3>3.3. Developer</h3>
 <p>The developer of kexec-loader, Daniel Collins (aka solemnwarning), can often be found on other discussion sites, such as the “Microsuck” forums and on freenode IRC. To contact solemnwarning, you can use the following e-mail address: <em>solemnwarning@solemnwarning.net</em>.</p>
 </body>
