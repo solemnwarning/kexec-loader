@@ -164,7 +164,9 @@ void config_load(void) {
 	config.timeout = 0;
 	config.grub_root[0] = '\0';
 	config.grub_first = hdx;
-	config.targets = NULL; /* BUG: Memory leak! */
+	
+	free_targets(config.targets);
+	config.targets = NULL;
 	
 	unsigned int lnum = 1;
 	char line[1024] = {'\0'};
@@ -282,13 +284,13 @@ void config_parse(char* line, unsigned int lnum) {
 		return;
 	}
 	if(str_compare(name, "mount", STR_NOCASE)) {
-		char* mpoint = next_value(value);
-		if(value[0] == '\0' || mpoint[0] == '\0') {
+		value2 = next_value(value);
+		if(value[0] == '\0' || value2[0] == '\0') {
 			printD("config:%u: mount requires 2 arguments", lnum);
 			return;
 		}
 		
-		config_add_mount(lnum, value, mpoint);
+		config_add_mount(lnum, value, value2);
 		return;
 	}
 	if(str_compare(name, "grub_root", STR_NOCASE)) {

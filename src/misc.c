@@ -251,6 +251,19 @@ void kmsg_monitor(void) {
 	exit(0);
 }
 
+/* Free a list of kl_target structures */
+void free_targets(kl_target *targets) {
+	kl_target *dptr;
+	
+	while(targets) {
+		dptr = targets;
+		targets = targets->next;
+		
+		free_mounts(dptr->mounts);
+		free(dptr);
+	}
+}
+
 /* Free a list of kl_mount structures */
 void free_mounts(kl_mount *mounts) {
 	kl_mount *dptr;
