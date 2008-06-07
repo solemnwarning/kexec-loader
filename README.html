@@ -112,7 +112,7 @@ using kexec. It is designed for systems where the BIOS does not support booting 
   <li><strong>grub_root [fstype:]&lt;device&gt;</strong>
   <br />Device containing the grub menu.lst (in either /boot/grub/menu.lst or /grub/menu.lst).</li>
   <li><strong>grub_first &lt;hdx/sdx&gt;</strong>
-  <br />Default is hdx. If hdx is specified, (hd0) will be hda, then all devices will follow as normal, with sd devices following at the end. If it's sdx, then it will reverse, (hd0) will be sda, followed by all other sd devices, then hd devices following at the end. <b>If a device.map was found:</b> kexec-loader will attempt to load settings from this, before failing back to this directive</b></li>
+  <br />Default is hdx. If hdx is specified, (hd0) will be hda, then all devices will follow as normal, with sd devices following at the end. If it's sdx, then it will reverse, (hd0) will be sda, followed by all other sd devices, then hd devices following at the end. <b>If a device.map was found:</b> kexec-loader will attempt to load settings from this, before failing back to this directive</li>
   <li><strong>cmdline &lt;command line options&gt;</strong>
   <br />Command line parameters to pass to the kernel, has the same effect as <code>kernel mykernel.bin foo=bar</code> in GRUB, you would put <code>foo=bar</code> here.</li>
   <li><strong>reset-vga</strong>
