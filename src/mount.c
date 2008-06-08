@@ -292,6 +292,13 @@ char* detect_fstype(char const *device) {
 	if(str_compare((char*)(buf+3), "NTFS    ", STR_MAXLEN, 8)) {
 		retval = "ntfs";
 	}
+	if(
+		str_compare((char*)(buf+32769), "CD001", STR_MAXLEN, 5) ||
+		str_compare((char*)(buf+37633), "CD001", STR_MAXLEN, 5) ||
+		str_compare((char*)(buf+32776), "CDROM", STR_MAXLEN, 5)
+	) {
+		retval = "iso9660";
+	}
 	
 	DFST_END:
 	while(fclose(fh) != 0) {
