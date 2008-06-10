@@ -1,5 +1,6 @@
+
 Version 1.4.1:
-	Better line editing and command history for shell.
+	Better line editing for shell.
 	
 	Support for autodetecting more filesystems, such as ISO9660 and UDF.
 

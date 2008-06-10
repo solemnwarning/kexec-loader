@@ -45,16 +45,23 @@
 #define CONSOLE_CMD(str) \
 	}else if(strcasecmp(cmd, str) == 0) {
 
+#define HISTORY_MAX 32
+
 void list_devices(void);
 static char *next_arg(char *args);
 
 static kl_target cons_target;
+static char *history[HISTORY_MAX];
 
 void shell_main(void) {
 	char cmdbuf[1024];
 	size_t len;
-	int c;
-	char *cmd, *arg1, *arg2;
+	int c, hnum;
+	char *cmd, *arg1, *arg2, *nhist;
+	
+	for(hnum = 0; hnum < HISTORY_MAX; hnum++) {
+		history[hnum] = NULL;
+	}
 	
 	TARGET_DEFAULTS(&cons_target);
 	kl_mount *nmount;
@@ -62,6 +69,7 @@ void shell_main(void) {
 	READLINE:
 	cmdbuf[0] = '\0';
 	len = 0;
+	hnum = -1;
 	
 	printf("> ");
 	
@@ -89,6 +97,48 @@ void shell_main(void) {
 			
 			putchar(c);
 		}
+		if(c == 0x1B && getchar() == '[') {
+			c = getchar();
+			
+			if(c == 65 && (hnum+1) < HISTORY_MAX && history[hnum+1]) {
+				strcpy(cmdbuf, history[++hnum]);
+				len = strlen(cmdbuf);
+				
+				console_eline(ELINE_ALL);
+				printf("\r> %s", cmdbuf);
+			}
+			if(c == 66 && hnum >= 0) {
+				hnum--;
+				
+				if(hnum == -1) {
+					cmdbuf[0] = '\0';
+					len = 0;
+				}else{
+					strcpy(cmdbuf, history[hnum]);
+					len = strlen(cmdbuf);
+				}
+				
+				console_eline(ELINE_ALL);
+				printf("\r> %s", cmdbuf);
+			}
+		}
+	}
+	
+	if((nhist = malloc(strlen(cmdbuf)+1))) {
+		strcpy(nhist, cmdbuf);
+		free(history[HISTORY_MAX-1]);
+		
+		for(hnum = (HISTORY_MAX-1); hnum > 0; hnum--) {
+			if(history[hnum-1]) {
+				history[hnum] = history[hnum-1];
+			}
+		}
+		
+		history[0] = nhist;
+	}else{
+		TEXT_RED();
+		printD("> Failed to allocate nhist: %s", strerror(errno));
+		TEXT_WHITE();
 	}
 	
 	cmd = cmdbuf+strspn(cmdbuf, " ");
