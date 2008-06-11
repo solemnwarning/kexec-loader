@@ -57,7 +57,7 @@ void list_devices(void);
 static void print_header(void);
 static void prepare_text(void);
 
-static int rows = 25, cols = 80;
+int rows = 25, cols = 80;
 static int srow = 4, erow = 0;
 static int scol = 3, ecol = 0;
 

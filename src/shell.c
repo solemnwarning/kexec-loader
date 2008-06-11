@@ -47,6 +47,8 @@
 
 #define HISTORY_MAX 32
 
+extern int rows, cols;
+
 void list_devices(void);
 static char *next_arg(char *args);
 
@@ -55,7 +57,7 @@ static char *history[HISTORY_MAX];
 
 void shell_main(void) {
 	char cmdbuf[1024];
-	size_t len;
+	size_t len, offset;
 	int c, hnum;
 	char *cmd, *arg1, *arg2, *nhist;
 	
@@ -69,6 +71,7 @@ void shell_main(void) {
 	READLINE:
 	cmdbuf[0] = '\0';
 	len = 0;
+	offset = 0;
 	hnum = -1;
 	
 	printf("> ");
@@ -82,20 +85,29 @@ void shell_main(void) {
 		}
 		if(c == 0x7F) {
 			if(len > 0) {
-				console_cback(1);
-				putchar(' ');
-				console_cback(1);
-				
 				cmdbuf[--len] = '\0';
+				
+				if(offset > 0) {
+					if(--offset == 0) {
+						console_eline(ELINE_ALL);
+						printf("\r> %s", cmdbuf);
+					}
+				}else{
+					console_cback(1);
+					putchar(' ');
+					console_cback(1);
+				}
 			}
-			
-			continue;
 		}
 		if(c >= 0x20 && c <= 0x7E && len < 1023) {
 			cmdbuf[len++] = c;
 			cmdbuf[len] = '\0';
 			
-			putchar(c);
+			if(len+2 >= cols) {
+				offset++;
+			}else{
+				putchar(c);
+			}
 		}
 		if(c == 0x1B && getchar() == '[') {
 			c = getchar();
@@ -104,8 +116,14 @@ void shell_main(void) {
 				strcpy(cmdbuf, history[++hnum]);
 				len = strlen(cmdbuf);
 				
-				console_eline(ELINE_ALL);
-				printf("\r> %s", cmdbuf);
+				if(len+2 >= cols) {
+					offset = (len+3) - cols;
+				}else{
+					offset = 0;
+					
+					console_eline(ELINE_ALL);
+					printf("\r> %s", cmdbuf);
+				}
 			}
 			if(c == 66 && hnum >= 0) {
 				hnum--;
@@ -118,9 +136,20 @@ void shell_main(void) {
 					len = strlen(cmdbuf);
 				}
 				
-				console_eline(ELINE_ALL);
-				printf("\r> %s", cmdbuf);
+				if(len+2 >= cols) {
+					offset = (len+3) - cols;
+				}else{
+					offset = 0;
+					
+					console_eline(ELINE_ALL);
+					printf("\r> %s", cmdbuf);
+				}
 			}
+		}
+		
+		if(offset > 0) {
+			console_eline(ELINE_ALL);
+			printf("\r> $%s", cmdbuf+offset+1);
 		}
 	}
 	
