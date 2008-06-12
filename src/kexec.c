@@ -57,6 +57,9 @@
 	free(append);\
 	free(cmdline);\
 	free(initrd);\
+	while(modcount > 0) {\
+		free(modules[--modcount]);\
+	}\
 	return x;
 
 int kexec_main(int argc, char **argv);
@@ -99,8 +102,10 @@ int load_kernel(kl_target *target) {
 	char *append = NULL;
 	char *cmdline = NULL;
 	char *initrd = NULL;
+	char *modules[MAX_MODULES];
+	int modcount = 0;
 	
-	char* kexec_argv[8] = {NULL};
+	char* kexec_argv[8+target->n_modules];
 	argc = 1;
 	
 	argv_append("-l");
@@ -128,6 +133,11 @@ int load_kernel(kl_target *target) {
 		argv_appendf(initrd, "--initrd=%s", target->initrd);
 		
 		printd(">> initrd: %s", target->initrd);
+	}
+	while(modcount < target->n_modules) {
+		argv_appendf(modules[modcount], "--module=%s", target->modules[modcount]);
+		
+		printd(">> module: %s", target->modules[modcount++]);
 	}
 	
 	TEXT_WHITE();

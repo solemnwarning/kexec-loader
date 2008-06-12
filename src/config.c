@@ -135,7 +135,7 @@ static void add_module(unsigned int lnum, char const *module) {
 		return;
 	}
 	
-	size_t len = snprintf(NULL, 0, "--module=/mnt/target/%s", module);
+	size_t len = snprintf(NULL, 0, "/mnt/target/%s", module);
 	int modnum = target.n_modules;
 	
 	target.modules[modnum] = malloc(len + 1);
@@ -144,7 +144,7 @@ static void add_module(unsigned int lnum, char const *module) {
 		return;
 	}
 	
-	sprintf(target.modules[modnum], "--module=/mnt/target/%s", module);
+	sprintf(target.modules[modnum], "/mnt/target/%s", module);
 	target.n_modules++;
 }
 
