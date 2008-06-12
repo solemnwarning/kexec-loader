@@ -51,8 +51,9 @@ extern int rows, cols;
 
 void list_devices(void);
 static char *next_arg(char *args);
+static void add_module(char const *module);
 
-static kl_target cons_target;
+static kl_target cons_target = TARGET_DEFAULTS_DEFINE;
 static char *history[HISTORY_MAX];
 
 void shell_main(void) {
@@ -65,6 +66,7 @@ void shell_main(void) {
 		history[hnum] = NULL;
 	}
 	
+	free_modules(cons_target.modules, cons_target.n_modules);
 	TARGET_DEFAULTS(&cons_target);
 	kl_mount *nmount;
 	
@@ -251,6 +253,8 @@ void shell_main(void) {
 		console_fgcolour(CONS_WHITE);
 	CONSOLE_CMD("reset-vga")
 		cons_target.flags |= TARGET_RESET_VGA;
+	CONSOLE_CMD("module")
+		add_module(arg1);
 	}else{
 		printd("Unknown command: %s", cmd);
 	}
@@ -271,4 +275,23 @@ static char *next_arg(char *args) {
 	}
 	
 	return retval;
+}
+
+static void add_module(char const *module) {
+	if(cons_target.n_modules == MAX_MODULES) {
+		printD("Too many modules, maximum = %d", MAX_MODULES);
+		return;
+	}
+	
+	size_t len = snprintf(NULL, 0, "/mnt/target/%s", module);
+	int modnum = cons_target.n_modules;
+	
+	cons_target.modules[modnum] = malloc(len + 1);
+	if(!cons_target.modules[modnum]) {
+		printD("malloc(%u): %s", len+1, strerror(errno));
+		return;
+	}
+	
+	sprintf(cons_target.modules[modnum], "/mnt/target/%s", module);
+	cons_target.n_modules++;
 }

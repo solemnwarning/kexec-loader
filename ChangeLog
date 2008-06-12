@@ -5,6 +5,9 @@ Version 1.4.1:
 	Added nano-like scrolling for editing commands which are longer then
 	the screen, otherwise backspacing before column 1 deletes characters
 	from the command buffer, but not from the screen.
+	
+	Added module command and configuration directive to support loading
+	multiboot modules.
 
 Version 1.4:
 	Added cmdline configuration directive.

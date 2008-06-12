@@ -54,5 +54,6 @@ void kmsg_monitor(void);
 
 void free_targets(kl_target *targets);
 void free_mounts(kl_mount *mounts);
+void free_modules(char **modules, int modcount);
 
 #endif /* !KEXEC_LOADER_MISC_H */

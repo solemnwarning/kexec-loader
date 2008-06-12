@@ -112,6 +112,13 @@ static void cfg_add_target(void) {
 	strcpy(nptr->initrd, target.initrd);
 	strcpy(nptr->append, target.append);
 	strcpy(nptr->cmdline, target.cmdline);
+	
+	int n;
+	for(n = 0; n < target.n_modules; n++) {
+		nptr->modules[n] = target.modules[n];
+	}
+	
+	nptr->n_modules = target.n_modules;
 	nptr->mounts = target.mounts;
 	
 	if(!config.targets) {
