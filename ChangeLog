@@ -1,6 +1,10 @@
 Version 1.4.1:
 	Added command history, scrolls through previous commands on up/down
 	arrow keys, by default the history size is 32 commands.
+	
+	Added nano-like scrolling for editing commands which are longer then
+	the screen, otherwise backspacing before column 1 deletes characters
+	from the command buffer, but not from the screen.
 
 Version 1.4:
 	Added cmdline configuration directive.
