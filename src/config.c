@@ -129,6 +129,25 @@ static void cfg_add_target(void) {
 	TARGET_DEFAULTS(&target);
 }
 
+static void add_module(unsigned int lnum, char const *module) {
+	if(target.n_modules == MAX_MODULES) {
+		printD("config:%u: Too many modules, maximum = %d", MAX_MODULES);
+		return;
+	}
+	
+	size_t len = snprintf(NULL, 0, "--module=/mnt/target/%s", module);
+	int modnum = target.n_modules;
+	
+	target.modules[modnum] = malloc(len + 1);
+	if(!target.modules[modnum]) {
+		printD("config:%u: malloc(%u): %s", len+1, strerror(errno));
+		return;
+	}
+	
+	sprintf(target.modules[modnum], "--module=/mnt/target/%s", module);
+	target.n_modules++;
+}
+
 static char *next_value(char *value) {
 	char *rval = value+strcspn(value, " \t\r\n");
 	
@@ -313,6 +332,9 @@ void config_parse(char* line, unsigned int lnum) {
 		}
 		
 		return;
+	}
+	if(str_compare(name, "module", STR_NOCASE)) {
+		add_module(lnum, value);
 	}
 	
 	printD("config:%u: Unknown directive '%s'", lnum, name);

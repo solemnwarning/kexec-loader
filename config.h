@@ -44,5 +44,6 @@
 #define KERNEL_SIZE 2048
 #define INITRD_SIZE 2048
 #define APPEND_SIZE 512
+#define MAX_MODULES 16
 
 #endif /* !KEXEC_LOADER_CTCONFIG_H */
