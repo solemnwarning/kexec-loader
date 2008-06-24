@@ -1,4 +1,6 @@
 Version 1.4.1:
+	Added support for ISO-9660 to detect_fstype().
+	
 	Added command history, scrolls through previous commands on up/down
 	arrow keys, by default the history size is 32 commands.
 	

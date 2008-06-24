@@ -1,10 +1,7 @@
-
-Version 1.4.1:
-	Better line editing for shell.
-	
-	Support for autodetecting more filesystems, such as ISO9660 and UDF.
+Version 1.4.2:
+	Dynamic-length strings and input buffers.
 
 Future/undecided:
-	Dynamic memory for strings other then input buffers? (Filenames, etc)
+	Better line editing for shell.
 	
 	Autocompletion of commands and filenames in shell?
