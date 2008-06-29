@@ -31,25 +31,27 @@ a:hover {
 
 <body>
 <h1>kexec-loader manual</h1>
-<p>Version: 1.4.</p>
+<p>Version: 1.4.1.</p>
 <p>&copy; 2008 Daniel Collins<br />&copy; 2008 Philip Kent</p>
 <h2>1. Compilation</h2>
 <h3>1.1. Introduction</h3>
 <p>kexec-loader is a boot loader which loads a Linux kernel, then displays a GRUB-like menu so you can select a kernel to boot
 using kexec. It is designed for systems where the BIOS does not support booting from some devices (e.g. your kernel is on a USB memory key which the BIOS does not support).</p>
 <p>If you have downloaded one of the pre-built disk images, you do not need to read the rest of this section, and you can skip to Section 2. A pre-made disk image is probably more suitable to the end user in most cases, as the provided image supports IDE, SATA and USB and is pre-compiled. You can obtain it from the project's webpage.</p>
-<h3>1.2. New in kexec-loader 1.4</h3>
+<h3>1.2. New in kexec-loader 1.4.1</h3>
 <p>A summary of the new features in this release of kexec-loader is below. For a more detailed changelog, please see the ChangeLog file.</p>
 <ul>
   <li>Improved support for multiboot kernels
-	  <ul>
-	    <li>Support for multiboot cmdline</li>
-	    <li>Support for resetting the VGA adaptor</li>
-	  </ul>
-	  </li>
-  <li>Built in shell</li>
-  <li>Improvements to user experience with better errors in kexec-tools</li>
-  <li>A fix for a memory leak and a few bug fixes.</li>
+    <ul>
+      <li>Support for multiboot modules</li>
+    </ul>
+  </li>
+  <li>Improved shell
+    <ul>
+      <li>Support for a command history</li>
+      <li>Support for 'nano' like scrolling if entered string does not fit on screen.</li>
+    </ul>
+  </li>
 </ul>
 <h3>1.3. Requirements</h3>
 <p>To build kexec-loader, you require the following tools.</p>
@@ -117,6 +119,8 @@ using kexec. It is designed for systems where the BIOS does not support booting 
   <br />Command line parameters to pass to the kernel, has the same effect as <code>kernel mykernel.bin foo=bar</code> in GRUB, you would put <code>foo=bar</code> here.</li>
   <li><strong>reset-vga</strong>
   <br />Reset the VGA adaptor before starting the kernel, may be useful if you get garbled or no output on bootup.</li>
+  <li><strong>module &lt;path/modulename&gt;</strong>
+  <br />Load a multiboot module.</li>
 </ul>
 <p>Where parameters are shown in &lt;angled brackets&gt;, they are required for that directive. Ones in [square brackets] are optional. For mount and rootfs, if you do specify a fstype, it should be specified as ext2:/dev/hda1 for example.</p>
 <p>Normally kexec-loader can detect the filesystem type, it supports autodetection for the following types.</p>
@@ -128,6 +132,7 @@ using kexec. It is designed for systems where the BIOS does not support booting 
   <li>Minix</li>
   <li>FAT</li>
   <li>NTFS</li>
+  <li>ISO-9660 (aka CD-ROM)</li>
 </ul>
 <p>Specifying no filesystem or "auto" will result in auto detection. For manual specification, enter the name of any filesystem that your kernel supports.</p>
 <h3>2.2. Using the Menu</h3>
@@ -142,7 +147,7 @@ using kexec. It is designed for systems where the BIOS does not support booting 
   <li><b>disks</b>
   <br />Display a list of detected disks, like the keystroke on the graphical list.</li>
 </ul>
-<p>Please note that this shell will be improved in subsequent releases.</p>
+<p>To scroll through the command history, use the up and down keys. A maximum of 32 commands are remembered (upon exceeding this, the oldest command will be removed from the history to make space). Commands that are longer than the screen can hold will scroll, similar to the 'nano' text editor. Please note that this shell will be improved in subsequent releases.</p>
 <h3>2.4. Debug Console</h3>
 <p>Once kexec-loader has started all debugging messages, as well as Linux kernel messages are sent to a separate debug console. By default the debug console is /dev/tty2, this can be changed at boot by using the Linux cmdline, for example kexec_debug=/dev/ttyS0 writes all debug messages and kernel messages to the first serial port.</p>
 <h2>3. Support</h2>
