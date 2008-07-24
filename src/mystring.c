@@ -32,6 +32,7 @@
 #include <string.h>
 #include <stdio.h>
 #include <stdarg.h>
+#include <ctype.h>
 
 #include "misc.h"
 
@@ -84,4 +85,40 @@ char *str_append(char *dest, char const *src, int max) {
 	dest[alen+dlen] = '\0';
 	
 	return dest;
+}
+
+/* Compare a string
+ * If max is non-negative, no more then max characters will be compared
+ *
+ * Returns 1 on match, zero otherwise
+*/
+int str_eq(char const *s1, char const *s2, int max) {
+	int n;
+	
+	for(n = 0; n < max || max < 0; n++) {
+		if(s1[n] != s2[n]) {
+			return 0;
+		}
+		if(s1[n] == '\0') {
+			return 1;
+		}
+	}
+	
+	return 1;
+}
+
+/* Same as above, but ignoring case */
+int str_ceq(char const *s1, char const *s2, int max) {
+	int n;
+	
+	for(n = 0; n < max || max < 0; n++) {
+		if(tolower(s1[n]) != tolower(s2[n])) {
+			return 0;
+		}
+		if(s1[n] == '\0') {
+			return 1;
+		}
+	}
+	
+	return 1;
 }

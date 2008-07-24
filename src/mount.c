@@ -271,10 +271,10 @@ char* detect_fstype(char const *device) {
 			retval = "ext2";
 		}
 	}
-	if(str_compare((char*)buf, "XFSB", STR_MAXLEN, 4)) {
+	if(str_eq((char*)buf, "XFSB", 4)) {
 		retval = "xfs";
 	}
-	if(str_compare((char*)(buf+0x10034), "ReIsEr", STR_MAXLEN, 6)) {
+	if(str_eq((char*)(buf+0x10034), "ReIsEr", 6)) {
 		retval = "reiserfs";
 	}
 	if(
@@ -286,16 +286,16 @@ char* detect_fstype(char const *device) {
 	) {
 		retval = "minix";
 	}
-	if(str_compare((char*)(buf+0x36), "FAT", STR_MAXLEN, 3)) {
+	if(str_eq((char*)(buf+0x36), "FAT", 3)) {
 		retval = "vfat";
 	}
-	if(str_compare((char*)(buf+3), "NTFS    ", STR_MAXLEN, 8)) {
+	if(str_eq((char*)(buf+3), "NTFS    ", 8)) {
 		retval = "ntfs";
 	}
 	if(
-		str_compare((char*)(buf+32769), "CD001", STR_MAXLEN, 5) ||
-		str_compare((char*)(buf+37633), "CD001", STR_MAXLEN, 5) ||
-		str_compare((char*)(buf+32776), "CDROM", STR_MAXLEN, 5)
+		str_eq((char*)(buf+32769), "CD001", 5) ||
+		str_eq((char*)(buf+37633), "CD001", 5) ||
+		str_eq((char*)(buf+32776), "CDROM", 5)
 	) {
 		retval = "iso9660";
 	}
@@ -385,7 +385,7 @@ char const *mount_dev(char const *device, char const *mpoint) {
 		goto END;
 	}
 	
-	if(!fstype || str_compare(fstype, "auto", 0)) {
+	if(!fstype || str_eq(fstype, "auto", -1)) {
 		fstype = detect_fstype(device);
 		if(!fstype) {
 			errmsg = "Unknown filesystem format";

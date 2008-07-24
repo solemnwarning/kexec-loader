@@ -34,5 +34,7 @@
 char *str_copy(char const *src, int max);
 char *str_printf(char const *fmt, ...);
 char *str_append(char *dest, char const *src, int max);
+int str_eq(char const *s1, char const *s2, int max);
+int str_ceq(char const *s1, char const *s2, int max);
 
 #endif /* !KEXEC_LOADER_MYSTRING_H */

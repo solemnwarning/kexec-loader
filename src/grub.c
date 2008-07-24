@@ -161,7 +161,7 @@ char *grub_cdevice(char const *gdev) {
 	
 	struct grub_device *ptr = grub_devices;
 	while(ptr) {
-		if(str_compare(ptr->device, gdev, 0)) {
+		if(str_eq(ptr->device, gdev, -1)) {
 			return strclone(ptr->fname);
 		}
 		
@@ -177,10 +177,10 @@ char *grub_cdevice(char const *gdev) {
 		ptr = ptr->next;
 	}
 	
-	if(str_compare("(fd0)", gdev, 0)) {
+	if(str_eq("(fd0)", gdev, -1)) {
 		return strclone("/dev/fd0");
 	}
-	if(str_compare("(fd1)", gdev, 0)) {
+	if(str_eq("(fd1)", gdev, -1)) {
 		return strclone("/dev/fd1");
 	}
 	
@@ -284,11 +284,11 @@ static void load_menu(void) {
 			value[strcspn(value, "\n\r")] = '\0';
 		}
 		
-		if(str_compare(name, "root", 0)) {
+		if(str_eq(name, "root", -1)) {
 			strncpy(c_root, value, DEVICE_SIZE);
 			c_root[DEVICE_SIZE-1] = '\0';
 		}
-		if(str_compare(name, "kernel", 0)) {
+		if(str_eq(name, "kernel", -1)) {
 			if((len = strcspn(value, " \t")) > NAME_SIZE) {
 				len = NAME_SIZE;
 			}
@@ -304,14 +304,14 @@ static void load_menu(void) {
 				c_append[APPEND_SIZE-1] = '\0';
 			}
 		}
-		if(str_compare(name, "initrd", 0)) {
+		if(str_eq(name, "initrd", -1)) {
 			strncpy(c_initrd, value, INITRD_SIZE);
 			c_initrd[INITRD_SIZE-1] = '\0';
 		}
-		if(str_compare(name, "default", 0)) {
+		if(str_eq(name, "default", -1)) {
 			dnum = atoi(value);
 		}
-		if(str_compare(name, "title", 0)) {
+		if(str_eq(name, "title", -1)) {
 			if(c_title[0] != '\0') {
 				if(tnum++ == dnum) {
 					c_flags = TARGET_DEFAULT;
@@ -323,7 +323,7 @@ static void load_menu(void) {
 			strncpy(c_title, value, NAME_SIZE);
 			c_title[NAME_SIZE-1] = '\0';
 		}
-		if(str_compare(name, "chainloader", 0)) {
+		if(str_eq(name, "chainload", -1)) {
 			c_title[0] = '\0';
 			c_root[0] = '\0';
 			c_kernel[0] = '\0';
@@ -333,7 +333,7 @@ static void load_menu(void) {
 			
 			tnum++;
 		}
-		if(str_compare(name, "timeout", 0) && !config.timeout) {
+		if(str_eq(name, "timeout", -1) && !config.timeout) {
 			config.timeout = strtoul(value, NULL, 10);
 		}
 	}
@@ -393,7 +393,7 @@ static void add_target(void) {
 	nptr->mounts->mpoint = str_copy("/mnt/grub", -1);
 	
 	if(initrd[0] != '\0') {
-		if(str_compare(i_device, k_device, 0)) {
+		if(str_eq(i_device, k_device, -1)) {
 			snprintf(nptr->initrd, INITRD_SIZE, "/mnt/grub/%s", initrd);
 		}else{
 			nptr->mounts->next = allocate(sizeof(kl_mount));

@@ -133,11 +133,7 @@ static void add_module(unsigned int lnum, char const *module) {
 		return;
 	}
 	
-	size_t len = snprintf(NULL, 0, "/mnt/target/%s", module);
-	int modnum = target.n_modules;
-	
-	target.modules[modnum] = str_printf("/mnt/target/%s", module);
-	target.n_modules++;
+	target.modules[target.n_modules++] = str_printf("/mnt/target/%s", module);
 }
 
 static char *next_value(char *value) {
@@ -218,12 +214,12 @@ void config_parse(char* line, unsigned int lnum) {
 	
 	debug("config:%u: '%s' = '%s'\n", lnum, name, value);
 	
-	if(str_compare(name, "timeout", STR_NOCASE)) {
+	if(str_ceq(name, "timeout", -1)) {
 		config.timeout = strtoul(value, NULL, 10);
 		
 		return;
 	}
-	if(str_compare(name, "title", STR_NOCASE)) {
+	if(str_ceq(name, "title", -1)) {
 		if(target.name[0] != '\0') {
 			cfg_add_target();
 		}
@@ -237,7 +233,7 @@ void config_parse(char* line, unsigned int lnum) {
 		
 		return;
 	}
-	if(str_compare(name, "kernel", STR_NOCASE)) {
+	if(str_ceq(name, "kernel", -1)) {
 		if(value[0] == '\0') {
 			printD("config:%u: Kernel requires an argument", lnum);
 			return;
@@ -247,7 +243,7 @@ void config_parse(char* line, unsigned int lnum) {
 		
 		return;
 	}
-	if(str_compare(name, "initrd", STR_NOCASE)) {
+	if(str_ceq(name, "initrd", -1)) {
 		if(value[0] == '\0') {
 			printD("config:%u: initrd requires an argument", lnum);
 			return;
@@ -257,7 +253,7 @@ void config_parse(char* line, unsigned int lnum) {
 		
 		return;
 	}
-	if(str_compare(name, "append", STR_NOCASE)) {
+	if(str_ceq(name, "append", -1)) {
 		if(value[0] == '\0') {
 			printD("config:%u: Append requires an argument", lnum);
 			return;
@@ -267,7 +263,7 @@ void config_parse(char* line, unsigned int lnum) {
 		
 		return;
 	}
-	if(str_compare(name, "cmdline", STR_NOCASE)) {
+	if(str_ceq(name, "cmdline", -1)) {
 		if(value[0] == '\0') {
 			printD("config:%u: cmdline requires an argument", lnum);
 			return;
@@ -277,15 +273,15 @@ void config_parse(char* line, unsigned int lnum) {
 		
 		return;
 	}
-	if(str_compare(name, "default", STR_NOCASE)) {
+	if(str_ceq(name, "default", -1)) {
 		target.flags |= TARGET_DEFAULT;
 		return;
 	}
-	if(str_compare(name, "reset-vga", STR_NOCASE)) {
+	if(str_ceq(name, "reset-vga", -1)) {
 		target.flags |= TARGET_RESET_VGA;
 		return;
 	}
-	if(str_compare(name, "rootfs", STR_NOCASE)) {
+	if(str_ceq(name, "rootfs", -1)) {
 		if(value[0] == '\0') {
 			printD("config:%u: RootFS requires an argument", lnum);
 			return;
@@ -294,7 +290,7 @@ void config_parse(char* line, unsigned int lnum) {
 		config_add_mount(lnum, value, "/");
 		return;
 	}
-	if(str_compare(name, "mount", STR_NOCASE)) {
+	if(str_ceq(name, "mount", -1)) {
 		value2 = next_value(value);
 		if(value[0] == '\0' || value2[0] == '\0') {
 			printD("config:%u: mount requires 2 arguments", lnum);
@@ -304,7 +300,7 @@ void config_parse(char* line, unsigned int lnum) {
 		config_add_mount(lnum, value, value2);
 		return;
 	}
-	if(str_compare(name, "grub_root", STR_NOCASE)) {
+	if(str_ceq(name, "grub_root", -1)) {
 		if(value[0] == '\0') {
 			printD("config:%u: grub_root requires an argument", lnum);
 			return;
@@ -314,10 +310,10 @@ void config_parse(char* line, unsigned int lnum) {
 		config.grub_root[DEVICE_SIZE-1] = '\0';
 		return;
 	}
-	if(str_compare(name, "grub_first", STR_NOCASE)) {
-		if(str_compare(value, "hdx", 0)) {
+	if(str_ceq(name, "grub_first", -1)) {
+		if(str_eq(value, "hdx", -1)) {
 			config.grub_first = hdx;
-		}else if(str_compare(value, "sdx", 0)) {
+		}else if(str_eq(value, "sdx", -1)) {
 			config.grub_first = sdx;
 		}else{
 			printD("config:%u: Value must be hdx or sdx", lnum);
@@ -325,7 +321,7 @@ void config_parse(char* line, unsigned int lnum) {
 		
 		return;
 	}
-	if(str_compare(name, "module", STR_NOCASE)) {
+	if(str_ceq(name, "module", -1)) {
 		add_module(lnum, value);
 	}
 	
