@@ -33,5 +33,6 @@
 
 char *str_copy(char const *src, int max);
 char *str_printf(char const *fmt, ...);
+char *str_append(char *dest, char const *src, int max);
 
 #endif /* !KEXEC_LOADER_MYSTRING_H */

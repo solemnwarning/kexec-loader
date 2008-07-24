@@ -40,17 +40,17 @@
 typedef struct kl_target kl_target;
 typedef struct kl_mount kl_mount;
 
-#define MOUNT_DEFAULTS(ptr) \
-	memset((ptr)->device, '\0', DEVICE_SIZE);\
-	memset((ptr)->mpoint, '\0', MPOINT_SIZE);\
+#define INIT_MOUNT(ptr) \
+	(ptr)->device = NULL;\
+	(ptr)->mpoint = NULL;\
 	(ptr)->depth = 0;\
 	(ptr)->next = NULL;
 
-#define MOUNT_DEFAULTS_DEFINE {{'\0'},{'\0'},0,NULL}
+#define DINIT_MOUNT {NULL,NULL,0,NULL}
 
 struct kl_mount {
-	char device[DEVICE_SIZE];
-	char mpoint[MPOINT_SIZE];
+	char *device;
+	char *mpoint;
 	unsigned int depth;
 	
 	struct kl_mount* next;

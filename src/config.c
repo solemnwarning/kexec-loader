@@ -44,6 +44,7 @@
 #include "mount.h"
 #include "console.h"
 #include "grub.h"
+#include "mystring.h"
 
 struct kl_config config = CONFIG_DEFAULTS_DEFINE;
 static struct kl_target target = TARGET_DEFAULTS_DEFINE;
@@ -58,10 +59,10 @@ static void config_add_mount(unsigned int lnum, char* device, char* mpoint) {
 		
 		return;
 	}
-	MOUNT_DEFAULTS(nptr);
+	INIT_MOUNT(nptr);
 	
-	strncpy(nptr->device, device, DEVICE_SIZE-1);
-	strncpy(nptr->mpoint, "/mnt/target/", MPOINT_SIZE-1);
+	nptr->device = str_copy(device, -1);
+	nptr->mpoint = str_copy("/mnt/target/", -1);
 	
 	char *mptok = strtok(mpoint, "/");
 	while(mptok) {
@@ -69,8 +70,8 @@ static void config_add_mount(unsigned int lnum, char* device, char* mpoint) {
 			goto NTOK;
 		}
 		
-		strncat(nptr->mpoint, mptok, MPOINT_SIZE);
-		strncat(nptr->mpoint, "/", MPOINT_SIZE);
+		str_append(nptr->mpoint, mptok, -1);
+		str_append(nptr->mpoint, "/", -1);
 		nptr->depth++;
 		
 		NTOK:

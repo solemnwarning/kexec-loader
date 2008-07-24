@@ -33,19 +33,16 @@
 #include <stdio.h>
 #include <stdarg.h>
 
-/* Allocate a buffer using malloc() and copy the supplied string into it, if
+#include "misc.h"
+
+/* Allocate a buffer using allocate() and copy the supplied string into it, if
  * max is non-negative no more then max characters are copied to the new string
- *
- * Returns a pointer to the new string, or NULL if malloc() fails
 */
 char *str_copy(char const *src, int max) {
 	size_t len;
-	for(len = 0; src[len] && max < 0; len++) {}
+	for(len = 0; src[len] || max < 0; len++) {}
 	
-	char *dest = malloc(len+1);
-	if(!dest) {
-		return NULL;
-	}
+	char *dest = allocate(len+1);
 	
 	strncpy(dest, src, len);
 	dest[len] = '\0';
@@ -53,23 +50,38 @@ char *str_copy(char const *src, int max) {
 	return dest;
 }
 
-/* Allocate a buffer using malloc() and write the supplied sprintf-format string
- * to it
- *
- * Returns a pointer to the new string, or NULL if malloc() fails
+/* Allocate a buffer using allocate() and write the supplied sprintf-format
+ * string to it
 */
 char *str_printf(char const *fmt, ...) {
 	va_list argv;
 	va_start(argv, fmt);
 	
-	char *dest = malloc(vsnprintf(NULL, 0, fmt, argv)+1);
-	if(!dest) {
-		goto RET;
-	}
-	
+	char *dest = allocate(vsnprintf(NULL, 0, fmt, argv)+1);
 	vsprintf(dest, fmt, argv);
 	
-	RET:
 	va_end(argv);
+	return dest;
+}
+
+/* Append text to a string, if max is non-negative no more then max characters
+ * of src will be appended to dest
+ *
+ * If dest is NULL, a new string will be created
+*/
+char *str_append(char *dest, char const *src, int max) {
+	size_t alen = 0, dlen = 0, n;
+	while(src[alen] || max < 0) { alen++; }
+	while(dest && dest[dlen]) { dlen++; }
+	
+	if((dest = realloc(dest, alen+dlen+1)) == NULL) {
+		fatal("Failed to realloc buffer to %u", alen+dlen+1);
+	}
+	
+	for(n = 0; n < alen; n++) {
+		dest[dlen+n] = src[n];
+	}
+	dest[alen+dlen] = '\0';
+	
 	return dest;
 }

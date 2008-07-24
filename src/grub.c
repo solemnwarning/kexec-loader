@@ -41,6 +41,7 @@
 #include "../config.h"
 #include "console.h"
 #include "misc.h"
+#include "mystring.h"
 
 static struct grub_device {
 	char device[DEVICE_SIZE];
@@ -390,18 +391,18 @@ static void add_target(void) {
 	strcpy(nptr->append, c_append);
 	
 	nptr->mounts = allocate(sizeof(kl_mount));
-	MOUNT_DEFAULTS(nptr->mounts);
-	strcpy(nptr->mounts->device, k_device);
-	strcpy(nptr->mounts->mpoint, "/mnt/grub");
+	INIT_MOUNT(nptr->mounts);
+	nptr->mounts->device = str_copy(k_device, -1);
+	nptr->mounts->mpoint = str_copy("/mnt/grub", -1);
 	
 	if(initrd[0] != '\0') {
 		if(str_compare(i_device, k_device, 0)) {
 			snprintf(nptr->initrd, INITRD_SIZE, "/mnt/grub/%s", initrd);
 		}else{
 			nptr->mounts->next = allocate(sizeof(kl_mount));
-			MOUNT_DEFAULTS(nptr->mounts->next);
-			strcpy(nptr->mounts->next->device, i_device);
-			strcpy(nptr->mounts->next->mpoint, "/mnt/grub_i");
+			INIT_MOUNT(nptr->mounts->next);
+			nptr->mounts->next->device = str_copy(i_device, -1);
+			nptr->mounts->next->mpoint = str_copy("/mnt/grub_i", -1);
 			
 			snprintf(nptr->initrd, INITRD_SIZE, "/mnt/grub_i/%s", initrd);
 		}

@@ -41,6 +41,7 @@
 #include "misc.h"
 #include "mount.h"
 #include "kexec.h"
+#include "mystring.h"
 
 #define CONSOLE_CMD(str) \
 	}else if(strcasecmp(cmd, str) == 0) {
@@ -195,10 +196,10 @@ void shell_main(void) {
 			printd("malloc: %s", strerror(errno));
 			goto ENDCMD;
 		}
-		MOUNT_DEFAULTS(nmount);
+		INIT_MOUNT(nmount);
 		
-		strncpy(nmount->device, arg1, DEVICE_SIZE-1);
-		snprintf(nmount->mpoint, MPOINT_SIZE, "/mnt/target/%s", arg2);
+		nmount->device = str_copy(arg1, -1);
+		nmount->mpoint = str_printf("/mnt/target/%s", arg2);
 		
 		if(!mount_list(nmount)) {
 			free(nmount);
