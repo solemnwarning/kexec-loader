@@ -46,9 +46,6 @@ void* allocate_r(char const* file, unsigned int line, size_t size);
 void fatal(char const* fmt, ...);
 void debug(char const* fmt, ...);
 
-char* strclone(char const* string);
-int str_compare(char const*, char const*, int, ...);
-
 char *get_cmdline(char const *name);
 void kmsg_monitor(void);
 

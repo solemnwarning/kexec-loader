@@ -40,6 +40,7 @@
 #include "config.h"
 #include "../config.h"
 #include "console.h"
+#include "mystring.h"
 
 /* Error checking malloc() wrapper, also zeros memory */
 void* allocate_r(char const* file, unsigned int line, size_t size) {
@@ -99,90 +100,6 @@ void debug(char const* fmt, ...) {
 	va_end(argv);
 }
 
-/* Copy a string */
-char* strclone(char const* string) {
-	char* dest = allocate(strlen(string)+1);
-	strcpy(dest, string);
-	
-	return(dest);
-}
-
-/* Compare str1 and str2
- * Returns 1 on match, 0 on mismatch
-*/
-int str_compare(char const* str1, char const* str2, int flags, ...) {
-	if(str1 == NULL && str2 == NULL) {
-		return(1);
-	}
-	if(str1 == NULL || str2 == NULL) {
-		return(0);
-	}
-	
-	size_t maxlen = 0;
-	size_t compared = 0;
-	
-	va_list arglist;
-	va_start(arglist, flags);
-	if(flags & STR_MAXLEN) {
-		maxlen = va_arg(arglist, size_t);
-	}
-	va_end(arglist);
-	
-	for(; !(flags & STR_MAXLEN) || compared < maxlen; compared++) {
-		if(str1[0] == str2[0]) {
-			if(str1[0] == '\0') {
-				break;
-			}
-			
-			str1++;
-			str2++;
-			continue;
-		}
-		if(flags & STR_NOCASE && (tolower(str1[0]) == tolower(str2[0]))) {
-			str1++;
-			str2++;
-			continue;
-		}
-		if((flags & STR_WILDCARDS || flags & STR_WILDCARD1) && (str1[0] == '*' || str1[0] == '?')) {
-			if(str1[0] == '?' && str2[0] != '\0') {
-				str1++;
-				str2++;
-				continue;
-			}
-			if(str1[0] == '*') {
-				if(str2[0] == '\0' || str1[1] == '\0') {
-					break;
-				}
-				if(str1[1] == str2[0]) {
-					str1 += 2;
-				}
-				str2++;
-				continue;
-			}
-		}
-		if((flags & STR_WILDCARDS || flags & STR_WILDCARD2) && (str2[0] == '*' || str2[0] == '?')) {
-			if(str2[0] == '?' && str1[0] != '\0') {
-				str1++;
-				str2++;
-				continue;
-			}
-			if(str2[0] == '*') {
-				if(str1[0] == '\0' || str2[1] == '\0') {
-					break;
-				}
-				if(str2[1] == str1[0]) {
-					str2 += 2;
-				}
-				str1++;
-				continue;
-			}
-		}
-		
-		return(0);
-	}
-	return(1);
-}
-
 /* Search for an option that was passed to Linux via /proc/cmdline
  * Returns the =value if found, or NULL on error/not found
 */
@@ -220,10 +137,10 @@ char *get_cmdline(char const *name) {
 	
 	if(tok) {
 		if((val = strchr(tok, '='))) {
-			return strclone(val+1);
+			return str_copy(val+1, -1);
 		}
 		
-		return strclone("");
+		return str_copy("", -1);
 	}
 	
 	return NULL;

@@ -43,6 +43,7 @@
 #include "config.h"
 #include "console.h"
 #include "grub.h"
+#include "mystring.h"
 
 #define MAGIC_BUF_SIZE (0x1003A)
 

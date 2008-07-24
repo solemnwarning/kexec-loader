@@ -162,29 +162,29 @@ char *grub_cdevice(char const *gdev) {
 	struct grub_device *ptr = grub_devices;
 	while(ptr) {
 		if(str_eq(ptr->device, gdev, -1)) {
-			return strclone(ptr->fname);
+			return str_copy(ptr->fname, -1);
 		}
 		
 		if(
-			str_compare("(hd*,*)", gdev, STR_WILDCARD1) &&
-			str_compare("(hd*)", ptr->device, STR_WILDCARD1) &&
+			globcmp(gdev, "(hd*,*)", GLOB_STAR | GLOB_SINGLE) &&
+			globcmp(ptr->device, "(hd*)", GLOB_STAR | GLOB_SINGLE) &&
 			atoi(gdev+3) == atoi(ptr->device+3)
 		) {
 			snprintf(devbuf, DEVICE_SIZE, "%s%d", ptr->fname, atoi(strchr(gdev, ',')+1)+1);
-			return strclone(devbuf);
+			return str_copy(devbuf, -1);
 		}
 		
 		ptr = ptr->next;
 	}
 	
 	if(str_eq("(fd0)", gdev, -1)) {
-		return strclone("/dev/fd0");
+		return str_copy("/dev/fd0", -1);
 	}
 	if(str_eq("(fd1)", gdev, -1)) {
-		return strclone("/dev/fd1");
+		return str_copy("/dev/fd1", -1);
 	}
 	
-	if(!str_compare("(hd*)", gdev, STR_WILDCARD1)) {
+	if(!globcmp(gdev, "(hd*)", GLOB_STAR | GLOB_SINGLE)) {
 		return NULL;
 	}
 	
@@ -210,8 +210,8 @@ char *grub_cdevice(char const *gdev) {
 		device[strcspn(device, " \t")] = '\0';
 		
 		if(
-			(step == 0 && !str_compare(device, "hd?", STR_WILDCARD2)) ||
-			(step == 1 && !str_compare(device, "sd?", STR_WILDCARD2))
+			(step == 0 && !globcmp(device, "hd?", GLOB_STAR | GLOB_SINGLE)) ||
+			(step == 1 && !globcmp(device, "sd?", GLOB_STAR | GLOB_SINGLE))
 		) {
 			continue;
 		}
@@ -245,7 +245,7 @@ char *grub_cdevice(char const *gdev) {
 	}
 	
 	fclose(fh);
-	return strclone(devbuf);
+	return str_copy(devbuf, -1);
 }
 
 /* Load targets from menu.lst */

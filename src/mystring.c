@@ -34,7 +34,10 @@
 #include <stdarg.h>
 #include <ctype.h>
 
+#include "mystring.h"
 #include "misc.h"
+
+#define RCASE(x) (flags & GLOB_IGNCASE ? tolower(x) : x)
 
 /* Allocate a buffer using allocate() and copy the supplied string into it, if
  * max is non-negative no more then max characters are copied to the new string
@@ -118,6 +121,83 @@ int str_ceq(char const *s1, char const *s2, int max) {
 		if(s1[n] == '\0') {
 			return 1;
 		}
+	}
+	
+	return 1;
+}
+
+/* Compare function used by globcmp() */
+static int mycmp(char const *str, char const *expr, size_t len, int flags) {
+	size_t n;
+	
+	for(n = 0; n < len; n++) {
+		if(RCASE(str[n]) == RCASE(expr[n])) {
+			if(str[n] == '\0') {
+				return 1;
+			}
+			
+			continue;
+		}
+		if(flags & GLOB_SINGLE && expr[n] == '?' && str[n] != '\0') {
+			continue;
+		}
+		if(flags & GLOB_HASH && expr[n] == '#' && isdigit(str[n])) {
+			continue;
+		}
+		
+		return 0;
+	}
+	
+	return 1;
+}
+
+/* Match a glob (wildcard) expression against a string
+ * Returns 1 on match, zero otherwise
+*/
+int globcmp(char const *str, char const *expr, int flags, ...) {
+	size_t n, l;
+	
+	while(1) {
+		if(flags & GLOB_STAR && expr[0] == '*') {
+			while(expr[0] == '*') { expr++; }
+			
+			if(str[0] == '\0' || expr[0] == '\0') {
+				return 1;
+			}
+			
+			n = strcspn(expr, "*");
+			
+			if(expr[n] == '*') {
+				while(!mycmp(str, expr, n, flags)) {
+					str++;
+				}
+			}else{
+				if((l = strlen(str)) < n) {
+					return 0;
+				}
+				
+				str = (str + l) - n;
+				
+				if(mycmp(str, expr, n, flags)) {
+					return 1;
+				}else{
+					return 0;
+				}
+			}
+			
+			str += n;
+			expr += n;
+			continue;
+		}
+		if(!mycmp(str, expr, 1, flags)) {
+			return 0;
+		}
+		if(expr[0] == '\0') {
+			return 1;
+		}
+		
+		expr++;
+		str++;
 	}
 	
 	return 1;
