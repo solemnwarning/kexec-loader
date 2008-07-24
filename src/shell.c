@@ -156,22 +156,16 @@ void shell_main(void) {
 		}
 	}
 	
-	if((nhist = malloc(strlen(cmdbuf)+1))) {
-		strcpy(nhist, cmdbuf);
-		free(history[HISTORY_MAX-1]);
-		
-		for(hnum = (HISTORY_MAX-1); hnum > 0; hnum--) {
-			if(history[hnum-1]) {
-				history[hnum] = history[hnum-1];
-			}
+	nhist = str_copy(cmdbuf, -1);
+	free(history[HISTORY_MAX-1]);
+	
+	for(hnum = (HISTORY_MAX-1); hnum > 0; hnum--) {
+		if(history[hnum-1]) {
+			history[hnum] = history[hnum-1];
 		}
-		
-		history[0] = nhist;
-	}else{
-		TEXT_RED();
-		printD("> Failed to allocate nhist: %s", strerror(errno));
-		TEXT_WHITE();
 	}
+	
+	history[0] = nhist;
 	
 	cmd = cmdbuf+strspn(cmdbuf, " ");
 	arg1 = next_arg(cmd);
@@ -192,10 +186,7 @@ void shell_main(void) {
 			goto ENDCMD;
 		}
 		
-		if(!(nmount = malloc(sizeof(struct kl_mount)))) {
-			printd("malloc: %s", strerror(errno));
-			goto ENDCMD;
-		}
+		nmount = allocate(sizeof(struct kl_mount));
 		INIT_MOUNT(nmount);
 		
 		nmount->device = str_copy(arg1, -1);
@@ -287,12 +278,6 @@ static void add_module(char const *module) {
 	size_t len = snprintf(NULL, 0, "/mnt/target/%s", module);
 	int modnum = cons_target.n_modules;
 	
-	cons_target.modules[modnum] = malloc(len + 1);
-	if(!cons_target.modules[modnum]) {
-		printD("malloc(%u): %s", len+1, strerror(errno));
-		return;
-	}
-	
-	sprintf(cons_target.modules[modnum], "/mnt/target/%s", module);
+	cons_target.modules[modnum] = str_printf("/mnt/target/%s", module);
 	cons_target.n_modules++;
 }

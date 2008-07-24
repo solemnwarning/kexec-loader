@@ -42,16 +42,10 @@
 #include "../config.h"
 #include "console.h"
 #include "config.h"
+#include "mystring.h"
 
 #define argv_append(str) kexec_argv[argc++] = str; kexec_argv[argc] = NULL;
-
-#define argv_appendf(str, ...) \
-	if(!(str = malloc(snprintf(NULL, 0, __VA_ARGS__)+1))) {\
-		RETURN(1);\
-	}\
-	\
-	sprintf(str, __VA_ARGS__);\
-	argv_append(str);
+#define argv_appendf(str, ...) argv_append(str_printf(__VA_ARGS__));
 
 #define RETURN(x) \
 	free(append);\

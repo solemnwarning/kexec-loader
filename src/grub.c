@@ -124,10 +124,7 @@ static void load_devices(void) {
 			value[strcspn(value, "\r\n")] = '\0';
 		}
 		
-		if(!(ptr = malloc(sizeof(struct grub_device)))) {
-			printD("device.map: malloc() failure, aborting");
-			break;
-		}
+		ptr = allocate(sizeof(struct grub_device));
 		
 		strncpy(ptr->device, name, DEVICE_SIZE);
 		strncpy(ptr->fname, value, DEVICE_SIZE);

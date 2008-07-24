@@ -53,12 +53,7 @@ static struct kl_target target = TARGET_DEFAULTS_DEFINE;
  * This changes the device string passed to it
 */
 static void config_add_mount(unsigned int lnum, char* device, char* mpoint) {
-	kl_mount *nptr = malloc(sizeof(kl_mount));
-	if(!nptr) {
-		printD("config:%u: Can't allocate memory", lnum);
-		
-		return;
-	}
+	kl_mount *nptr = allocate(sizeof(kl_mount));
 	INIT_MOUNT(nptr);
 	
 	nptr->device = str_copy(device, -1);
@@ -98,12 +93,7 @@ static void cfg_add_target(void) {
 		goto END;
 	}
 	
-	kl_target *nptr = malloc(sizeof(kl_target));
-	if(!nptr) {
-		printD("Can't malloc() %u bytes\n", sizeof(kl_target));
-		goto END;
-	}
-	
+	kl_target *nptr = allocate(sizeof(kl_target));
 	TARGET_DEFAULTS(nptr);
 	
 	strcpy(nptr->name, target.name);
@@ -146,13 +136,7 @@ static void add_module(unsigned int lnum, char const *module) {
 	size_t len = snprintf(NULL, 0, "/mnt/target/%s", module);
 	int modnum = target.n_modules;
 	
-	target.modules[modnum] = malloc(len + 1);
-	if(!target.modules[modnum]) {
-		printD("config:%u: malloc(%u): %s", len+1, strerror(errno));
-		return;
-	}
-	
-	sprintf(target.modules[modnum], "/mnt/target/%s", module);
+	target.modules[modnum] = str_printf("/mnt/target/%s", module);
 	target.n_modules++;
 }
 
