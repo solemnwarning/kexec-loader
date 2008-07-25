@@ -57,26 +57,26 @@ struct kl_mount {
 };
 
 #define TARGET_DEFAULTS(ptr) \
-	memset((ptr)->name, '\0', NAME_SIZE);\
+	(ptr)->name = NULL;\
 	(ptr)->flags = 0;\
-	memset((ptr)->kernel, '\0', KERNEL_SIZE);\
-	memset((ptr)->initrd, '\0', INITRD_SIZE);\
-	memset((ptr)->append, '\0', APPEND_SIZE);\
-	memset((ptr)->cmdline, '\0', APPEND_SIZE);\
+	(ptr)->kernel = NULL;\
+	(ptr)->initrd = NULL;\
+	(ptr)->append = NULL;\
+	(ptr)->cmdline = NULL;\
 	(ptr)->n_modules = 0;\
 	(ptr)->mounts = NULL;\
 	(ptr)->next = NULL;
 
-#define TARGET_DEFAULTS_DEFINE {{'\0'},0,{'\0'},{'\0'},{'\0'},{'\0'},{NULL},0,NULL,NULL}
+#define TARGET_DEFAULTS_DEFINE {NULL,0,NULL,NULL,NULL,NULL,{NULL},0,NULL,NULL}
 
 struct kl_target {
-	char name[NAME_SIZE];
+	char *name;
 	int flags;
 	
-	char kernel[KERNEL_SIZE];
-	char initrd[INITRD_SIZE];
-	char append[APPEND_SIZE];
-	char cmdline[APPEND_SIZE];
+	char *kernel;
+	char *initrd;
+	char *append;
+	char *cmdline;
 	
 	char *modules[MAX_MODULES];
 	int n_modules;

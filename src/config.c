@@ -84,7 +84,7 @@ static void config_add_mount(unsigned int lnum, char* device, char* mpoint) {
 
 /* Add a target to config.targets */
 static void cfg_add_target(void) {
-	if(target.kernel[0] == '\0') {
+	if(!target.kernel) {
 		printD("Target %s has no kernel, not adding", target.name);
 		goto END;
 	}
@@ -96,13 +96,13 @@ static void cfg_add_target(void) {
 	kl_target *nptr = allocate(sizeof(kl_target));
 	TARGET_DEFAULTS(nptr);
 	
-	strcpy(nptr->name, target.name);
+	nptr->name = str_copy(target.name, -1);
 	nptr->flags = target.flags;
 	
-	strcpy(nptr->kernel, target.kernel);
-	strcpy(nptr->initrd, target.initrd);
-	strcpy(nptr->append, target.append);
-	strcpy(nptr->cmdline, target.cmdline);
+	nptr->kernel = str_copy(target.kernel, -1);
+	nptr->initrd = str_copy(target.initrd, -1);
+	nptr->append = str_copy(target.append, -1);
+	nptr->cmdline = str_copy(target.cmdline, -1);
 	
 	int n;
 	for(n = 0; n < target.n_modules; n++) {
@@ -220,7 +220,7 @@ void config_parse(char* line, unsigned int lnum) {
 		return;
 	}
 	if(str_ceq(name, "title", -1)) {
-		if(target.name[0] != '\0') {
+		if(target.name) {
 			cfg_add_target();
 		}
 		
@@ -229,7 +229,7 @@ void config_parse(char* line, unsigned int lnum) {
 			return;
 		}
 		
-		strncpy(target.name, value, NAME_SIZE-1);
+		target.name = str_copy(value, -1);
 		
 		return;
 	}
@@ -239,8 +239,7 @@ void config_parse(char* line, unsigned int lnum) {
 			return;
 		}
 		
-		snprintf(target.kernel, KERNEL_SIZE, "/mnt/target/%s", value);
-		
+		target.kernel = str_printf("/mnt/target/%s", value);
 		return;
 	}
 	if(str_ceq(name, "initrd", -1)) {
@@ -249,8 +248,7 @@ void config_parse(char* line, unsigned int lnum) {
 			return;
 		}
 		
-		snprintf(target.initrd, INITRD_SIZE, "/mnt/target/%s", value);
-		
+		target.initrd = str_printf("/mnt/target/%s", value);
 		return;
 	}
 	if(str_ceq(name, "append", -1)) {
@@ -259,8 +257,7 @@ void config_parse(char* line, unsigned int lnum) {
 			return;
 		}
 		
-		strncpy(target.append, value, APPEND_SIZE-1);
-		
+		target.append = str_copy(value, -1);
 		return;
 	}
 	if(str_ceq(name, "cmdline", -1)) {
@@ -269,8 +266,7 @@ void config_parse(char* line, unsigned int lnum) {
 			return;
 		}
 		
-		strncpy(target.cmdline, value, APPEND_SIZE-1);
-		
+		target.cmdline = str_copy(value, -1);
 		return;
 	}
 	if(str_ceq(name, "default", -1)) {
@@ -330,7 +326,7 @@ void config_parse(char* line, unsigned int lnum) {
 
 /* Add the remaining target, if it exists */
 void config_finish(void) {
-	if(target.name[0] != '\0') {
+	if(target.name) {
 		cfg_add_target();
 	}
 }

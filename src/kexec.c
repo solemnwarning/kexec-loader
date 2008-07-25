@@ -113,17 +113,17 @@ int load_kernel(kl_target *target) {
 	printd("> Loading kernel...");
 	printd(">> kernel: %s", target->kernel);
 	
-	if(target->append[0] != '\0') {
+	if(target->append) {
 		argv_appendf(append, "--append=%s", target->append);
 		
 		printd(">> append: %s", target->append);
 	}
-	if(target->cmdline[0] != '\0') {
+	if(target->cmdline) {
 		argv_appendf(cmdline, "--command-line=%s", target->cmdline);
 		
 		printd(">> cmdline: %s", target->cmdline);
 	}
-	if(target->initrd[0] != '\0') {
+	if(target->initrd) {
 		argv_appendf(initrd, "--initrd=%s", target->initrd);
 		
 		printd(">> initrd: %s", target->initrd);

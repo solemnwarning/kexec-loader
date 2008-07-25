@@ -210,18 +210,18 @@ void shell_main(void) {
 			goto ENDCMD;
 		}
 		
-		snprintf(cons_target.kernel, KERNEL_SIZE, "/mnt/target/%s", arg1);
+		cons_target.kernel = str_printf("/mnt/target/%s", arg1);
 	CONSOLE_CMD("initrd")
 		if(arg1[0] == '\0') {
 			printm("Usage: initrd <filename>");
 			goto ENDCMD;
 		}
 		
-		snprintf(cons_target.initrd, INITRD_SIZE, "/mnt/target/%s", arg1);
+		cons_target.initrd = str_printf("/mnt/target/%s", arg1);
 	CONSOLE_CMD("append")
-		strncpy(cons_target.append, arg1, APPEND_SIZE-1);
+		cons_target.append = str_copy(arg1, -1);
 	CONSOLE_CMD("cmdline")
-		strncpy(cons_target.cmdline, arg1, APPEND_SIZE-1);
+		cons_target.cmdline = str_copy(arg1, -1);
 	CONSOLE_CMD("boot")
 		if(!load_kernel(&cons_target)) {
 			goto ENDCMD;

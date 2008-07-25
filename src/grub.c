@@ -382,10 +382,10 @@ static void add_target(void) {
 	kl_target *nptr = allocate(sizeof(kl_target));
 	TARGET_DEFAULTS(nptr);
 	
-	strcpy(nptr->name, c_title);
+	nptr->name = str_copy(c_title, -1);
 	nptr->flags = c_flags;
-	snprintf(nptr->kernel, KERNEL_SIZE, "/mnt/grub/%s", kernel);
-	strcpy(nptr->append, c_append);
+	nptr->kernel = str_printf("/mnt/grub/%s", kernel);
+	nptr->append = str_copy(c_append, -1);
 	
 	nptr->mounts = allocate(sizeof(kl_mount));
 	INIT_MOUNT(nptr->mounts);
@@ -394,14 +394,14 @@ static void add_target(void) {
 	
 	if(initrd[0] != '\0') {
 		if(str_eq(i_device, k_device, -1)) {
-			snprintf(nptr->initrd, INITRD_SIZE, "/mnt/grub/%s", initrd);
+			nptr->initrd = str_printf("/mnt/grub/%s", initrd);
 		}else{
 			nptr->mounts->next = allocate(sizeof(kl_mount));
 			INIT_MOUNT(nptr->mounts->next);
 			nptr->mounts->next->device = str_copy(i_device, -1);
 			nptr->mounts->next->mpoint = str_copy("/mnt/grub_i", -1);
 			
-			snprintf(nptr->initrd, INITRD_SIZE, "/mnt/grub_i/%s", initrd);
+			nptr->initrd = str_printf("/mnt/grub_i/%s", initrd);
 		}
 	}
 	
