@@ -193,9 +193,14 @@ void free_mounts(kl_mount *mounts) {
 	}
 }
 
-void free_modules(char **modules, int modcount) {
-	while(modcount > 0) {
-		free(modules[--modcount]);
-		modules[modcount] = NULL;
+void free_modules(kl_module *modules) {
+	kl_module *dptr;
+	
+	while(modules) {
+		dptr = modules;
+		modules = modules->next;
+		
+		free(dptr->module);
+		free(dptr);
 	}
 }

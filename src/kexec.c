@@ -44,17 +44,13 @@
 #include "config.h"
 #include "mystring.h"
 
-#define argv_append(str) kexec_argv[argc++] = str; kexec_argv[argc] = NULL;
-#define argv_appendf(str, ...) argv_append(str_printf(__VA_ARGS__));
+#define argv_append(str) \
+	kexec_argv[argc++] = str_copy(NULL, str, -1);\
+	kexec_argv[argc] = NULL;
 
-#define RETURN(x) \
-	free(append);\
-	free(cmdline);\
-	free(initrd);\
-	while(modcount > 0) {\
-		free(modules[--modcount]);\
-	}\
-	return x;
+#define argv_appendf(...) \
+	kexec_argv[argc++] = str_printf(__VA_ARGS__);\
+	kexec_argv[argc] = NULL;
 
 int kexec_main(int argc, char **argv);
 
@@ -74,7 +70,6 @@ static int run_kexec(char** kexec_argv) {
 		return(-1);
 	}
 	if(newpid == 0) {
-		kexec_argv[0] = "kexec";
 		exit(kexec_main(argc, kexec_argv));
 	}
 	
@@ -93,15 +88,18 @@ static int run_kexec(char** kexec_argv) {
  * Returns 1 on success, zero on error
 */
 int load_kernel(kl_target *target) {
-	char *append = NULL;
-	char *cmdline = NULL;
-	char *initrd = NULL;
-	char *modules[MAX_MODULES];
-	int modcount = 0;
+	int n = 0, retval = 1;
 	
-	char* kexec_argv[8+target->n_modules];
-	argc = 1;
+	kl_module *module = target->modules;
+	while(module) {
+		n++;
+		module = module->next;
+	}
 	
+	char* kexec_argv[8+n];
+	argc = 0;
+	
+	argv_append("kexec");
 	argv_append("-l");
 	argv_append(target->kernel);
 	
@@ -114,31 +112,35 @@ int load_kernel(kl_target *target) {
 	printd(">> kernel: %s", target->kernel);
 	
 	if(target->append) {
-		argv_appendf(append, "--append=%s", target->append);
-		
+		argv_appendf("--append=%s", target->append);
 		printd(">> append: %s", target->append);
 	}
 	if(target->cmdline) {
-		argv_appendf(cmdline, "--command-line=%s", target->cmdline);
-		
+		argv_appendf("--command-line=%s", target->cmdline);
 		printd(">> cmdline: %s", target->cmdline);
 	}
 	if(target->initrd) {
-		argv_appendf(initrd, "--initrd=%s", target->initrd);
-		
+		argv_appendf("--initrd=%s", target->initrd);
 		printd(">> initrd: %s", target->initrd);
 	}
-	while(modcount < target->n_modules) {
-		argv_appendf(modules[modcount], "--module=%s", target->modules[modcount]);
+	
+	module = target->modules;
+	while(module) {
+		argv_appendf("--module=%s", module->module);
+		printd(">> module: %s", module->module);
 		
-		printd(">> module: %s", target->modules[modcount++]);
+		module = module->next;
 	}
 	
 	TEXT_WHITE();
 	
 	if(run_kexec(kexec_argv) != 0) {
-		RETURN(0);
+		retval = 1;
 	}
 	
-	RETURN(1);
+	for(n = 0; n < argc; n++) {
+		free(kexec_argv[n]);
+	}
+	
+	return retval;
 }

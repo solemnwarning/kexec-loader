@@ -67,7 +67,7 @@ void shell_main(void) {
 		history[hnum] = NULL;
 	}
 	
-	free_modules(cons_target.modules, cons_target.n_modules);
+	free_modules(cons_target.modules);
 	TARGET_DEFAULTS(&cons_target);
 	kl_mount *nmount;
 	
@@ -270,12 +270,10 @@ static char *next_arg(char *args) {
 }
 
 static void add_module(char const *module) {
-	if(cons_target.n_modules == MAX_MODULES) {
-		printD("Too many modules, maximum = %d", MAX_MODULES);
-		return;
-	}
+	kl_module *nptr = allocate(sizeof(kl_module));
+	INIT_MODULE(nptr);
 	
-	int modnum = cons_target.n_modules;
-	cons_target.modules[modnum] = str_printf("/mnt/target/%s", module);
-	cons_target.n_modules++;
+	nptr->module = str_printf("/mnt/target/%s", module);
+	nptr->next = cons_target.modules;
+	cons_target.modules = nptr;
 }

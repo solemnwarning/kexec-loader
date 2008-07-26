@@ -37,8 +37,9 @@
 #define TARGET_DEFAULT (1<<0)
 #define TARGET_RESET_VGA (1<<1)
 
-typedef struct kl_target kl_target;
 typedef struct kl_mount kl_mount;
+typedef struct kl_module kl_module;
+typedef struct kl_target kl_target;
 
 #define INIT_MOUNT(ptr) \
 	(ptr)->device = NULL;\
@@ -56,6 +57,17 @@ struct kl_mount {
 	struct kl_mount* next;
 };
 
+#define INIT_MODULE(ptr) \
+	(ptr)->module = NULL;\
+	(ptr)->next = NULL;
+
+#define DINIT_MODULE {NULL,NULL}
+
+struct kl_module {
+	char *module;
+	struct kl_module *next;
+};
+
 #define TARGET_DEFAULTS(ptr) \
 	(ptr)->name = NULL;\
 	(ptr)->flags = 0;\
@@ -63,11 +75,11 @@ struct kl_mount {
 	(ptr)->initrd = NULL;\
 	(ptr)->append = NULL;\
 	(ptr)->cmdline = NULL;\
-	(ptr)->n_modules = 0;\
+	(ptr)->modules = NULL;\
 	(ptr)->mounts = NULL;\
 	(ptr)->next = NULL;
 
-#define TARGET_DEFAULTS_DEFINE {NULL,0,NULL,NULL,NULL,NULL,{NULL},0,NULL,NULL}
+#define TARGET_DEFAULTS_DEFINE {NULL,0,NULL,NULL,NULL,NULL,NULL,NULL,NULL}
 
 struct kl_target {
 	char *name;
@@ -78,8 +90,7 @@ struct kl_target {
 	char *append;
 	char *cmdline;
 	
-	char *modules[MAX_MODULES];
-	int n_modules;
+	struct kl_module *modules;
 	
 	struct kl_mount* mounts;
 	struct kl_target* next;

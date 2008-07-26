@@ -103,13 +103,7 @@ static void cfg_add_target(void) {
 	nptr->initrd = target.initrd;
 	nptr->append = target.append;
 	nptr->cmdline =target.cmdline;
-	
-	int n;
-	for(n = 0; n < target.n_modules; n++) {
-		nptr->modules[n] = target.modules[n];
-	}
-	
-	nptr->n_modules = target.n_modules;
+	nptr->modules = target.modules;
 	nptr->mounts = target.mounts;
 	
 	if(!config.targets) {
@@ -128,12 +122,12 @@ static void cfg_add_target(void) {
 }
 
 static void add_module(unsigned int lnum, char const *module) {
-	if(target.n_modules == MAX_MODULES) {
-		printD("config:%u: Too many modules, maximum = %d", MAX_MODULES);
-		return;
-	}
+	kl_module *nptr = allocate(sizeof(kl_module));
+	INIT_MODULE(nptr);
 	
-	target.modules[target.n_modules++] = str_printf("/mnt/target/%s", module);
+	nptr->module = str_printf("/mnt/target/%s", module);
+	nptr->next = target.modules;
+	target.modules = nptr;
 }
 
 static char *next_value(char *value) {
