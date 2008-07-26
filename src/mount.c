@@ -350,10 +350,9 @@ int check_device(char const *device) {
 /* Mount a device
  * Returns NULL on success, or an error string upon failure
 */
-char const *mount_dev(char const *device, char const *mpoint) {
+char const *mount_dev(char const *idev, char const *mpoint) {
 	char *fstype = NULL, fsbuf[16];
-	char *idev, devbuf[DEVICE_SIZE];
-	char *errmsg = NULL;
+	char *errmsg = NULL, *device = (char*)idev;
 	size_t fslen;
 	
 	if(strchr(device, ':')) {
@@ -366,8 +365,6 @@ char const *mount_dev(char const *device, char const *mpoint) {
 		fstype = fsbuf;
 	}
 	
-	idev = (char*)device;
-	
 	if(device[0] == '(') {
 		device = grub_cdevice(device);
 		
@@ -377,8 +374,7 @@ char const *mount_dev(char const *device, char const *mpoint) {
 		}
 	}
 	if(device[0] != '/') {
-		snprintf(devbuf, DEVICE_SIZE, "/dev/%s", device);
-		device = devbuf;
+		device = str_printf("/dev/%s", device);
 	}
 	
 	if(!check_device(device)) {
@@ -406,8 +402,8 @@ char const *mount_dev(char const *device, char const *mpoint) {
 	}
 	
 	END:
-	if(idev[0] == '(') {
-		free((char*)device);
+	if(device != idev) {
+		free(device);
 	}
 	return errmsg;
 }

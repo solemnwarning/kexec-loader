@@ -301,8 +301,7 @@ void config_parse(char* line, unsigned int lnum) {
 			return;
 		}
 		
-		strncpy(config.grub_root, value, DEVICE_SIZE);
-		config.grub_root[DEVICE_SIZE-1] = '\0';
+		str_copy(&config.grub_root, value, -1);
 		return;
 	}
 	if(str_ceq(name, "grub_first", -1)) {

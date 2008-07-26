@@ -44,8 +44,8 @@
 #include "mystring.h"
 
 static struct grub_device {
-	char device[DEVICE_SIZE];
-	char fname[DEVICE_SIZE];
+	char *device;
+	char *fname;
 	
 	struct grub_device *next;
 } *grub_devices = NULL;
@@ -122,10 +122,8 @@ static void load_devices(void) {
 		
 		ptr = allocate(sizeof(struct grub_device));
 		
-		strncpy(ptr->device, name, DEVICE_SIZE);
-		strncpy(ptr->fname, value, DEVICE_SIZE);
-		ptr->device[DEVICE_SIZE-1] = '\0';
-		ptr->fname[DEVICE_SIZE-1] = '\0';
+		str_copy(&ptr->device, name, -1);
+		str_copy(&ptr->fname, value, -1);
 		
 		ptr->next = grub_devices;
 		grub_devices = ptr;
@@ -153,7 +151,7 @@ static void free_devices(void) {
  * Returns NULL if the conversion fails
 */
 char *grub_cdevice(char const *gdev) {
-	char devbuf[DEVICE_SIZE];
+	char *devbuf = NULL, *devbuf2 = NULL;
 	
 	struct grub_device *ptr = grub_devices;
 	while(ptr) {
@@ -166,8 +164,7 @@ char *grub_cdevice(char const *gdev) {
 			globcmp(ptr->device, "(hd*)", GLOB_STAR | GLOB_SINGLE) &&
 			atoi(gdev+3) == atoi(ptr->device+3)
 		) {
-			snprintf(devbuf, DEVICE_SIZE, "%s%d", ptr->fname, atoi(strchr(gdev, ',')+1)+1);
-			return str_copy(NULL, devbuf, -1);
+			return str_printf("%s%d", ptr->fname, atoi(strchr(gdev, ',')+1)+1);
 		}
 		
 		ptr = ptr->next;
@@ -196,7 +193,7 @@ char *grub_cdevice(char const *gdev) {
 	}
 	
 	int step = config.grub_first, count = -1, n = -1, last = -1, i;
-	char line[256], *device, devbuf2[DEVICE_SIZE];
+	char line[256], *device;
 	
 	RLOOP:
 	rewind(fh);
@@ -215,7 +212,7 @@ char *grub_cdevice(char const *gdev) {
 		i = device[2]-48;
 		
 		if(i > last && (i < n || n == last)) {
-			snprintf(devbuf, DEVICE_SIZE, "/dev/%s", device);
+			devbuf = str_printf("/dev/%s", device);
 			n = i;
 		}
 	}
@@ -236,12 +233,13 @@ char *grub_cdevice(char const *gdev) {
 	}
 	
 	if(partnum != -1) {
-		strcpy(devbuf2, devbuf);
-		snprintf(devbuf, DEVICE_SIZE, "%s%d", devbuf2, partnum+1);
+		devbuf2 = devbuf;
+		devbuf = str_printf("%s%d", devbuf2, partnum+1);
+		free(devbuf2);
 	}
 	
 	fclose(fh);
-	return str_copy(NULL, devbuf, -1);
+	return devbuf;
 }
 
 /* Load targets from menu.lst */
