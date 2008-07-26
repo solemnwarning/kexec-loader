@@ -1,3 +1,9 @@
+Version 1.4.2:
+	Replaced malloc() calls with allocate() calls for simplicity.
+	
+	Replaced most fixed-length strings with dynamic strings in order to
+	save memory.
+
 Version 1.4.1:
 	Added support for ISO-9660 to detect_fstype().
 	

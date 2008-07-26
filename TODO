@@ -1,6 +1,3 @@
-Version 1.4.2:
-	Dynamic-length strings and input buffers.
-
 Future/undecided:
 	Better line editing for shell.
 	
