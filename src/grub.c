@@ -50,12 +50,8 @@ static struct grub_device {
 	struct grub_device *next;
 } *grub_devices = NULL;
 
-static char c_title[NAME_SIZE] = {'\0'};
-static char c_root[DEVICE_SIZE] = {'\0'};
-static char c_kernel[KERNEL_SIZE] = {'\0'};
-static char c_append[APPEND_SIZE] = {'\0'};
-static char c_initrd[INITRD_SIZE] = {'\0'};
-static int c_flags = 0;
+static kl_target g_target = TARGET_DEFAULTS_DEFINE;
+static char *g_root = NULL;
 
 static void load_devices(void);
 static void free_devices(void);
@@ -162,7 +158,7 @@ char *grub_cdevice(char const *gdev) {
 	struct grub_device *ptr = grub_devices;
 	while(ptr) {
 		if(str_eq(ptr->device, gdev, -1)) {
-			return str_copy(ptr->fname, -1);
+			return str_copy(NULL, ptr->fname, -1);
 		}
 		
 		if(
@@ -171,17 +167,17 @@ char *grub_cdevice(char const *gdev) {
 			atoi(gdev+3) == atoi(ptr->device+3)
 		) {
 			snprintf(devbuf, DEVICE_SIZE, "%s%d", ptr->fname, atoi(strchr(gdev, ',')+1)+1);
-			return str_copy(devbuf, -1);
+			return str_copy(NULL, devbuf, -1);
 		}
 		
 		ptr = ptr->next;
 	}
 	
 	if(str_eq("(fd0)", gdev, -1)) {
-		return str_copy("/dev/fd0", -1);
+		return str_copy(NULL, "/dev/fd0", -1);
 	}
 	if(str_eq("(fd1)", gdev, -1)) {
-		return str_copy("/dev/fd1", -1);
+		return str_copy(NULL, "/dev/fd1", -1);
 	}
 	
 	if(!globcmp(gdev, "(hd*)", GLOB_STAR | GLOB_SINGLE)) {
@@ -245,7 +241,7 @@ char *grub_cdevice(char const *gdev) {
 	}
 	
 	fclose(fh);
-	return str_copy(devbuf, -1);
+	return str_copy(NULL, devbuf, -1);
 }
 
 /* Load targets from menu.lst */
@@ -253,7 +249,6 @@ static void load_menu(void) {
 	char *menu = NULL;
 	char line[1024], *name, *value;
 	int dnum = -1, tnum = 0;
-	size_t len;
 	
 	if(access("/mnt/grub/grub/menu.lst", F_OK) == 0) {
 		menu = "/mnt/grub/grub/menu.lst";
@@ -285,51 +280,44 @@ static void load_menu(void) {
 		}
 		
 		if(str_eq(name, "root", -1)) {
-			strncpy(c_root, value, DEVICE_SIZE);
-			c_root[DEVICE_SIZE-1] = '\0';
+			str_copy(&g_root, value, -1);
 		}
 		if(str_eq(name, "kernel", -1)) {
-			if((len = strcspn(value, " \t")) > NAME_SIZE) {
-				len = NAME_SIZE;
-			}
-			
-			strncpy(c_kernel, value, len);
-			c_kernel[len] = '\0';
+			str_copy(&g_target.kernel, value, strcspn(value, " \t"));
 			
 			value += strcspn(value, " \t");
 			value += strspn(value, " \t");
 				
 			if(value[0] != '\0') {
-				strncpy(c_append, value, APPEND_SIZE);
-				c_append[APPEND_SIZE-1] = '\0';
+				str_copy(&g_target.append, value, -1);
 			}
 		}
 		if(str_eq(name, "initrd", -1)) {
-			strncpy(c_initrd, value, INITRD_SIZE);
-			c_initrd[INITRD_SIZE-1] = '\0';
+			str_copy(&g_target.initrd, value, -1);
 		}
 		if(str_eq(name, "default", -1)) {
 			dnum = atoi(value);
 		}
 		if(str_eq(name, "title", -1)) {
-			if(c_title[0] != '\0') {
+			if(g_target.kernel) {
 				if(tnum++ == dnum) {
-					c_flags = TARGET_DEFAULT;
+					g_target.flags |= TARGET_DEFAULT;
 				}
 				
 				add_target();
 			}
 			
-			strncpy(c_title, value, NAME_SIZE);
-			c_title[NAME_SIZE-1] = '\0';
+			str_copy(&g_target.kernel, value, -1);
 		}
 		if(str_eq(name, "chainload", -1)) {
-			c_title[0] = '\0';
-			c_root[0] = '\0';
-			c_kernel[0] = '\0';
-			c_append[0] = '\0';
-			c_initrd[0] = '\0';
-			c_flags = 0;
+			free(g_target.name);
+			free(g_target.kernel);
+			free(g_target.initrd);
+			free(g_target.append);
+			TARGET_DEFAULTS(&g_target);
+			
+			free(g_root);
+			g_root = NULL;
 			
 			tnum++;
 		}
@@ -337,8 +325,14 @@ static void load_menu(void) {
 			config.timeout = strtoul(value, NULL, 10);
 		}
 	}
-	if(c_title[0] != '\0') {
+	if(g_target.name) {
 		add_target();
+	}else{
+		free(g_target.name);
+		free(g_target.kernel);
+		free(g_target.initrd);
+		free(g_target.append);
+		TARGET_DEFAULTS(&g_target);
 	}
 	
 	fclose(fh);
@@ -346,63 +340,71 @@ static void load_menu(void) {
 
 /* Add new target and zero the c_ variables */
 static void add_target(void) {
-	char *kernel = c_kernel, k_device[DEVICE_SIZE];
-	char *initrd = c_initrd, i_device[DEVICE_SIZE];
+	char *kernel = g_target.kernel, *k_device = NULL;
+	char *initrd = g_target.initrd, *i_device = NULL;
 	size_t len;
 	
+	if(!kernel) {
+		printD("No kernel specified for '%s'", g_target.name);
+		goto ERROR;
+	}
+	if(kernel[0] != '(' && !g_root) {
+		printD("No kernel device specified for '%s'\n", g_target.name);
+		goto ERROR;
+	}
+	if(initrd && initrd[0] != '(' && !g_root) {
+		printD("No initrd device specified for '%s'\n", g_target.name);
+		goto ERROR;
+	}
+	
 	if(kernel[0] == '(') {
-		if((len = strcspn(kernel, ")")+1) > DEVICE_SIZE) {
-			len = DEVICE_SIZE;
-		}
+		len = strcspn(kernel, ")")+1;
 		
-		strncpy(k_device, kernel, len);
-		k_device[len] = '\0';
+		str_copy(&k_device, kernel, len);
 		kernel += len;
 	}else{
-		strcpy(k_device, c_root);
+		str_copy(&k_device, g_root, -1);
 	}
 	
-	if(initrd[0] == '(') {
-		if((len = strcspn(initrd, ")")+1) > DEVICE_SIZE) {
-			len = DEVICE_SIZE;
+	if(initrd) {
+		if(initrd[0] == '(') {
+			len = strcspn(initrd, ")")+1;
+			
+			str_copy(&i_device, initrd, len);
+			initrd += len;
+		}else{
+			str_copy(&i_device, g_root, -1);
 		}
-		
-		strncpy(i_device, initrd, len);
-		i_device[len] = '\0';
-		initrd += len;
-	}else{
-		strcpy(i_device, c_root);
-	}
-	
-	if(kernel[0] == '\0') {
-		printD("No kernel specified for '%s'", c_title);
-		goto END;
 	}
 	
 	kl_target *nptr = allocate(sizeof(kl_target));
 	TARGET_DEFAULTS(nptr);
 	
-	nptr->name = str_copy(c_title, -1);
-	nptr->flags = c_flags;
+	nptr->name = g_target.name;
+	nptr->flags = g_target.flags;
+	nptr->append = g_target.append;
+	
 	nptr->kernel = str_printf("/mnt/grub/%s", kernel);
-	nptr->append = str_copy(c_append, -1);
+	free(g_target.kernel);
 	
 	nptr->mounts = allocate(sizeof(kl_mount));
 	INIT_MOUNT(nptr->mounts);
-	nptr->mounts->device = str_copy(k_device, -1);
-	nptr->mounts->mpoint = str_copy("/mnt/grub", -1);
+	nptr->mounts->device = k_device;
+	str_copy(&nptr->mounts->mpoint, "/mnt/grub", -1);
 	
-	if(initrd[0] != '\0') {
+	if(initrd) {
 		if(str_eq(i_device, k_device, -1)) {
 			nptr->initrd = str_printf("/mnt/grub/%s", initrd);
 		}else{
 			nptr->mounts->next = allocate(sizeof(kl_mount));
 			INIT_MOUNT(nptr->mounts->next);
-			nptr->mounts->next->device = str_copy(i_device, -1);
-			nptr->mounts->next->mpoint = str_copy("/mnt/grub_i", -1);
+			nptr->mounts->next->device = i_device;
+			str_copy(&nptr->mounts->next->mpoint, "/mnt/grub_i", -1);
 			
 			nptr->initrd = str_printf("/mnt/grub_i/%s", initrd);
 		}
+		
+		free(g_target.initrd);
 	}
 	
 	kl_target *eptr = config.targets;
@@ -417,9 +419,14 @@ static void add_target(void) {
 	}
 	
 	END:
-	c_root[0] = '\0';
-	c_kernel[0] = '\0';
-	c_append[0] = '\0';
-	c_initrd[0] = '\0';
-	c_flags = 0;
+	TARGET_DEFAULTS(&g_target);
+	free(g_root);
+	g_root = NULL;
+	return;
+	
+	ERROR:
+	free(g_target.name);
+	free(g_target.kernel);
+	free(g_target.append);
+	goto END;
 }

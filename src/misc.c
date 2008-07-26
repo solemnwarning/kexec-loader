@@ -137,10 +137,10 @@ char *get_cmdline(char const *name) {
 	
 	if(tok) {
 		if((val = strchr(tok, '='))) {
-			return str_copy(val+1, -1);
+			return str_copy(NULL, val+1, -1);
 		}
 		
-		return str_copy("", -1);
+		return str_copy(NULL, "", -1);
 	}
 	
 	return NULL;

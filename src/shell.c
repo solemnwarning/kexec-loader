@@ -156,7 +156,7 @@ void shell_main(void) {
 		}
 	}
 	
-	nhist = str_copy(cmdbuf, -1);
+	nhist = str_copy(NULL, cmdbuf, -1);
 	free(history[HISTORY_MAX-1]);
 	
 	for(hnum = (HISTORY_MAX-1); hnum > 0; hnum--) {
@@ -189,7 +189,7 @@ void shell_main(void) {
 		nmount = allocate(sizeof(struct kl_mount));
 		INIT_MOUNT(nmount);
 		
-		nmount->device = str_copy(arg1, -1);
+		str_copy(&nmount->device, arg1, -1);
 		nmount->mpoint = str_printf("/mnt/target/%s", arg2);
 		
 		if(!mount_list(nmount)) {
@@ -219,9 +219,9 @@ void shell_main(void) {
 		
 		cons_target.initrd = str_printf("/mnt/target/%s", arg1);
 	CONSOLE_CMD("append")
-		cons_target.append = str_copy(arg1, -1);
+		str_copy(&cons_target.append, arg1, -1);
 	CONSOLE_CMD("cmdline")
-		cons_target.cmdline = str_copy(arg1, -1);
+		str_copy(&cons_target.cmdline, arg1, -1);
 	CONSOLE_CMD("boot")
 		if(!load_kernel(&cons_target)) {
 			goto ENDCMD;
@@ -275,9 +275,7 @@ static void add_module(char const *module) {
 		return;
 	}
 	
-	size_t len = snprintf(NULL, 0, "/mnt/target/%s", module);
 	int modnum = cons_target.n_modules;
-	
 	cons_target.modules[modnum] = str_printf("/mnt/target/%s", module);
 	cons_target.n_modules++;
 }

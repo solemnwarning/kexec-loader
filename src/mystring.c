@@ -39,19 +39,27 @@
 
 #define RCASE(x) (flags & GLOB_IGNCASE ? tolower(x) : x)
 
-/* Allocate a buffer using allocate() and copy the supplied string into it, if
- * max is non-negative no more then max characters are copied to the new string
+/* Create a copy of src and return it, if max is non-negative, no more then max
+ * characters will be copied to the new buffer.
+ *
+ * If dest is not NULL, the pointer to the new buffer will also be stored in
+ * *dest, if *dest is also not NULL it will be free()'d.
 */
-char *str_copy(char const *src, int max) {
+char *str_copy(char **dest, char const *src, int max) {
 	size_t len;
 	for(len = 0; src[len] || max < 0; len++) {}
 	
-	char *dest = allocate(len+1);
+	char *rptr = allocate(len+1);
 	
-	strncpy(dest, src, len);
-	dest[len] = '\0';
+	strncpy(rptr, src, len);
+	rptr[len] = '\0';
 	
-	return dest;
+	if(dest) {
+		free(*dest);
+		*dest = rptr;
+	}
+	
+	return rptr;
 }
 
 /* Allocate a buffer using allocate() and write the supplied sprintf-format

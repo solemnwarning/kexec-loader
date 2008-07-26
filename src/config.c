@@ -56,8 +56,8 @@ static void config_add_mount(unsigned int lnum, char* device, char* mpoint) {
 	kl_mount *nptr = allocate(sizeof(kl_mount));
 	INIT_MOUNT(nptr);
 	
-	nptr->device = str_copy(device, -1);
-	nptr->mpoint = str_copy("/mnt/target/", -1);
+	str_copy(&nptr->device, device, -1);
+	str_copy(&nptr->mpoint, "/mnt/target/", -1);
 	
 	char *mptok = strtok(mpoint, "/");
 	while(mptok) {
@@ -96,13 +96,13 @@ static void cfg_add_target(void) {
 	kl_target *nptr = allocate(sizeof(kl_target));
 	TARGET_DEFAULTS(nptr);
 	
-	nptr->name = str_copy(target.name, -1);
+	nptr->name = target.name;
 	nptr->flags = target.flags;
 	
-	nptr->kernel = str_copy(target.kernel, -1);
-	nptr->initrd = str_copy(target.initrd, -1);
-	nptr->append = str_copy(target.append, -1);
-	nptr->cmdline = str_copy(target.cmdline, -1);
+	nptr->kernel = target.kernel;
+	nptr->initrd = target.initrd;
+	nptr->append = target.append;
+	nptr->cmdline =target.cmdline;
 	
 	int n;
 	for(n = 0; n < target.n_modules; n++) {
@@ -229,8 +229,7 @@ void config_parse(char* line, unsigned int lnum) {
 			return;
 		}
 		
-		target.name = str_copy(value, -1);
-		
+		str_copy(&target.name, value, -1);
 		return;
 	}
 	if(str_ceq(name, "kernel", -1)) {
@@ -248,7 +247,7 @@ void config_parse(char* line, unsigned int lnum) {
 			return;
 		}
 		
-		target.initrd = str_printf("/mnt/target/%s", value);
+		str_printf("/mnt/target/%s", value);
 		return;
 	}
 	if(str_ceq(name, "append", -1)) {
@@ -257,7 +256,7 @@ void config_parse(char* line, unsigned int lnum) {
 			return;
 		}
 		
-		target.append = str_copy(value, -1);
+		str_copy(&target.append, value, -1);
 		return;
 	}
 	if(str_ceq(name, "cmdline", -1)) {
@@ -266,7 +265,7 @@ void config_parse(char* line, unsigned int lnum) {
 			return;
 		}
 		
-		target.cmdline = str_copy(value, -1);
+		str_copy(&target.cmdline, value, -1);
 		return;
 	}
 	if(str_ceq(name, "default", -1)) {
