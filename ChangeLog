@@ -6,6 +6,8 @@ Version 1.4.2:
 	
 	Replaced kl_target.modules array with a linked-list to remove the limit
 	on multiboot modules.
+	
+	Added multiboot module support for GRUB configuration files.
 
 Version 1.4.1:
 	Added support for ISO-9660 to detect_fstype().

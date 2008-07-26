@@ -322,6 +322,14 @@ static void load_menu(void) {
 		if(str_eq(name, "timeout", -1) && !config.timeout) {
 			config.timeout = strtoul(value, NULL, 10);
 		}
+		if(str_eq(name, "module", -1)) {
+			kl_module *nptr = allocate(sizeof(kl_module));
+			INIT_MODULE(nptr);
+			
+			nptr->module = str_printf("/mnt/target/%s", value);
+			nptr->next = g_target.modules;
+			g_target.modules = nptr;
+		}
 	}
 	if(g_target.name) {
 		add_target();
