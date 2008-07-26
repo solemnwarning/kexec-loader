@@ -35,6 +35,4 @@
 
 #define CONFIG_FILE "kexec-loader.conf"
 
-#define MAX_MODULES 16
-
 #endif /* !KEXEC_LOADER_CTCONFIG_H */

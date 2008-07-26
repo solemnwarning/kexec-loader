@@ -3,6 +3,9 @@ Version 1.4.2:
 	
 	Replaced most fixed-length strings with dynamic strings in order to
 	save memory.
+	
+	Replaced kl_target.modules array with a linked-list to remove the limit
+	on multiboot modules.
 
 Version 1.4.1:
 	Added support for ISO-9660 to detect_fstype().
