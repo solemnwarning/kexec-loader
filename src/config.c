@@ -163,7 +163,7 @@ void config_load(void) {
 	}
 	
 	config.timeout = 0;
-	config.grub_root[0] = '\0';
+	config.grub_root = NULL;
 	config.grub_first = hdx;
 	
 	free_targets(config.targets);

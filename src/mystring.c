@@ -47,7 +47,7 @@
 */
 char *str_copy(char **dest, char const *src, int max) {
 	size_t len;
-	for(len = 0; src[len] || max < 0; len++) {}
+	for(len = 0; src[len] && (len < max || max < 0); len++) {}
 	
 	char *rptr = allocate(len+1);
 	
@@ -83,7 +83,7 @@ char *str_printf(char const *fmt, ...) {
 */
 char *str_append(char *dest, char const *src, int max) {
 	size_t alen = 0, dlen = 0, n;
-	while(src[alen] || max < 0) { alen++; }
+	while(src[alen] && (alen < max || max < 0)) { alen++; }
 	while(dest && dest[dlen]) { dlen++; }
 	
 	if((dest = realloc(dest, alen+dlen+1)) == NULL) {

@@ -305,7 +305,7 @@ static void load_menu(void) {
 				add_target();
 			}
 			
-			str_copy(&g_target.kernel, value, -1);
+			str_copy(&g_target.name, value, -1);
 		}
 		if(str_eq(name, "chainload", -1)) {
 			free(g_target.name);
