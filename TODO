@@ -1,5 +1,5 @@
-Version 1.4.2:
-	Dynamic-length strings and input buffers.
+Version 1.5:
+	Support for loading Linux kernel modules.
 
 Future/undecided:
 	Better line editing for shell.

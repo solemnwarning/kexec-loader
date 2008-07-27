@@ -66,23 +66,6 @@ int main(int argc, char** argv) {
 		fatal("Can't mount /proc filesystem: %s", strerror(errno));
 	}
 	
-	struct rlimit limit = {
-		STACK_LIMIT,
-		STACK_LIMIT
-	};
-	
-	if(setrlimit(RLIMIT_STACK, &limit) == -1) {
-		debug("Can't set stack limit to %d\n", STACK_LIMIT);
-	}
-	
-	debug("STACK_LIMIT = %d\n", STACK_LIMIT);
-	debug("DEVICE_SIZE = %d\n", DEVICE_SIZE);
-	debug("MPOINT_SIZE = %d\n", MPOINT_SIZE);
-	debug("NAME_SIZE = %d\n", NAME_SIZE);
-	debug("KERNEL_SIZE = %d\n", KERNEL_SIZE);
-	debug("INITRD_SIZE = %d\n", INITRD_SIZE);
-	debug("APPEND_SIZE = %d\n", APPEND_SIZE);
-	
 	kmsg_monitor();
 	console_init();
 	

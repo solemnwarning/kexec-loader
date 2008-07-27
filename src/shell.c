@@ -41,6 +41,7 @@
 #include "misc.h"
 #include "mount.h"
 #include "kexec.h"
+#include "mystring.h"
 
 #define CONSOLE_CMD(str) \
 	}else if(strcasecmp(cmd, str) == 0) {
@@ -66,7 +67,7 @@ void shell_main(void) {
 		history[hnum] = NULL;
 	}
 	
-	free_modules(cons_target.modules, cons_target.n_modules);
+	free_modules(cons_target.modules);
 	TARGET_DEFAULTS(&cons_target);
 	kl_mount *nmount;
 	
@@ -155,22 +156,16 @@ void shell_main(void) {
 		}
 	}
 	
-	if((nhist = malloc(strlen(cmdbuf)+1))) {
-		strcpy(nhist, cmdbuf);
-		free(history[HISTORY_MAX-1]);
-		
-		for(hnum = (HISTORY_MAX-1); hnum > 0; hnum--) {
-			if(history[hnum-1]) {
-				history[hnum] = history[hnum-1];
-			}
+	nhist = str_copy(NULL, cmdbuf, -1);
+	free(history[HISTORY_MAX-1]);
+	
+	for(hnum = (HISTORY_MAX-1); hnum > 0; hnum--) {
+		if(history[hnum-1]) {
+			history[hnum] = history[hnum-1];
 		}
-		
-		history[0] = nhist;
-	}else{
-		TEXT_RED();
-		printD("> Failed to allocate nhist: %s", strerror(errno));
-		TEXT_WHITE();
 	}
+	
+	history[0] = nhist;
 	
 	cmd = cmdbuf+strspn(cmdbuf, " ");
 	arg1 = next_arg(cmd);
@@ -191,14 +186,11 @@ void shell_main(void) {
 			goto ENDCMD;
 		}
 		
-		if(!(nmount = malloc(sizeof(struct kl_mount)))) {
-			printd("malloc: %s", strerror(errno));
-			goto ENDCMD;
-		}
-		MOUNT_DEFAULTS(nmount);
+		nmount = allocate(sizeof(struct kl_mount));
+		INIT_MOUNT(nmount);
 		
-		strncpy(nmount->device, arg1, DEVICE_SIZE-1);
-		snprintf(nmount->mpoint, MPOINT_SIZE, "/mnt/target/%s", arg2);
+		str_copy(&nmount->device, arg1, -1);
+		nmount->mpoint = str_printf("/mnt/target/%s", arg2);
 		
 		if(!mount_list(nmount)) {
 			free(nmount);
@@ -218,18 +210,18 @@ void shell_main(void) {
 			goto ENDCMD;
 		}
 		
-		snprintf(cons_target.kernel, KERNEL_SIZE, "/mnt/target/%s", arg1);
+		cons_target.kernel = str_printf("/mnt/target/%s", arg1);
 	CONSOLE_CMD("initrd")
 		if(arg1[0] == '\0') {
 			printm("Usage: initrd <filename>");
 			goto ENDCMD;
 		}
 		
-		snprintf(cons_target.initrd, INITRD_SIZE, "/mnt/target/%s", arg1);
+		cons_target.initrd = str_printf("/mnt/target/%s", arg1);
 	CONSOLE_CMD("append")
-		strncpy(cons_target.append, arg1, APPEND_SIZE-1);
+		str_copy(&cons_target.append, arg1, -1);
 	CONSOLE_CMD("cmdline")
-		strncpy(cons_target.cmdline, arg1, APPEND_SIZE-1);
+		str_copy(&cons_target.cmdline, arg1, -1);
 	CONSOLE_CMD("boot")
 		if(!load_kernel(&cons_target)) {
 			goto ENDCMD;
@@ -278,20 +270,10 @@ static char *next_arg(char *args) {
 }
 
 static void add_module(char const *module) {
-	if(cons_target.n_modules == MAX_MODULES) {
-		printD("Too many modules, maximum = %d", MAX_MODULES);
-		return;
-	}
+	kl_module *nptr = allocate(sizeof(kl_module));
+	INIT_MODULE(nptr);
 	
-	size_t len = snprintf(NULL, 0, "/mnt/target/%s", module);
-	int modnum = cons_target.n_modules;
-	
-	cons_target.modules[modnum] = malloc(len + 1);
-	if(!cons_target.modules[modnum]) {
-		printD("malloc(%u): %s", len+1, strerror(errno));
-		return;
-	}
-	
-	sprintf(cons_target.modules[modnum], "/mnt/target/%s", module);
-	cons_target.n_modules++;
+	nptr->module = str_printf("/mnt/target/%s", module);
+	nptr->next = cons_target.modules;
+	cons_target.modules = nptr;
 }
