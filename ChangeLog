@@ -1,3 +1,8 @@
+Version 1.4.3:
+	Fixed bug caused by my stupidity and lack of testing:
+		grub_loadcfg() incorrectly checked that grub_root was set, why
+		does this seem so familiar? Oh yeah! Version 1.3.1!
+
 Version 1.4.2:
 	Replaced malloc() calls with allocate() calls for simplicity.
 	

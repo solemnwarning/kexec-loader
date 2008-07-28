@@ -62,7 +62,7 @@ static void add_target(void);
 void grub_loadcfg(void) {
 	free_devices();
 	
-	if(config.grub_root[0] == '\0') {
+	if(!config.grub_root) {
 		return;
 	}
 	
