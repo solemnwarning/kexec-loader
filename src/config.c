@@ -44,6 +44,7 @@
 #include "mount.h"
 #include "console.h"
 #include "grub.h"
+#include "mystring.h"
 
 struct kl_config config = CONFIG_DEFAULTS_DEFINE;
 static struct kl_target target = TARGET_DEFAULTS_DEFINE;
@@ -52,16 +53,11 @@ static struct kl_target target = TARGET_DEFAULTS_DEFINE;
  * This changes the device string passed to it
 */
 static void config_add_mount(unsigned int lnum, char* device, char* mpoint) {
-	kl_mount *nptr = malloc(sizeof(kl_mount));
-	if(!nptr) {
-		printD("config:%u: Can't allocate memory", lnum);
-		
-		return;
-	}
-	MOUNT_DEFAULTS(nptr);
+	kl_mount *nptr = allocate(sizeof(kl_mount));
+	INIT_MOUNT(nptr);
 	
-	strncpy(nptr->device, device, DEVICE_SIZE-1);
-	strncpy(nptr->mpoint, "/mnt/target/", MPOINT_SIZE-1);
+	str_copy(&nptr->device, device, -1);
+	str_copy(&nptr->mpoint, "/mnt/target/", -1);
 	
 	char *mptok = strtok(mpoint, "/");
 	while(mptok) {
@@ -69,8 +65,8 @@ static void config_add_mount(unsigned int lnum, char* device, char* mpoint) {
 			goto NTOK;
 		}
 		
-		strncat(nptr->mpoint, mptok, MPOINT_SIZE);
-		strncat(nptr->mpoint, "/", MPOINT_SIZE);
+		str_append(nptr->mpoint, mptok, -1);
+		str_append(nptr->mpoint, "/", -1);
 		nptr->depth++;
 		
 		NTOK:
@@ -88,7 +84,7 @@ static void config_add_mount(unsigned int lnum, char* device, char* mpoint) {
 
 /* Add a target to config.targets */
 static void cfg_add_target(void) {
-	if(target.kernel[0] == '\0') {
+	if(!target.kernel) {
 		printD("Target %s has no kernel, not adding", target.name);
 		goto END;
 	}
@@ -97,28 +93,17 @@ static void cfg_add_target(void) {
 		goto END;
 	}
 	
-	kl_target *nptr = malloc(sizeof(kl_target));
-	if(!nptr) {
-		printD("Can't malloc() %u bytes\n", sizeof(kl_target));
-		goto END;
-	}
-	
+	kl_target *nptr = allocate(sizeof(kl_target));
 	TARGET_DEFAULTS(nptr);
 	
-	strcpy(nptr->name, target.name);
+	nptr->name = target.name;
 	nptr->flags = target.flags;
 	
-	strcpy(nptr->kernel, target.kernel);
-	strcpy(nptr->initrd, target.initrd);
-	strcpy(nptr->append, target.append);
-	strcpy(nptr->cmdline, target.cmdline);
-	
-	int n;
-	for(n = 0; n < target.n_modules; n++) {
-		nptr->modules[n] = target.modules[n];
-	}
-	
-	nptr->n_modules = target.n_modules;
+	nptr->kernel = target.kernel;
+	nptr->initrd = target.initrd;
+	nptr->append = target.append;
+	nptr->cmdline =target.cmdline;
+	nptr->modules = target.modules;
 	nptr->mounts = target.mounts;
 	
 	if(!config.targets) {
@@ -137,22 +122,12 @@ static void cfg_add_target(void) {
 }
 
 static void add_module(unsigned int lnum, char const *module) {
-	if(target.n_modules == MAX_MODULES) {
-		printD("config:%u: Too many modules, maximum = %d", MAX_MODULES);
-		return;
-	}
+	kl_module *nptr = allocate(sizeof(kl_module));
+	INIT_MODULE(nptr);
 	
-	size_t len = snprintf(NULL, 0, "/mnt/target/%s", module);
-	int modnum = target.n_modules;
-	
-	target.modules[modnum] = malloc(len + 1);
-	if(!target.modules[modnum]) {
-		printD("config:%u: malloc(%u): %s", len+1, strerror(errno));
-		return;
-	}
-	
-	sprintf(target.modules[modnum], "/mnt/target/%s", module);
-	target.n_modules++;
+	nptr->module = str_printf("/mnt/target/%s", module);
+	nptr->next = target.modules;
+	target.modules = nptr;
 }
 
 static char *next_value(char *value) {
@@ -188,7 +163,7 @@ void config_load(void) {
 	}
 	
 	config.timeout = 0;
-	config.grub_root[0] = '\0';
+	config.grub_root = NULL;
 	config.grub_first = hdx;
 	
 	free_targets(config.targets);
@@ -233,13 +208,13 @@ void config_parse(char* line, unsigned int lnum) {
 	
 	debug("config:%u: '%s' = '%s'\n", lnum, name, value);
 	
-	if(str_compare(name, "timeout", STR_NOCASE)) {
+	if(str_ceq(name, "timeout", -1)) {
 		config.timeout = strtoul(value, NULL, 10);
 		
 		return;
 	}
-	if(str_compare(name, "title", STR_NOCASE)) {
-		if(target.name[0] != '\0') {
+	if(str_ceq(name, "title", -1)) {
+		if(target.name) {
 			cfg_add_target();
 		}
 		
@@ -248,59 +223,54 @@ void config_parse(char* line, unsigned int lnum) {
 			return;
 		}
 		
-		strncpy(target.name, value, NAME_SIZE-1);
-		
+		str_copy(&target.name, value, -1);
 		return;
 	}
-	if(str_compare(name, "kernel", STR_NOCASE)) {
+	if(str_ceq(name, "kernel", -1)) {
 		if(value[0] == '\0') {
 			printD("config:%u: Kernel requires an argument", lnum);
 			return;
 		}
 		
-		snprintf(target.kernel, KERNEL_SIZE, "/mnt/target/%s", value);
-		
+		target.kernel = str_printf("/mnt/target/%s", value);
 		return;
 	}
-	if(str_compare(name, "initrd", STR_NOCASE)) {
+	if(str_ceq(name, "initrd", -1)) {
 		if(value[0] == '\0') {
 			printD("config:%u: initrd requires an argument", lnum);
 			return;
 		}
 		
-		snprintf(target.initrd, INITRD_SIZE, "/mnt/target/%s", value);
-		
+		str_printf("/mnt/target/%s", value);
 		return;
 	}
-	if(str_compare(name, "append", STR_NOCASE)) {
+	if(str_ceq(name, "append", -1)) {
 		if(value[0] == '\0') {
 			printD("config:%u: Append requires an argument", lnum);
 			return;
 		}
 		
-		strncpy(target.append, value, APPEND_SIZE-1);
-		
+		str_copy(&target.append, value, -1);
 		return;
 	}
-	if(str_compare(name, "cmdline", STR_NOCASE)) {
+	if(str_ceq(name, "cmdline", -1)) {
 		if(value[0] == '\0') {
 			printD("config:%u: cmdline requires an argument", lnum);
 			return;
 		}
 		
-		strncpy(target.cmdline, value, APPEND_SIZE-1);
-		
+		str_copy(&target.cmdline, value, -1);
 		return;
 	}
-	if(str_compare(name, "default", STR_NOCASE)) {
+	if(str_ceq(name, "default", -1)) {
 		target.flags |= TARGET_DEFAULT;
 		return;
 	}
-	if(str_compare(name, "reset-vga", STR_NOCASE)) {
+	if(str_ceq(name, "reset-vga", -1)) {
 		target.flags |= TARGET_RESET_VGA;
 		return;
 	}
-	if(str_compare(name, "rootfs", STR_NOCASE)) {
+	if(str_ceq(name, "rootfs", -1)) {
 		if(value[0] == '\0') {
 			printD("config:%u: RootFS requires an argument", lnum);
 			return;
@@ -309,7 +279,7 @@ void config_parse(char* line, unsigned int lnum) {
 		config_add_mount(lnum, value, "/");
 		return;
 	}
-	if(str_compare(name, "mount", STR_NOCASE)) {
+	if(str_ceq(name, "mount", -1)) {
 		value2 = next_value(value);
 		if(value[0] == '\0' || value2[0] == '\0') {
 			printD("config:%u: mount requires 2 arguments", lnum);
@@ -319,20 +289,19 @@ void config_parse(char* line, unsigned int lnum) {
 		config_add_mount(lnum, value, value2);
 		return;
 	}
-	if(str_compare(name, "grub_root", STR_NOCASE)) {
+	if(str_ceq(name, "grub_root", -1)) {
 		if(value[0] == '\0') {
 			printD("config:%u: grub_root requires an argument", lnum);
 			return;
 		}
 		
-		strncpy(config.grub_root, value, DEVICE_SIZE);
-		config.grub_root[DEVICE_SIZE-1] = '\0';
+		str_copy(&config.grub_root, value, -1);
 		return;
 	}
-	if(str_compare(name, "grub_first", STR_NOCASE)) {
-		if(str_compare(value, "hdx", 0)) {
+	if(str_ceq(name, "grub_first", -1)) {
+		if(str_eq(value, "hdx", -1)) {
 			config.grub_first = hdx;
-		}else if(str_compare(value, "sdx", 0)) {
+		}else if(str_eq(value, "sdx", -1)) {
 			config.grub_first = sdx;
 		}else{
 			printD("config:%u: Value must be hdx or sdx", lnum);
@@ -340,7 +309,7 @@ void config_parse(char* line, unsigned int lnum) {
 		
 		return;
 	}
-	if(str_compare(name, "module", STR_NOCASE)) {
+	if(str_ceq(name, "module", -1)) {
 		add_module(lnum, value);
 	}
 	
@@ -349,7 +318,7 @@ void config_parse(char* line, unsigned int lnum) {
 
 /* Add the remaining target, if it exists */
 void config_finish(void) {
-	if(target.name[0] != '\0') {
+	if(target.name) {
 		cfg_add_target();
 	}
 }

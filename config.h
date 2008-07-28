@@ -35,15 +35,4 @@
 
 #define CONFIG_FILE "kexec-loader.conf"
 
-#define STACK_LIMIT (1024*16)
-
-#define DEVICE_SIZE 32
-#define MPOINT_SIZE 2048
-
-#define NAME_SIZE 128
-#define KERNEL_SIZE 2048
-#define INITRD_SIZE 2048
-#define APPEND_SIZE 512
-#define MAX_MODULES 16
-
 #endif /* !KEXEC_LOADER_CTCONFIG_H */

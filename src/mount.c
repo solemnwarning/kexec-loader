@@ -43,6 +43,7 @@
 #include "config.h"
 #include "console.h"
 #include "grub.h"
+#include "mystring.h"
 
 #define MAGIC_BUF_SIZE (0x1003A)
 
@@ -271,10 +272,10 @@ char* detect_fstype(char const *device) {
 			retval = "ext2";
 		}
 	}
-	if(str_compare((char*)buf, "XFSB", STR_MAXLEN, 4)) {
+	if(str_eq((char*)buf, "XFSB", 4)) {
 		retval = "xfs";
 	}
-	if(str_compare((char*)(buf+0x10034), "ReIsEr", STR_MAXLEN, 6)) {
+	if(str_eq((char*)(buf+0x10034), "ReIsEr", 6)) {
 		retval = "reiserfs";
 	}
 	if(
@@ -286,16 +287,16 @@ char* detect_fstype(char const *device) {
 	) {
 		retval = "minix";
 	}
-	if(str_compare((char*)(buf+0x36), "FAT", STR_MAXLEN, 3)) {
+	if(str_eq((char*)(buf+0x36), "FAT", 3)) {
 		retval = "vfat";
 	}
-	if(str_compare((char*)(buf+3), "NTFS    ", STR_MAXLEN, 8)) {
+	if(str_eq((char*)(buf+3), "NTFS    ", 8)) {
 		retval = "ntfs";
 	}
 	if(
-		str_compare((char*)(buf+32769), "CD001", STR_MAXLEN, 5) ||
-		str_compare((char*)(buf+37633), "CD001", STR_MAXLEN, 5) ||
-		str_compare((char*)(buf+32776), "CDROM", STR_MAXLEN, 5)
+		str_eq((char*)(buf+32769), "CD001", 5) ||
+		str_eq((char*)(buf+37633), "CD001", 5) ||
+		str_eq((char*)(buf+32776), "CDROM", 5)
 	) {
 		retval = "iso9660";
 	}
@@ -349,10 +350,9 @@ int check_device(char const *device) {
 /* Mount a device
  * Returns NULL on success, or an error string upon failure
 */
-char const *mount_dev(char const *device, char const *mpoint) {
+char const *mount_dev(char const *idev, char const *mpoint) {
 	char *fstype = NULL, fsbuf[16];
-	char *idev, devbuf[DEVICE_SIZE];
-	char *errmsg = NULL;
+	char *errmsg = NULL, *device = (char*)idev;
 	size_t fslen;
 	
 	if(strchr(device, ':')) {
@@ -365,8 +365,6 @@ char const *mount_dev(char const *device, char const *mpoint) {
 		fstype = fsbuf;
 	}
 	
-	idev = (char*)device;
-	
 	if(device[0] == '(') {
 		device = grub_cdevice(device);
 		
@@ -376,8 +374,7 @@ char const *mount_dev(char const *device, char const *mpoint) {
 		}
 	}
 	if(device[0] != '/') {
-		snprintf(devbuf, DEVICE_SIZE, "/dev/%s", device);
-		device = devbuf;
+		device = str_printf("/dev/%s", device);
 	}
 	
 	if(!check_device(device)) {
@@ -385,7 +382,7 @@ char const *mount_dev(char const *device, char const *mpoint) {
 		goto END;
 	}
 	
-	if(!fstype || str_compare(fstype, "auto", 0)) {
+	if(!fstype || str_eq(fstype, "auto", -1)) {
 		fstype = detect_fstype(device);
 		if(!fstype) {
 			errmsg = "Unknown filesystem format";
@@ -405,8 +402,8 @@ char const *mount_dev(char const *device, char const *mpoint) {
 	}
 	
 	END:
-	if(idev[0] == '(') {
-		free((char*)device);
+	if(device != idev) {
+		free(device);
 	}
 	return errmsg;
 }

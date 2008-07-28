@@ -37,60 +37,71 @@
 #define TARGET_DEFAULT (1<<0)
 #define TARGET_RESET_VGA (1<<1)
 
-typedef struct kl_target kl_target;
 typedef struct kl_mount kl_mount;
+typedef struct kl_module kl_module;
+typedef struct kl_target kl_target;
 
-#define MOUNT_DEFAULTS(ptr) \
-	memset((ptr)->device, '\0', DEVICE_SIZE);\
-	memset((ptr)->mpoint, '\0', MPOINT_SIZE);\
+#define INIT_MOUNT(ptr) \
+	(ptr)->device = NULL;\
+	(ptr)->mpoint = NULL;\
 	(ptr)->depth = 0;\
 	(ptr)->next = NULL;
 
-#define MOUNT_DEFAULTS_DEFINE {{'\0'},{'\0'},0,NULL}
+#define DINIT_MOUNT {NULL,NULL,0,NULL}
 
 struct kl_mount {
-	char device[DEVICE_SIZE];
-	char mpoint[MPOINT_SIZE];
+	char *device;
+	char *mpoint;
 	unsigned int depth;
 	
 	struct kl_mount* next;
 };
 
+#define INIT_MODULE(ptr) \
+	(ptr)->module = NULL;\
+	(ptr)->next = NULL;
+
+#define DINIT_MODULE {NULL,NULL}
+
+struct kl_module {
+	char *module;
+	struct kl_module *next;
+};
+
 #define TARGET_DEFAULTS(ptr) \
-	memset((ptr)->name, '\0', NAME_SIZE);\
+	(ptr)->name = NULL;\
 	(ptr)->flags = 0;\
-	memset((ptr)->kernel, '\0', KERNEL_SIZE);\
-	memset((ptr)->initrd, '\0', INITRD_SIZE);\
-	memset((ptr)->append, '\0', APPEND_SIZE);\
-	memset((ptr)->cmdline, '\0', APPEND_SIZE);\
-	(ptr)->n_modules = 0;\
+	(ptr)->kernel = NULL;\
+	(ptr)->initrd = NULL;\
+	(ptr)->append = NULL;\
+	(ptr)->cmdline = NULL;\
+	(ptr)->modules = NULL;\
 	(ptr)->mounts = NULL;\
 	(ptr)->next = NULL;
 
-#define TARGET_DEFAULTS_DEFINE {{'\0'},0,{'\0'},{'\0'},{'\0'},{'\0'},{NULL},0,NULL,NULL}
+#define TARGET_DEFAULTS_DEFINE {NULL,0,NULL,NULL,NULL,NULL,NULL,NULL,NULL}
 
 struct kl_target {
-	char name[NAME_SIZE];
+	char *name;
 	int flags;
 	
-	char kernel[KERNEL_SIZE];
-	char initrd[INITRD_SIZE];
-	char append[APPEND_SIZE];
-	char cmdline[APPEND_SIZE];
+	char *kernel;
+	char *initrd;
+	char *append;
+	char *cmdline;
 	
-	char *modules[MAX_MODULES];
-	int n_modules;
+	struct kl_module *modules;
 	
 	struct kl_mount* mounts;
 	struct kl_target* next;
 };
 
-#define CONFIG_DEFAULTS_DEFINE {0,{'\0'},hdx,NULL}
+#define CONFIG_DEFAULTS_DEFINE {0,NULL,hdx,NULL}
 
 struct kl_config {
 	unsigned int timeout;
 	
-	char grub_root[DEVICE_SIZE];
+	char *grub_root;
 	enum {hdx,sdx} grub_first;
 	
 	struct kl_target* targets;
