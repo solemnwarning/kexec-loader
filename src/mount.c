@@ -36,6 +36,7 @@
 #include <string.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <poll.h>
 
 #include "mount.h"
 #include "misc.h"
@@ -47,10 +48,10 @@
 
 #define MAGIC_BUF_SIZE (0x1003A)
 
-/* Mount disk containing CONFIG_FILE at /mnt
+/* Mount disk containing CONFIG_FILE at /boot
  * Returns 1 if device containing file was mounted, zero otherwise
 */
-int mount_config(void) {
+int mount_boot(void) {
 	char const* devices[] = {
 		"/dev/fd0",
 		"/dev/fd1",
@@ -62,8 +63,15 @@ int mount_config(void) {
 		NULL
 	};
 	
-	unsigned int devnum, rtime = 1;
+	unsigned int devnum;
 	char const* devname, *errmsg;
+	
+	struct pollfd pevents;
+	pevents.fd = STDIN_FILENO;
+	pevents.events = POLLIN;
+	
+	printm("Searching for " CONFIG_FILE "...");
+	printm("Press any key to abort");
 	
 	if((devname = get_cmdline("kexec_config"))) {
 		for(devnum = 0; devices[devnum]; devnum++) {}
@@ -76,41 +84,37 @@ int mount_config(void) {
 		devices[0] = devname;
 	}
 	
-	RETRY:
 	devnum = 0;
 	devname = devices[0];
 	
-	while(devname) {
-		if((errmsg = mount_dev(devname, "/mnt/config"))) {
-			debug("Can't mount %s at /mnt/config: %s\n", devname, errmsg);
+	while(1) {
+		if(poll(&pevents, 1, 0)) {
+			while(getchar() != EOF) {}
+			return 0;
+		}
+		
+		if((errmsg = mount_dev(devname, "/boot"))) {
+			debug("Can't mount %s at /boot: %s\n", devname, errmsg);
 			goto ENDLOOP;
 		}
 		
-		if(access("/mnt/config/" CONFIG_FILE, F_OK) == 0) {
+		if(access("/boot/" CONFIG_FILE, F_OK) == 0) {
 			printd("Found " CONFIG_FILE " on %s", devname);
 			return 1;
 		}
 		
-		if(umount("/mnt/config") == -1) {
-			debug("Can't unmount /mnt/config: %s\n", strerror(errno));
+		if(umount("/boot") == -1) {
+			debug("Can't unmount /boot: %s\n", strerror(errno));
 		}
 		
 		ENDLOOP:
-		devname = devices[++devnum];
-	}
-	
-	if(rtime < 4) {
-		printd("Can't find disk containing " CONFIG_FILE);
-		printd("Retrying in %u seconds...", rtime);
+		if(!devname[++devnum]) {
+			sleep(1);
+			devnum = 0;
+		}
 		
-		sleep(rtime);
-		rtime *= 2;
-		
-		goto RETRY;
+		devname = devices[devnum];
 	}
-	
-	printD("Can't find disk containing " CONFIG_FILE);
-	printD("Giving up, configuration not loaded");
 	
 	return 0;
 }

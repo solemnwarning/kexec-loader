@@ -77,11 +77,15 @@ int main(int argc, char** argv) {
 	debug("srow = %d, erow = %d\n", srow, erow);
 	debug("scol = %d, ecol = %d\n", scol, ecol);
 	
-	while(1) {
+	if(mount_boot()) {
 		config_load();
-		main_menu();
+		
+		if(umount("/boot") == -1) {
+			debug("Failed to unmount /boot: %s\n", strerror(errno));
+		}
 	}
 	
+	main_menu();
 	return 1;
 }
 

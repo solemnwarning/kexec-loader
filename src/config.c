@@ -149,17 +149,12 @@ static char *next_value(char *value) {
  * or may not be loaded.
 */
 void config_load(void) {
-	if(!mount_config()) {
-		return;
-	}
-	
 	TARGET_DEFAULTS(&target);
 	
-	FILE* cfg_handle = fopen("/mnt/config/" CONFIG_FILE, "r");
+	FILE* cfg_handle = fopen("/boot/" CONFIG_FILE, "r");
 	if(!cfg_handle) {
 		printD("Can't open " CONFIG_FILE ": %s", strerror(errno));
-		
-		goto UMOUNT;
+		return;
 	}
 	
 	config.timeout = 0;
@@ -186,11 +181,6 @@ void config_load(void) {
 		debug("Can't close " CONFIG_FILE ": %s\n", strerror(errno));
 		debug("Discarding cfg_handle!\n");
 		return;
-	}
-	
-	UMOUNT:
-	if(umount("/mnt/config") == -1) {
-		debug("Can't unmount /mnt/config: %s\n", strerror(errno));
 	}
 }
 
