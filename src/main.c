@@ -261,10 +261,6 @@ static void main_menu(void) {
 			
 			continue;
 		}
-		if(key == 'r' || key == 'R') {
-			prepare_text();
-			return;
-		}
 		if(key == 's' || key == 'S') {
 			prepare_text();
 			shell_main();
@@ -294,10 +290,7 @@ static void draw_skel(void) {
 	}
 	
 	console_setpos(rows-2, 2);
-	printf("Press L to list detected devices, R to reload configuration");
-	
-	console_setpos(rows-1, 2);
-	printf("Press S to execute shell");
+	printf("Press L to list detected disks, S to execute shell");
 }
 
 /* Draw a +----+ line along one row */
@@ -353,7 +346,7 @@ static void target_run(kl_target *target) {
 /* Display a list of devices from /proc/diskstats */
 void list_devices(void) {
 	char buf[256];
-	char filename[32];
+	char filename[64];
 	char *name, *fstype;
 	int major, minor;
 	
@@ -370,7 +363,7 @@ void list_devices(void) {
 		minor = atoi(strtok(NULL, " \t"));
 		name = strtok(NULL, " \t");
 		
-		snprintf(filename, 32, "/dev/%s", name);
+		snprintf(filename, 64, "/dev/%s", name);
 		if(!(fstype = detect_fstype(filename))) {
 			fstype = "Unknown filesystem";
 		}
