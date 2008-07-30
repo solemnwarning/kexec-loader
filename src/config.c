@@ -37,6 +37,7 @@
 #include <fcntl.h>
 #include <unistd.h>
 #include <sys/mount.h>
+#include <sys/syscall.h>
 
 #include "config.h"
 #include "../config.h"
@@ -48,6 +49,8 @@
 
 struct kl_config config = CONFIG_DEFAULTS_DEFINE;
 static struct kl_target target = TARGET_DEFAULTS_DEFINE;
+
+static void modprobe(char const *name, char const *args, unsigned int lnum);
 
 /* Add a mount
  * This changes the device string passed to it
@@ -302,6 +305,15 @@ void config_parse(char* line, unsigned int lnum) {
 	if(str_ceq(name, "module", -1)) {
 		add_module(lnum, value);
 	}
+	if(str_ceq(name, "modprobe", -1)) {
+		if(value[0] == '\0') {
+			printD("config:%u: modprobe requires an argument", lnum);
+			return;
+		}
+		
+		value2 = next_value(value);
+		modprobe(value, value2, lnum);
+	}
 	
 	printD("config:%u: Unknown directive '%s'", lnum, name);
 }
@@ -311,4 +323,55 @@ void config_finish(void) {
 	if(target.name) {
 		cfg_add_target();
 	}
+}
+
+/* Load a kernel module */
+static void modprobe(char const *name, char const *args, unsigned int lnum) {
+	char *filename = str_printf("/boot/modules/%s.ko", name);
+	char *buf = NULL;
+	int mod_fh = -1;
+	int rbytes = 0, rret;
+	
+	struct stat mstat;
+	if(stat(filename, &mstat) == -1) {
+		printD("config:%u: Failed to stat module '%s': %s", lnum, filename, strerror(errno));
+		goto CLEANUP;
+	}
+	
+	debug("Loading module '%s' (%u bytes)\n", filename, mstat.st_size);
+	buf = allocate(mstat.st_size);
+	
+	if((mod_fh = open(filename, O_RDONLY)) == -1) {
+		printD("config:%u: Failed to open module '%s': %s", lnum, filename, strerror(errno));
+		goto CLEANUP;
+	}
+	
+	while(rbytes < mstat.st_size) {
+		rret = read(mod_fh, buf+rbytes, mstat.st_size-rbytes);
+		if(rret == -1) {
+			if(errno == EINTR) {
+				continue;
+			}
+			
+			printD("config:%u: Failed to read module '%s': %s", lnum, filename, strerror(errno));
+			goto CLEANUP;
+		}
+		if(rret == 0) {
+			break;
+		}
+		
+		rbytes += rret;
+	}
+	
+	if(syscall(SYS_init_module, buf, rbytes, args) == -1) {
+		printD("config:%u: Failed to load module '%s': %s", lnum, filename, strerror(errno));
+	}
+	
+	CLEANUP:
+	if(mod_fh >= 0 && close(mod_fh) == -1) {
+		debug("Failed to close '%s': %s\n", filename, strerror(errno));
+	}
+	
+	free(filename);
+	free(buf);
 }
