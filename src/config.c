@@ -305,6 +305,7 @@ void config_parse(char* line, unsigned int lnum) {
 	}
 	if(str_ceq(name, "module", -1)) {
 		add_module(lnum, value);
+		return;
 	}
 	if(str_ceq(name, "modprobe", -1)) {
 		if(value[0] == '\0') {
@@ -314,6 +315,7 @@ void config_parse(char* line, unsigned int lnum) {
 		
 		value2 = next_value(value);
 		modprobe(value, value2, lnum);
+		return;
 	}
 	
 	printD("config:%u: Unknown directive '%s'", lnum, name);
@@ -339,7 +341,7 @@ static void modprobe(char const *name, char const *args, unsigned int lnum) {
 		goto CLEANUP;
 	}
 	
-	debug("Loading module '%s' (%u bytes)\n", filename, mstat.st_size);
+	printd("Loading module '%s' (%u bytes)", filename, mstat.st_size);
 	buf = allocate(mstat.st_size);
 	
 	if((mod_fh = open(filename, O_RDONLY)) == -1) {
