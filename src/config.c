@@ -46,13 +46,14 @@
 #include "console.h"
 #include "grub.h"
 #include "mystring.h"
+#include "elf.h"
 
 struct kl_config config = CONFIG_DEFAULTS_DEFINE;
 kl_module *k_modules = NULL;
 
 static struct kl_target target = TARGET_DEFAULTS_DEFINE;
 
-static void modprobe(char const *name, char const *args, unsigned int lnum);
+static int modprobe(char const *name, char const *args, unsigned int lnum, int dload);
 static const char *moderror(int err);
 
 /* Add a mount
@@ -316,7 +317,7 @@ void config_parse(char* line, unsigned int lnum) {
 		}
 		
 		value2 = next_value(value);
-		modprobe(value, value2, lnum);
+		modprobe(value, value2, lnum, 0);
 		return;
 	}
 	
@@ -331,11 +332,12 @@ void config_finish(void) {
 }
 
 /* Load a kernel module */
-static void modprobe(char const *name, char const *args, unsigned int lnum) {
+static int modprobe(char const *name, char const *args, unsigned int lnum, int dload) {
 	char *filename = str_printf("/boot/modules/%s.ko", name);
 	char *buf = NULL;
 	int mod_fh = -1;
 	int rbytes = 0, rret;
+	int retval = 0;
 	
 	if(check_module(name)) {
 		printd("config:%u: Module '%s' already loaded", lnum, filename);
@@ -348,7 +350,12 @@ static void modprobe(char const *name, char const *args, unsigned int lnum) {
 		goto CLEANUP;
 	}
 	
-	printd("Loading module '%s' (%u bytes)", filename, mstat.st_size);
+	if(dload) {
+		printd("Loading dependancy '%s'...", name);
+	}else{
+		printd("Loading module '%s'...", name);
+	}
+	
 	buf = allocate(mstat.st_size);
 	
 	if((mod_fh = open(filename, O_RDONLY)) == -1) {
@@ -373,6 +380,31 @@ static void modprobe(char const *name, char const *args, unsigned int lnum) {
 		rbytes += rret;
 	}
 	
+	size_t secsize, n = 0;
+	char *sec = elf_getsection(buf, ".modinfo", &secsize);
+	
+	while(sec && n < secsize) {
+		if(!str_eq(sec, "depends=", 8)) {
+			n += (strlen(sec)+1);
+			sec += (strlen(sec)+1);
+			continue;
+		}
+		
+		sec += 8;
+		while(sec[0] != '\0') {
+			char *dep = str_copy(NULL, sec, strcspn(sec, ","));
+			
+			if(!check_module(dep)) {
+				modprobe(dep, "", lnum, 1);
+			}
+			
+			free(dep);
+			sec += (strcspn(sec, ",")+1);
+		}
+		
+		break;
+	}
+	
 	if(syscall(SYS_init_module, buf, rbytes, args) != 0) {
 		if(errno == EEXIST) {
 			printd("config:%u: Module '%s' already loaded", lnum, filename);
@@ -390,6 +422,8 @@ static void modprobe(char const *name, char const *args, unsigned int lnum) {
 	nmod->next = k_modules;
 	k_modules = nmod;
 	
+	retval = 1;
+	
 	CLEANUP:
 	if(mod_fh >= 0 && close(mod_fh) == -1) {
 		debug("Failed to close '%s': %s\n", filename, strerror(errno));
@@ -397,6 +431,7 @@ static void modprobe(char const *name, char const *args, unsigned int lnum) {
 	
 	free(filename);
 	free(buf);
+	return retval;
 }
 
 static const char *moderror(int err) {
