@@ -93,16 +93,13 @@ static char *elf64_getsection(char const *elf, char const *name, size_t *size) {
 
 /* Convert a value in the ELF binary from the ELF endian to the host endian. */
 static void elf2host_(void *dest, void const *src, size_t size, char eidata) {
-	static char host_endian = ELFDATANONE;
+	char host_endian = ELFDATANONE;
+	int16_t test = 1;
 	
-	if(host_endian == ELFDATANONE) {
-		int16_t test = 1;
-		
-		if(((char*)&test)[0] == 1) {
-			host_endian = ELFDATA2LSB;
-		}else{
-			host_endian = ELFDATA2MSB;
-		}
+	if(((char*)&test)[0] == 1) {
+		host_endian = ELFDATA2LSB;
+	}else{
+		host_endian = ELFDATA2MSB;
 	}
 	
 	if(host_endian != eidata) {
