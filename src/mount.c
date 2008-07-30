@@ -70,6 +70,7 @@ int mount_boot(void) {
 	pevents.fd = STDIN_FILENO;
 	pevents.events = POLLIN;
 	
+	putchar('\n');
 	printm("Searching for " CONFIG_FILE "...");
 	printm("Press any key to abort");
 	

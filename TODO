@@ -1,7 +1,5 @@
-Version 1.5:
-	Support for loading Linux kernel modules.
+Version 1.5.1:
+	Support for compressed kernel modules?
 
 Future/undecided:
 	Better line editing for shell.
-	
-	Autocompletion of commands and filenames in shell?

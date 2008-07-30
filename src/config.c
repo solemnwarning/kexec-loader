@@ -367,6 +367,11 @@ static void modprobe(char const *name, char const *args, unsigned int lnum) {
 	}
 	
 	if(syscall(SYS_init_module, buf, rbytes, args) != 0) {
+		if(errno == EEXIST) {
+			printd("config:%u: Module '%s' already loaded", lnum, filename);
+			goto CLEANUP;
+		}
+		
 		printD("config:%u: Failed to load module '%s': %s", lnum, filename, moderror(errno));
 	}
 	

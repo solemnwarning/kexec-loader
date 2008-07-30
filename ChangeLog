@@ -1,3 +1,11 @@
+Version 1.5:
+	Rewrote code which finds the boot disk.
+	
+	Removed capability to reload configuration by pressing R at the main
+	menu.
+	
+	Added support for trivial (insmod-like) Linux module loading.
+
 Version 1.4.3:
 	Fixed bug caused by my stupidity and lack of testing:
 		grub_loadcfg() incorrectly checked that grub_root was set, why
