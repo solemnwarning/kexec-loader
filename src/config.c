@@ -51,6 +51,7 @@ struct kl_config config = CONFIG_DEFAULTS_DEFINE;
 static struct kl_target target = TARGET_DEFAULTS_DEFINE;
 
 static void modprobe(char const *name, char const *args, unsigned int lnum);
+static const char *moderror(int err);
 
 /* Add a mount
  * This changes the device string passed to it
@@ -363,8 +364,8 @@ static void modprobe(char const *name, char const *args, unsigned int lnum) {
 		rbytes += rret;
 	}
 	
-	if(syscall(SYS_init_module, buf, rbytes, args) == -1) {
-		printD("config:%u: Failed to load module '%s': %s", lnum, filename, strerror(errno));
+	if(syscall(SYS_init_module, buf, rbytes, args) != 0) {
+		printD("config:%u: Failed to load module '%s': %s", lnum, filename, moderror(errno));
 	}
 	
 	CLEANUP:
@@ -374,4 +375,19 @@ static void modprobe(char const *name, char const *args, unsigned int lnum) {
 	
 	free(filename);
 	free(buf);
+}
+
+static const char *moderror(int err) {
+	switch (err) {
+		case ENOEXEC:
+			return "Invalid module format";
+		case ENOENT:
+			return "Unknown symbol in module";
+		case ESRCH:
+			return "Module has wrong symbol version";
+		case EINVAL:
+			return "Invalid parameters";
+		default:
+			return strerror(err);
+	}
 }
