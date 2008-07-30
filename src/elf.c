@@ -75,11 +75,31 @@ char *elf_getsection(char const *elf, char const *name, size_t *size) {
 static char *elf32_getsection(char const *elf, char const *name, size_t *size) {
 	Elf32_Off e_shoff;
 	Elf32_Half e_shentsize;
-	Elf32_Half e_shnum;
+	Elf32_Half e_shnum, shnum;
+	Elf32_Half e_shstrndx;
 	
 	elf2host(&e_shoff, elf+32, sizeof(Elf32_Off));
 	elf2host(&e_shentsize, elf+46, sizeof(Elf32_Half));
 	elf2host(&e_shnum, elf+48, sizeof(Elf32_Half));
+	elf2host(&e_shstrndx, elf+50, sizeof(Elf32_Half));
+	
+	Elf32_Word sh_name;
+	Elf32_Off sh_offset;
+	Elf32_Word sh_size;
+	
+	elf2host(&sh_offset, elf+e_shoff+(e_shentsize*e_shstrndx)+16, sizeof(Elf32_Off));
+	char *sh_strings = (char*)elf+sh_offset;
+	
+	for(shnum = 0; shnum < e_shnum; shnum++) {
+		elf2host(&sh_name, elf+e_shoff+(e_shentsize*shnum), sizeof(Elf32_Word));
+		elf2host(&sh_offset, elf+e_shoff+(e_shentsize*shnum)+16, sizeof(Elf32_Off));
+		elf2host(&sh_size, elf+e_shoff+(e_shentsize*shnum)+20, sizeof(Elf32_Word));
+		
+		if(str_eq(name, sh_strings+sh_name, -1)) {
+			*size = sh_size;
+			return (char*)elf+sh_offset;
+		}
+	}
 	
 	return NULL;
 }
