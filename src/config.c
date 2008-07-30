@@ -72,8 +72,8 @@ static void config_add_mount(unsigned int lnum, char* device, char* mpoint) {
 			goto NTOK;
 		}
 		
-		str_append(nptr->mpoint, mptok, -1);
-		str_append(nptr->mpoint, "/", -1);
+		nptr->mpoint = str_append(nptr->mpoint, mptok, -1);
+		nptr->mpoint = str_append(nptr->mpoint, "/", -1);
 		nptr->depth++;
 		
 		NTOK:
@@ -394,8 +394,9 @@ static int modprobe(char const *name, char const *args, unsigned int lnum, int d
 		while(sec[0] != '\0') {
 			char *dep = str_copy(NULL, sec, strcspn(sec, ","));
 			
-			if(!check_module(dep)) {
-				modprobe(dep, "", lnum, 1);
+			if(!check_module(dep) && !modprobe(dep, "", lnum, 1)) {
+				free(dep);
+				goto CLEANUP;
 			}
 			
 			free(dep);
