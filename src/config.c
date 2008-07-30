@@ -48,6 +48,8 @@
 #include "mystring.h"
 
 struct kl_config config = CONFIG_DEFAULTS_DEFINE;
+kl_module *k_modules = NULL;
+
 static struct kl_target target = TARGET_DEFAULTS_DEFINE;
 
 static void modprobe(char const *name, char const *args, unsigned int lnum);
@@ -335,6 +337,11 @@ static void modprobe(char const *name, char const *args, unsigned int lnum) {
 	int mod_fh = -1;
 	int rbytes = 0, rret;
 	
+	if(check_module(name)) {
+		printd("config:%u: Module '%s' already loaded", lnum, filename);
+		goto CLEANUP;
+	}
+	
 	struct stat mstat;
 	if(stat(filename, &mstat) == -1) {
 		printD("config:%u: Failed to stat module '%s': %s", lnum, filename, strerror(errno));
@@ -373,7 +380,15 @@ static void modprobe(char const *name, char const *args, unsigned int lnum) {
 		}
 		
 		printD("config:%u: Failed to load module '%s': %s", lnum, filename, moderror(errno));
+		goto CLEANUP;
 	}
+	
+	kl_module *nmod = allocate(sizeof(kl_module));
+	INIT_MODULE(nmod);
+	
+	nmod->module = str_copy(NULL, name, -1);
+	nmod->next = k_modules;
+	k_modules = nmod;
 	
 	CLEANUP:
 	if(mod_fh >= 0 && close(mod_fh) == -1) {
@@ -397,4 +412,19 @@ static const char *moderror(int err) {
 		default:
 			return strerror(err);
 	}
+}
+
+/* Check if a module has been loaded */
+int check_module(char const *name) {
+	kl_module *module = k_modules;
+	
+	while(module) {
+		if(str_eq(name, module->module, -1)) {
+			return 1;
+		}
+		
+		module = module->next;
+	}
+	
+	return 0;
 }
