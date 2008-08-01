@@ -68,7 +68,7 @@ void grub_loadcfg(void) {
 	
 	char const *errmsg;
 	if((errmsg = mount_dev(config.grub_root, "/mnt/grub"))) {
-		printD("Can't mount %s at /mnt/grub: %s", config.grub_root, errmsg);
+		printD(RED, 0, "Can't mount %s at /mnt/grub: %s", config.grub_root, errmsg);
 		return;
 	}
 	
@@ -76,7 +76,7 @@ void grub_loadcfg(void) {
 	load_menu();
 	
 	if(umount("/mnt/grub") == -1) {
-		debug("Can't unmount /mnt/grub: %s", strerror(errno));
+		printD(RED, 0, "Can't unmount /mnt/grub: %s", strerror(errno));
 	}
 }
 
@@ -99,7 +99,7 @@ static void load_devices(void) {
 	
 	FILE *fh = fopen(devmap, "r");
 	if(!fh) {
-		printD("Can't open %s: %s", devmap, strerror(errno));
+		printD(RED, 0, "Can't open %s: %s", devmap, strerror(errno));
 		return;
 	}
 	
@@ -255,13 +255,13 @@ static void load_menu(void) {
 		menu = "/mnt/grub/boot/grub/menu.lst";
 	}
 	if(!menu) {
-		printD("menu.lst not found");
+		printD(RED, 0, "menu.lst not found");
 		return;
 	}
 	
 	FILE *fh = fopen(menu, "r");
 	if(!fh) {
-		printD("Can't open menu.lst: %s", strerror(errno));
+		printD(RED, 0, "Can't open menu.lst: %s", strerror(errno));
 		return;
 	}
 	
@@ -351,15 +351,15 @@ static void add_target(void) {
 	size_t len;
 	
 	if(!kernel) {
-		printD("No kernel specified for '%s'", g_target.name);
+		printD(RED, 0, "No kernel specified for '%s'", g_target.name);
 		goto ERROR;
 	}
 	if(kernel[0] != '(' && !g_root) {
-		printD("No kernel device specified for '%s'\n", g_target.name);
+		printD(RED, 0, "No kernel device specified for '%s'\n", g_target.name);
 		goto ERROR;
 	}
 	if(initrd && initrd[0] != '(' && !g_root) {
-		printD("No initrd device specified for '%s'\n", g_target.name);
+		printD(RED, 0, "No initrd device specified for '%s'\n", g_target.name);
 		goto ERROR;
 	}
 	

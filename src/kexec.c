@@ -63,11 +63,8 @@ static int argc;
 static int run_kexec(char** kexec_argv) {
 	pid_t newpid = fork();
 	if(newpid == -1) {
-		TEXT_RED();
-		printD(">> Can't fork: %s", strerror(errno));
-		TEXT_WHITE();
-		
-		return(-1);
+		printD(RED, 2, "Can't fork: %s", strerror(errno));
+		return -1;
 	}
 	if(newpid == 0) {
 		exit(kexec_main(argc, kexec_argv));
@@ -107,32 +104,29 @@ int load_kernel(kl_target *target) {
 		argv_append("--reset-vga");
 	}
 	
-	TEXT_GREEN();
-	printd("> Loading kernel...");
-	printd(">> kernel: %s", target->kernel);
+	printd(GREEN, 1, "Loading kernel...");
+	printd(GREEN, 2, "kernel: %s", target->kernel);
 	
 	if(target->append) {
 		argv_appendf("--append=%s", target->append);
-		printd(">> append: %s", target->append);
+		printd(GREEN, 2, "append: %s", target->append);
 	}
 	if(target->cmdline) {
 		argv_appendf("--command-line=%s", target->cmdline);
-		printd(">> cmdline: %s", target->cmdline);
+		printd(GREEN, 2, "cmdline: %s", target->cmdline);
 	}
 	if(target->initrd) {
 		argv_appendf("--initrd=%s", target->initrd);
-		printd(">> initrd: %s", target->initrd);
+		printd(GREEN, 2, "initrd: %s", target->initrd);
 	}
 	
 	module = target->modules;
 	while(module) {
 		argv_appendf("--module=%s", module->module);
-		printd(">> module: %s", module->module);
+		printd(GREEN, 2, "module: %s", module->module);
 		
 		module = module->next;
 	}
-	
-	TEXT_WHITE();
 	
 	if(run_kexec(kexec_argv) != 0) {
 		retval = 1;

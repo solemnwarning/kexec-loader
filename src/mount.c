@@ -71,8 +71,8 @@ int mount_boot(void) {
 	pevents.events = POLLIN;
 	
 	putchar('\n');
-	printm("Searching for " CONFIG_FILE "...");
-	printm("Press any key to abort");
+	printm(GREEN, 0, "Searching for " CONFIG_FILE "...");
+	printm(0, 0, "Press any key to abort");
 	
 	if((devname = get_cmdline("kexec_config"))) {
 		for(devnum = 0; devices[devnum]; devnum++) {}
@@ -100,7 +100,7 @@ int mount_boot(void) {
 		}
 		
 		if(access("/boot/" CONFIG_FILE, F_OK) == 0) {
-			printd("Found " CONFIG_FILE " on %s", devname);
+			printd(GREEN, 0, "Found " CONFIG_FILE " on %s", devname);
 			return 1;
 		}
 		
@@ -132,13 +132,10 @@ int mount_list(kl_mount* mounts) {
 	
 	while(1) {
 		if(mptr->depth == depth) {
-			TEXT_GREEN();
-			printd("> Mounting %s at %s", mptr->device, mptr->mpoint);
+			printd(GREEN, 1, "Mounting %s at %s", mptr->device, mptr->mpoint);
 			
 			if((errmsg = mount_dev(mptr->device, mptr->mpoint))) {
-				TEXT_RED();
-				printD(">> Mount failed: %s", errmsg);
-				
+				printD(RED, 2, "Mount failed: %s", errmsg);
 				break;
 			}
 			
@@ -147,7 +144,6 @@ int mount_list(kl_mount* mounts) {
 		
 		if((mptr = mptr->next) == NULL) {
 			if(n == 0) {
-				TEXT_WHITE();
 				return 1;
 			}
 			
@@ -171,12 +167,10 @@ int mount_list(kl_mount* mounts) {
 				goto DDEPTH;
 			}
 			
-			TEXT_GREEN();
-			printd("> Unmounting %s", mptr->mpoint);
+			printd(GREEN, 1, "Unmounting %s", mptr->mpoint);
 			
 			if(umount(mptr->mpoint) == -1) {
-				TEXT_RED();
-				printD(">> Unmount failed: %s", strerror(errno));
+				printD(RED, 2, "Unmount failed: %s", strerror(errno));
 			}
 			
 			n2++;
@@ -192,7 +186,6 @@ int mount_list(kl_mount* mounts) {
 		}
 	}
 	
-	TEXT_WHITE();
 	return 0;
 }
 
@@ -219,12 +212,10 @@ void unmount_list(kl_mount *mounts) {
 	
 	while(depth >= 0) {
 		if(mptr->depth == depth) {
-			TEXT_GREEN();
-			printD("> Unmounting %s", mptr->mpoint);
+			printD(GREEN, 1, "Unmounting %s", mptr->mpoint);
 			
 			if(umount(mptr->mpoint) == -1) {
-				TEXT_RED();
-				printD(">> Unmount failed: %s", strerror(errno));
+				printD(RED, 2, "Unmount failed: %s", strerror(errno));
 			}
 		}
 		
@@ -233,8 +224,6 @@ void unmount_list(kl_mount *mounts) {
 			mptr = mounts;
 		}
 	}
-	
-	TEXT_WHITE();
 }
 
 /* Attempt to detect the filesystem format of a device or file

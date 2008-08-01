@@ -182,7 +182,7 @@ void shell_main(void) {
 		arg2 = next_arg(arg1);
 		
 		if(arg1[0] == '\0' || arg2[0] == '\0') {
-			printm("Usage: mount [<fstype>:]<device> <mount point>");
+			printm(0, 0, "Usage: mount [<fstype>:]<device> <mount point>");
 			goto ENDCMD;
 		}
 		
@@ -202,18 +202,18 @@ void shell_main(void) {
 	CONSOLE_CMD("disks")
 		list_devices();
 	CONSOLE_CMD("help")
-		printm("Available commands:");
-		printm("exit mount disks help kernel initrd append cmdline boot reset-vga");
+		printm(0, 0, "Available commands:");
+		printm(0, 0, "exit mount disks help kernel initrd append cmdline boot reset-vga");
 	CONSOLE_CMD("kernel")
 		if(arg1[0] == '\0') {
-			printm("Usage: kernel <filename>");
+			printm(0, 0, "Usage: kernel <filename>");
 			goto ENDCMD;
 		}
 		
 		cons_target.kernel = str_printf("/mnt/target/%s", arg1);
 	CONSOLE_CMD("initrd")
 		if(arg1[0] == '\0') {
-			printm("Usage: initrd <filename>");
+			printm(0, 0, "Usage: initrd <filename>");
 			goto ENDCMD;
 		}
 		
@@ -230,7 +230,7 @@ void shell_main(void) {
 		unmount_list(cons_target.mounts);
 		
 		console_fgcolour(CONS_GREEN);
-		printd("> Executing kernel...");
+		printd(GREEN, 1, "Executing kernel...");
 		console_fgcolour(CONS_WHITE);
 		
 		sync();
@@ -241,14 +241,14 @@ void shell_main(void) {
 		);
 		
 		console_fgcolour(CONS_RED);
-		printD(">> Reboot failed: %s", strerror(errno));
+		printD(RED, 2, "Reboot failed: %s", strerror(errno));
 		console_fgcolour(CONS_WHITE);
 	CONSOLE_CMD("reset-vga")
 		cons_target.flags |= TARGET_RESET_VGA;
 	CONSOLE_CMD("module")
 		add_module(arg1);
 	}else{
-		printd("Unknown command: %s", cmd);
+		printd(0, 0, "Unknown command: %s", cmd);
 	}
 	
 	ENDCMD:

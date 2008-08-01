@@ -45,6 +45,9 @@
 
 static int alert = 0;
 
+int fgcolour = CONS_WHITE;
+int bgcolour = CONS_BLACK;
+
 /* Initialize console(s) */
 void console_init(void) {
 	debug("Disabling printk() to console...\n");
@@ -97,11 +100,13 @@ void console_clear(void) {
 /* Set foreground (text) colour */
 void console_fgcolour(int colour) {
 	printf("%c[;%dm", 0x1B, colour);
+	fgcolour = colour;
 }
 
 /* Set background colour */
 void console_bgcolour(int colour) {
 	printf("%c[;;%dm", 0x1B, colour+10);
+	bgcolour = colour;
 }
 
 /* Set console attributes */
@@ -132,14 +137,26 @@ void console_cback(int n) {
 }
 
 /* Print output */
-void print2(int flags, char const *fmt, ...) {
+void print2(int flags, int colour, int level, char const *fmt, ...) {
+	int colour2 = fgcolour;
+	if(colour) {
+		console_fgcolour(colour);
+	}
+	
 	va_list argv;
 	va_start(argv, fmt);
 	
-	char msg[vsnprintf(NULL, 0, fmt, argv)];
-	vsprintf(msg, fmt, argv);
+	size_t alen = (level > 0 ? level+1 : 0);
+	
+	char msg[vsnprintf(NULL, 0, fmt, argv)+alen];
+	vsprintf(msg+alen, fmt, argv);
 	
 	va_end(argv);
+	
+	if(level > 0) {
+		memset(msg, '>', level);
+		msg[level] = ' ';
+	}
 	
 	if(flags & P2_DEBUG) {
 		debug("%s\n", msg);
@@ -150,4 +167,8 @@ void print2(int flags, char const *fmt, ...) {
 	}
 	
 	puts(msg);
+	
+	if(colour) {
+		console_fgcolour(colour2);
+	}
 }

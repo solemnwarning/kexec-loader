@@ -41,6 +41,10 @@
 #define CONS_CYAN	36
 #define CONS_WHITE	37
 
+/* I'm lazy */
+#define RED CONS_RED
+#define GREEN CONS_GREEN
+
 /* Console attributes */
 #define CONS_RESET	0
 #define CONS_BRIGHT	1
@@ -64,9 +68,8 @@
 #define printm(...) print2(0, __VA_ARGS__);
 #define printM(...) print2(P2_ALERT, __VA_ARGS__);
 
-#define TEXT_RED() console_fgcolour(CONS_RED);
-#define TEXT_GREEN() console_fgcolour(CONS_GREEN);
-#define TEXT_WHITE() console_fgcolour(CONS_WHITE);
+extern int fgcolour;
+extern int bgcolour;
 
 void console_init(void);
 void console_setpos(int row, int column);
@@ -78,6 +81,6 @@ void console_getsize(int* rows, int* cols);
 void console_eline(char const* mode);
 void console_cback(int n);
 
-void print2(int flags, char const *fmt, ...);
+void print2(int flags, int fgcolour, int level, char const *fmt, ...);
 
 #endif /* !KEXEC_LOADER_CONSOLE_H */

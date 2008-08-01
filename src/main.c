@@ -313,8 +313,8 @@ static void draw_tbline(int rnum) {
  * This only returns on error
 */
 static void target_run(kl_target *target) {
-	printd("Loading %s...", target->name);
-	printm("");
+	printd(GREEN, 0, "Loading %s...", target->name);
+	putchar('\n');
 	
 	if(!mount_list(target->mounts)) {
 		return;
@@ -328,7 +328,7 @@ static void target_run(kl_target *target) {
 	unmount_list(target->mounts);
 	
 	console_fgcolour(CONS_GREEN);
-	printd("> Executing kernel...");
+	printd(GREEN, 1, "Executing kernel...");
 	console_fgcolour(CONS_WHITE);
 	
 	sync();
@@ -339,7 +339,7 @@ static void target_run(kl_target *target) {
 	);
 	
 	console_fgcolour(CONS_RED);
-	printD(">> Reboot failed: %s", strerror(errno));
+	printD(RED, 2, "Reboot failed: %s", strerror(errno));
 	console_fgcolour(CONS_WHITE);
 }
 
@@ -352,11 +352,11 @@ void list_devices(void) {
 	
 	FILE *disks = fopen("/proc/diskstats", "r");
 	if(!disks) {
-		printD("Can't open /proc/diskstats: %s", strerror(errno));
+		printD(RED, 0, "Can't open /proc/diskstats: %s", strerror(errno));
 	}
 	
-	printM("The following disks have been detected by Linux:");
-	printM("");
+	printM(0, 0, "The following disks have been detected by Linux:");
+	putchar('\n');
 	
 	while(fgets(buf, 256, disks)) {
 		major = atoi(strtok(buf, " \t"));
@@ -368,7 +368,7 @@ void list_devices(void) {
 			fstype = "Unknown filesystem";
 		}
 		
-		printM("/dev/%s\t(%d, %d, %s)", name, major, minor, fstype);
+		printM(0, 0, "/dev/%s\t(%d, %d, %s)", name, major, minor, fstype);
 	}
 	
 	fclose(disks);
