@@ -4,7 +4,14 @@ Version 1.5:
 	Removed capability to reload configuration by pressing R at the main
 	menu.
 	
-	Added support for trivial (insmod-like) Linux module loading.
+	Added support for loading Linux modules and inserting them into the
+	kernel, gzip compressed modules are also supported.
+	
+	Fixed a bug: nptr->mpoint was not set to the return value of
+	str_append() in config_add_mount(), which could cause a segfault
+	depending on state of OS memory management code.
+	
+	Updated styling of status messages to make them more consistant.
 
 Version 1.4.3:
 	Fixed bug caused by my stupidity and lack of testing:
