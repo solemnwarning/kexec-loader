@@ -66,9 +66,11 @@ void grub_loadcfg(void) {
 		return;
 	}
 	
+	printd(GREEN, 1, "Mounting %s at /mnt/grub...", config.grub_root);
+	
 	char const *errmsg;
 	if((errmsg = mount_dev(config.grub_root, "/mnt/grub"))) {
-		printD(RED, 0, "Can't mount %s at /mnt/grub: %s", config.grub_root, errmsg);
+		printD(RED, 2, "Mount failed: %s", errmsg);
 		return;
 	}
 	
@@ -76,7 +78,7 @@ void grub_loadcfg(void) {
 	load_menu();
 	
 	if(umount("/mnt/grub") == -1) {
-		printD(RED, 0, "Can't unmount /mnt/grub: %s", strerror(errno));
+		debug("Can't unmount /mnt/grub: %s\n", strerror(errno));
 	}
 }
 
@@ -86,6 +88,8 @@ static void load_devices(void) {
 	char line[256], *name, *value;
 	struct grub_device *ptr;
 	
+	printd(GREEN, 1, "Searching for device.map...");
+	
 	if(access("/mnt/grub/grub/device.map", F_OK) == 0) {
 		devmap = "/mnt/grub/grub/device.map";
 	}
@@ -93,13 +97,15 @@ static void load_devices(void) {
 		devmap = "/mnt/grub/boot/grub/device.map";
 	}
 	if(!devmap) {
-		debug("device.map not found\n");
+		printd(RED, 2, "device.map not found");
 		return;
 	}
 	
+	printd(GREEN, 1, "Loading device.map...");
+	
 	FILE *fh = fopen(devmap, "r");
 	if(!fh) {
-		printD(RED, 0, "Can't open %s: %s", devmap, strerror(errno));
+		printD(RED, 2, "Can't open %s: %s", devmap, strerror(errno));
 		return;
 	}
 	
@@ -248,6 +254,8 @@ static void load_menu(void) {
 	char line[1024], *name, *value;
 	int dnum = -1, tnum = 0;
 	
+	printd(GREEN, 1, "Searching for menu.lst...");
+	
 	if(access("/mnt/grub/grub/menu.lst", F_OK) == 0) {
 		menu = "/mnt/grub/grub/menu.lst";
 	}
@@ -255,13 +263,15 @@ static void load_menu(void) {
 		menu = "/mnt/grub/boot/grub/menu.lst";
 	}
 	if(!menu) {
-		printD(RED, 0, "menu.lst not found");
+		printD(RED, 2, "menu.lst not found");
 		return;
 	}
 	
+	printd(GREEN, 1, "Loading menu.lst...");
+	
 	FILE *fh = fopen(menu, "r");
 	if(!fh) {
-		printD(RED, 0, "Can't open menu.lst: %s", strerror(errno));
+		printD(RED, 2, "Can't open %s: %s", menu, strerror(errno));
 		return;
 	}
 	
@@ -351,15 +361,15 @@ static void add_target(void) {
 	size_t len;
 	
 	if(!kernel) {
-		printD(RED, 0, "No kernel specified for '%s'", g_target.name);
+		printD(RED, 2, "No kernel specified for '%s'", g_target.name);
 		goto ERROR;
 	}
 	if(kernel[0] != '(' && !g_root) {
-		printD(RED, 0, "No kernel device specified for '%s'\n", g_target.name);
+		printD(RED, 2, "No kernel device specified for '%s'\n", g_target.name);
 		goto ERROR;
 	}
 	if(initrd && initrd[0] != '(' && !g_root) {
-		printD(RED, 0, "No initrd device specified for '%s'\n", g_target.name);
+		printD(RED, 2, "No initrd device specified for '%s'\n", g_target.name);
 		goto ERROR;
 	}
 	

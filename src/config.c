@@ -53,7 +53,7 @@ kl_module *k_modules = NULL;
 
 static struct kl_target target = TARGET_DEFAULTS_DEFINE;
 
-static int modprobe(char const *name, char const *args, unsigned int lnum, int dload);
+static int modprobe(char const *name, char const *args, int lvl);
 static const char *moderror(int err);
 
 /* Add a mount
@@ -92,11 +92,11 @@ static void config_add_mount(unsigned int lnum, char* device, char* mpoint) {
 /* Add a target to config.targets */
 static void cfg_add_target(void) {
 	if(!target.kernel) {
-		printD(RED, 0, "Target %s has no kernel, not adding", target.name);
+		printD(RED, 2, "Target '%s' has no kernel, not adding", target.name);
 		goto END;
 	}
 	if(!target.mounts) {
-		printD(RED, 0, "Target %s has no mounts, not adding", target.name);
+		printD(RED, 2, "Target '%s' has no mounts, not adding", target.name);
 		goto END;
 	}
 	
@@ -158,9 +158,11 @@ static char *next_value(char *value) {
 void config_load(void) {
 	TARGET_DEFAULTS(&target);
 	
+	printd(GREEN, 1, "Loading " CONFIG_FILE "...");
+	
 	FILE* cfg_handle = fopen("/boot/" CONFIG_FILE, "r");
 	if(!cfg_handle) {
-		printD(RED, 0, "Can't open " CONFIG_FILE ": %s", strerror(errno));
+		printD(RED, 2, "Can't open " CONFIG_FILE ": %s", strerror(errno));
 		return;
 	}
 	
@@ -216,7 +218,7 @@ void config_parse(char* line, unsigned int lnum) {
 		}
 		
 		if(value[0] == '\0') {
-			printD(RED, 0, "config:%u: Title requires an argument", lnum);
+			printD(RED, 2, "Line %u: Title requires an argument", lnum);
 			return;
 		}
 		
@@ -225,7 +227,7 @@ void config_parse(char* line, unsigned int lnum) {
 	}
 	if(str_ceq(name, "kernel", -1)) {
 		if(value[0] == '\0') {
-			printD(RED, 0, "config:%u: Kernel requires an argument", lnum);
+			printD(RED, 2, "Line %u: Kernel requires an argument", lnum);
 			return;
 		}
 		
@@ -234,7 +236,7 @@ void config_parse(char* line, unsigned int lnum) {
 	}
 	if(str_ceq(name, "initrd", -1)) {
 		if(value[0] == '\0') {
-			printD(RED, 0, "config:%u: initrd requires an argument", lnum);
+			printD(RED, 2, "Line %u: initrd requires an argument", lnum);
 			return;
 		}
 		
@@ -243,7 +245,7 @@ void config_parse(char* line, unsigned int lnum) {
 	}
 	if(str_ceq(name, "append", -1)) {
 		if(value[0] == '\0') {
-			printD(RED, 0, "config:%u: Append requires an argument", lnum);
+			printD(RED, 2, "Line %u: Append requires an argument", lnum);
 			return;
 		}
 		
@@ -252,7 +254,7 @@ void config_parse(char* line, unsigned int lnum) {
 	}
 	if(str_ceq(name, "cmdline", -1)) {
 		if(value[0] == '\0') {
-			printD(RED, 0, "config:%u: cmdline requires an argument", lnum);
+			printD(RED, 2, "Line %u: cmdline requires an argument", lnum);
 			return;
 		}
 		
@@ -269,7 +271,7 @@ void config_parse(char* line, unsigned int lnum) {
 	}
 	if(str_ceq(name, "rootfs", -1)) {
 		if(value[0] == '\0') {
-			printD(RED, 0, "config:%u: RootFS requires an argument", lnum);
+			printD(RED, 2, "Line %u: RootFS requires an argument", lnum);
 			return;
 		}
 		
@@ -279,7 +281,7 @@ void config_parse(char* line, unsigned int lnum) {
 	if(str_ceq(name, "mount", -1)) {
 		value2 = next_value(value);
 		if(value[0] == '\0' || value2[0] == '\0') {
-			printD(RED, 0, "config:%u: mount requires 2 arguments", lnum);
+			printD(RED, 2, "Line %u: mount requires 2 arguments", lnum);
 			return;
 		}
 		
@@ -288,7 +290,7 @@ void config_parse(char* line, unsigned int lnum) {
 	}
 	if(str_ceq(name, "grub_root", -1)) {
 		if(value[0] == '\0') {
-			printD(RED, 0, "config:%u: grub_root requires an argument", lnum);
+			printD(RED, 2, "Line %u: grub_root requires an argument", lnum);
 			return;
 		}
 		
@@ -301,7 +303,7 @@ void config_parse(char* line, unsigned int lnum) {
 		}else if(str_eq(value, "sdx", -1)) {
 			config.grub_first = sdx;
 		}else{
-			printD(RED, 0, "config:%u: Value must be hdx or sdx", lnum);
+			printD(RED, 2, "Line %u: Value must be hdx or sdx", lnum);
 		}
 		
 		return;
@@ -312,16 +314,16 @@ void config_parse(char* line, unsigned int lnum) {
 	}
 	if(str_ceq(name, "modprobe", -1)) {
 		if(value[0] == '\0') {
-			printD(RED, 0, "config:%u: modprobe requires an argument", lnum);
+			printD(RED, 2, "Line %u: modprobe requires an argument", lnum);
 			return;
 		}
 		
 		value2 = next_value(value);
-		modprobe(value, value2, lnum, 0);
+		modprobe(value, value2, 2);
 		return;
 	}
 	
-	printD(RED, 0, "config:%u: Unknown directive '%s'", lnum, name);
+	printD(RED, 2, "Line %u: Unknown directive '%s'", lnum, name);
 }
 
 /* Add the remaining target, if it exists */
@@ -332,7 +334,7 @@ void config_finish(void) {
 }
 
 /* Load a kernel module */
-static int modprobe(char const *name, char const *args, unsigned int lnum, int dload) {
+static int modprobe(char const *name, char const *args, int lvl) {
 	char *filename = str_printf("/boot/modules/%s.ko", name);
 	char *buf = NULL;
 	int mod_fh = -1;
@@ -340,26 +342,22 @@ static int modprobe(char const *name, char const *args, unsigned int lnum, int d
 	int retval = 0;
 	
 	if(check_module(name)) {
-		printd(GREEN, 0, "config:%u: Module '%s' already loaded", lnum, filename);
+		printd(RED, lvl, "Module '%s' already loaded", name);
 		goto CLEANUP;
 	}
+	
+	printd(GREEN, lvl++, "Loading module '%s'...", name);
 	
 	struct stat mstat;
 	if(stat(filename, &mstat) == -1) {
-		printD(RED, 0, "config:%u: Failed to stat module '%s': %s", lnum, filename, strerror(errno));
+		printD(RED, lvl, "Failed to stat %s.ko: %s", name, strerror(errno));
 		goto CLEANUP;
-	}
-	
-	if(dload) {
-		printd(GREEN, 0, "Loading dependancy '%s'...", name);
-	}else{
-		printd(GREEN, 0, "Loading module '%s'...", name);
 	}
 	
 	buf = allocate(mstat.st_size);
 	
 	if((mod_fh = open(filename, O_RDONLY)) == -1) {
-		printD(RED, 0, "config:%u: Failed to open module '%s': %s", lnum, filename, strerror(errno));
+		printD(RED, lvl, "Failed to open %s.ko: %s", name, strerror(errno));
 		goto CLEANUP;
 	}
 	
@@ -370,7 +368,7 @@ static int modprobe(char const *name, char const *args, unsigned int lnum, int d
 				continue;
 			}
 			
-			printD(RED, 0, "config:%u: Failed to read module '%s': %s", lnum, filename, strerror(errno));
+			printD(RED, lvl, "Failed to read %s.ko: %s", name, strerror(errno));
 			goto CLEANUP;
 		}
 		if(rret == 0) {
@@ -394,7 +392,7 @@ static int modprobe(char const *name, char const *args, unsigned int lnum, int d
 		while(sec[0] != '\0') {
 			char *dep = str_copy(NULL, sec, strcspn(sec, ","));
 			
-			if(!check_module(dep) && !modprobe(dep, "", lnum, 1)) {
+			if(!check_module(dep) && !modprobe(dep, "", lvl)) {
 				free(dep);
 				goto CLEANUP;
 			}
@@ -408,11 +406,11 @@ static int modprobe(char const *name, char const *args, unsigned int lnum, int d
 	
 	if(syscall(SYS_init_module, buf, rbytes, args) != 0) {
 		if(errno == EEXIST) {
-			printd(GREEN, 0, "config:%u: Module '%s' already loaded", lnum, filename);
+			printd(RED, lvl, "Module '%s' already loaded", name);
 			goto CLEANUP;
 		}
 		
-		printD(RED, 0, "config:%u: Failed to load module '%s': %s", lnum, filename, moderror(errno));
+		printD(RED, lvl, "Failed to load module '%s': %s", name, moderror(errno));
 		goto CLEANUP;
 	}
 	

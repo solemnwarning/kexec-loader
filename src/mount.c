@@ -71,8 +71,8 @@ int mount_boot(void) {
 	pevents.events = POLLIN;
 	
 	putchar('\n');
-	printm(GREEN, 0, "Searching for " CONFIG_FILE "...");
-	printm(0, 0, "Press any key to abort");
+	printm(GREEN, 1, "Searching for " CONFIG_FILE "...");
+	printm(0, 1, "Press any key to abort");
 	
 	if((devname = get_cmdline("kexec_config"))) {
 		for(devnum = 0; devices[devnum]; devnum++) {}
@@ -100,7 +100,7 @@ int mount_boot(void) {
 		}
 		
 		if(access("/boot/" CONFIG_FILE, F_OK) == 0) {
-			printd(GREEN, 0, "Found " CONFIG_FILE " on %s", devname);
+			printd(GREEN, 2, "Found " CONFIG_FILE " on %s", devname);
 			return 1;
 		}
 		

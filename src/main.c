@@ -313,7 +313,7 @@ static void draw_tbline(int rnum) {
  * This only returns on error
 */
 static void target_run(kl_target *target) {
-	printd(GREEN, 0, "Loading %s...", target->name);
+	printd(GREEN, 1, "Loading %s...", target->name);
 	putchar('\n');
 	
 	if(!mount_list(target->mounts)) {
