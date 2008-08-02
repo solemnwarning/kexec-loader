@@ -37,6 +37,8 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <poll.h>
+#include <sys/mman.h>
+#include <fcntl.h>
 
 #include "mount.h"
 #include "misc.h"
@@ -230,33 +232,23 @@ void unmount_list(kl_mount *mounts) {
  * Returns the filesystem type as a string on success, NULL on error
 */
 char* detect_fstype(char const *device) {
-	FILE *fh = NULL;
+	int fd = -1;
+	unsigned char *buf = MAP_FAILED;
+	char *retval = NULL;
 	
-	while(!(fh = fopen(device, "rb"))) {
+	while((fd = open(device, O_RDONLY)) == -1) {
 		if(errno == EINTR) {
 			continue;
 		}
 		
 		debug("Can't open %s: %s\n", device, strerror(errno));
-		return NULL;
+		goto CLEANUP;
 	}
 	
-	char *retval = NULL;
-	size_t rcount = 0;
-	
-	unsigned char buf[MAGIC_BUF_SIZE];
-	memset(buf, '\0', MAGIC_BUF_SIZE);
-	
-	while(rcount < MAGIC_BUF_SIZE) {
-		rcount += fread(buf+rcount, 1, MAGIC_BUF_SIZE-rcount, fh);
-		
-		if(feof(fh)) {
-			break;
-		}
-		if(ferror(fh) && errno != EINTR) {
-			goto DFST_END;
-		}
-		clearerr(fh);
+	buf = mmap(NULL, MAGIC_BUF_SIZE, PROT_READ, MAP_SHARED, fd, 0);
+	if(buf == MAP_FAILED) {
+		debug("Failed to mmap device: %s\n", strerror(errno));
+		goto CLEANUP;
 	}
 	
 	if(buf[0x438] == 0x53 && buf[0x439] == 0xEF) {
@@ -295,13 +287,16 @@ char* detect_fstype(char const *device) {
 		retval = "iso9660";
 	}
 	
-	DFST_END:
-	while(fclose(fh) != 0) {
+	CLEANUP:
+	if(buf != MAP_FAILED && munmap(buf, MAGIC_BUF_SIZE) == -1) {
+		debug("Failed to unmap device buf: %s\n", strerror(errno));
+	}
+	while(fd >= 0 && close(fd) == -1) {
 		if(errno == EINTR) {
 			continue;
 		}
 		
-		debug("Can't close %s: %s\n", device, strerror(errno));
+		debug("Failed to close device: %s\n", strerror(errno));
 	}
 	
 	return retval;
