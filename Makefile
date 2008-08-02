@@ -34,7 +34,7 @@ VERSION=r$(shell svn info | grep 'Revision:' | sed -e 's/Revision: //')
 export CC := gcc
 export CFLAGS := -Wall -DVERSION=\"$(VERSION)\"
 export INCLUDES :=
-export LIBS :=
+export LIBS := -lz
 export KLBASE := $(PWD)
 
 ifdef HOST

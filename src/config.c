@@ -38,6 +38,7 @@
 #include <unistd.h>
 #include <sys/mount.h>
 #include <sys/syscall.h>
+#include <zlib.h>
 
 #include "config.h"
 #include "../config.h"
@@ -336,10 +337,10 @@ void config_finish(void) {
 /* Load a kernel module */
 static int modprobe(char const *name, char const *args, int lvl) {
 	char *filename = str_printf("/boot/modules/%s.ko", name);
-	char *buf = NULL;
-	int mod_fh = -1;
-	int rbytes = 0, rret;
-	int retval = 0;
+	gzFile fh = NULL;
+	char *buf = NULL, *nbuf;
+	size_t bsize = 0, rbytes = 0;
+	int retval = 0, fret;
 	
 	if(check_module(name)) {
 		printd(RED, lvl, "Module '%s' already loaded", name);
@@ -348,34 +349,27 @@ static int modprobe(char const *name, char const *args, int lvl) {
 	
 	printd(GREEN, lvl++, "Loading module '%s'...", name);
 	
-	struct stat mstat;
-	if(stat(filename, &mstat) == -1) {
-		printD(RED, lvl, "Failed to stat %s.ko: %s", name, strerror(errno));
-		goto CLEANUP;
-	}
-	
-	buf = allocate(mstat.st_size);
-	
-	if((mod_fh = open(filename, O_RDONLY)) == -1) {
+	if(!(fh = gzopen(filename, "rb"))) {
 		printD(RED, lvl, "Failed to open %s.ko: %s", name, strerror(errno));
 		goto CLEANUP;
 	}
 	
-	while(rbytes < mstat.st_size) {
-		rret = read(mod_fh, buf+rbytes, mstat.st_size-rbytes);
-		if(rret == -1) {
-			if(errno == EINTR) {
-				continue;
-			}
-			
-			printD(RED, lvl, "Failed to read %s.ko: %s", name, strerror(errno));
+	while(!gzeof(fh)) {
+		bsize += 64000;
+		
+		if(!(nbuf = realloc(buf, bsize))) {
+			printD(RED, lvl, "Failed to realloc buffer to %u", bsize);
 			goto CLEANUP;
 		}
-		if(rret == 0) {
-			break;
+		
+		buf = nbuf;
+		
+		if((fret = gzread(fh, buf+rbytes, 64000)) == -1) {
+			printD(RED, lvl, "Failed to read %s.ko: %s", name, gzerror(fh, &fret));
+			goto CLEANUP;
 		}
 		
-		rbytes += rret;
+		rbytes += fret;
 	}
 	
 	size_t secsize, n = 0;
@@ -424,8 +418,8 @@ static int modprobe(char const *name, char const *args, int lvl) {
 	retval = 1;
 	
 	CLEANUP:
-	if(mod_fh >= 0 && close(mod_fh) == -1) {
-		debug("Failed to close '%s': %s\n", filename, strerror(errno));
+	if(fh && (fret = gzclose(fh)) != Z_OK) {
+		debug("Failed to close '%s': %s\n", filename, gzerror(fh, &fret));
 	}
 	
 	free(filename);
