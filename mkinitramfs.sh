@@ -39,33 +39,6 @@ function cprog() {
 	exit 1
 }
 
-# Create /dev/hdX and /dev/hdX[0-16] devices
-#
-function create_hdx() {
-	mknod -m 0600 $1 b $2 $3 || exit 1
-	
-	part=1
-	while [ "$part" -le "16" ]; do
-		mknod -m 0600 $1$part b $2 $[$3+$part] || exit 1
-		
-		part=$[$part+1]
-	done
-}
-
-# Create /dev/sdX and /dev/sdX[0-15] devices
-#
-function create_sdx() {
-	base=$[$2*16]
-	mknod -m 0600 $1 b 8 $base
-	
-	part=1
-	while [ "$part" -le "15" ]; do
-		mknod -m 0600 $1$part b 8 $[$base+$part] || exit 1
-		
-		part=$[$part+1]
-	done
-}
-
 cprog whoami
 cprog mkdir
 cprog install
@@ -117,25 +90,6 @@ mknod -m 0600 "$initramfs/dev/ttyS0" c 4 64 || exit 1
 mknod -m 0600 "$initramfs/dev/ttyS1" c 4 65 || exit 1
 mknod -m 0600 "$initramfs/dev/ttyS2" c 4 66 || exit 1
 mknod -m 0600 "$initramfs/dev/ttyS3" c 4 67 || exit 1
-
-mknod -m 0600 "$initramfs/dev/fd0" b 2 0 || exit 1
-mknod -m 0600 "$initramfs/dev/fd1" b 2 1 || exit 1
-
-create_hdx "$initramfs/dev/hda" 3 0
-create_hdx "$initramfs/dev/hdb" 3 64
-create_hdx "$initramfs/dev/hdc" 22 0
-create_hdx "$initramfs/dev/hdd" 22 64
-create_hdx "$initramfs/dev/hde" 33 0
-create_hdx "$initramfs/dev/hdf" 33 64
-
-create_sdx "$initramfs/dev/sda" 0
-create_sdx "$initramfs/dev/sdb" 1
-create_sdx "$initramfs/dev/sdc" 2
-create_sdx "$initramfs/dev/sdd" 3
-create_sdx "$initramfs/dev/sde" 4
-create_sdx "$initramfs/dev/sdf" 5
-create_sdx "$initramfs/dev/sdg" 6
-create_sdx "$initramfs/dev/sdh" 7
 
 echo "Creating $initramfs_cpio..."
 cd "$initramfs" && find | cpio --create --format=newc --quiet > "$initramfs_cpio" || exit 1

@@ -39,6 +39,7 @@
 #include <poll.h>
 #include <sys/mman.h>
 #include <fcntl.h>
+#include <linux/kdev_t.h>
 
 #include "mount.h"
 #include "misc.h"
@@ -236,6 +237,11 @@ char* detect_fstype(char const *device) {
 	unsigned char *buf = MAP_FAILED;
 	char *retval = NULL;
 	
+	if(!check_device(device)) {
+		debug("Device not found\n");
+		goto CLEANUP;
+	}
+	
 	while((fd = open(device, O_RDONLY)) == -1) {
 		if(errno == EINTR) {
 			continue;
@@ -308,8 +314,8 @@ char* detect_fstype(char const *device) {
  * The supplied device may or may not have the /dev/ prefix.
 */
 int check_device(char const *device) {
-	char buf[512], *name;
-	int rval = 0;
+	char buf[512], *ptr;
+	int rval = 0, major, minor;
 	
 	if(strncmp(device, "/dev/", 5) == 0) {
 		device += 5;
@@ -322,12 +328,26 @@ int check_device(char const *device) {
 	}
 	
 	while(fgets(buf, 512, disks)) {
-		strtok(buf, " \t");
-		strtok(NULL, " \t");
-		name = strtok(NULL, " \t");
+		ptr = buf+strspn(buf, " \t");
+		major = atoi(ptr);
 		
-		if(strcmp(name, device) == 0) {
+		ptr += strcspn(ptr, " \t");
+		ptr += strspn(ptr, " \t");
+		minor = atoi(ptr);
+		
+		ptr += strcspn(ptr, " \t");
+		ptr += strspn(ptr, " \t");
+		ptr[strcspn(ptr, " \t\r\n")] = '\0';
+		
+		if(str_eq(ptr, device, -1)) {
 			rval = 1;
+			
+			snprintf(buf, 512, "/dev/%s", device);
+			if(mknod(buf, 0600 | S_IFBLK, MKDEV(major, minor)) == -1 && errno != EEXIST) {
+				debug("Failed to create %s device node: %s\n", buf, strerror(errno));
+				rval = 0;
+			}
+			
 			break;
 		}
 	}
