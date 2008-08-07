@@ -12,6 +12,12 @@ Version 1.5:
 	depending on state of OS memory management code.
 	
 	Updated styling of status messages to make them more consistant.
+	
+	Rewrote detect_fstype() to use mmap() instead of reading MAGIC_BUF_SIZE
+	bytes of into stack memory.
+	
+	Updated mount code to create device nodes from /proc/diskstats and
+	removed hdx/sdx mknod code from mkinitramfs.sh
 
 Version 1.4.3:
 	Fixed bug caused by my stupidity and lack of testing:
