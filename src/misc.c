@@ -80,7 +80,7 @@ void debug(char const* fmt, ...) {
 	if(!debug_fh) {
 		char *filename = get_cmdline("kexec_debug");
 		if(!filename) {
-			filename = "/dev/tty2";
+			filename = str_copy(NULL, "/dev/tty2", -1);
 		}
 		
 		if((debug_fh = fopen(filename, "a")) == NULL) {
