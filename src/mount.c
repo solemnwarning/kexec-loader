@@ -112,7 +112,7 @@ int mount_boot(void) {
 		}
 		
 		ENDLOOP:
-		if(!devname[++devnum]) {
+		if(!devices[++devnum]) {
 			sleep(1);
 			devnum = 0;
 		}
@@ -427,7 +427,7 @@ static int check_magic(int fd, off_t offset, char const *magic, size_t len) {
 		return 0;
 	}
 	
-	if(lseek(fd, offset, SEEK_CUR) == (off_t)-1) {
+	if(lseek(fd, offset, SEEK_SET) == (off_t)-1) {
 		debug("Failed to seek: %s\n", strerror(errno));
 		return 0;
 	}
