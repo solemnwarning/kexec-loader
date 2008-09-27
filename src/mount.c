@@ -49,7 +49,7 @@
 #include "grub.h"
 #include "mystring.h"
 
-#define MAGIC_BUF_SIZE (0x1003A)
+static int check_magic(int fd, off_t offset, char const *magic, size_t len);
 
 /* Mount disk containing CONFIG_FILE at /boot
  * Returns 1 if device containing file was mounted, zero otherwise
@@ -234,7 +234,6 @@ void unmount_list(kl_mount *mounts) {
 */
 char* detect_fstype(char const *device) {
 	int fd = -1;
-	unsigned char *buf = MAP_FAILED;
 	char *retval = NULL;
 	
 	if(!check_device(device)) {
@@ -251,52 +250,43 @@ char* detect_fstype(char const *device) {
 		goto CLEANUP;
 	}
 	
-	buf = mmap(NULL, MAGIC_BUF_SIZE, PROT_READ, MAP_SHARED, fd, 0);
-	if(buf == MAP_FAILED) {
-		debug("Failed to mmap device: %s\n", strerror(errno));
-		goto CLEANUP;
-	}
-	
-	if(buf[0x438] == 0x53 && buf[0x439] == 0xEF) {
-		if(buf[0x45C] & 4) {
+	if(check_magic(fd, 0x438, (char[]){0x53, 0xEF}, 2)) {
+		if(check_magic(fd, 0x45C, "EXT3_CHECK", 1)) {
 			retval = "ext3";
 		}else{
 			retval = "ext2";
 		}
 	}
-	if(str_eq((char*)buf, "XFSB", 4)) {
+	if(check_magic(fd, 0, "XFSB", 4)) {
 		retval = "xfs";
 	}
-	if(str_eq((char*)(buf+0x10034), "ReIsEr", 6)) {
+	if(check_magic(fd, 0x10034, "ReIsEr", 6)) {
 		retval = "reiserfs";
 	}
 	if(
-		(buf[0x410] == 0x13 && buf[0x411] == 0x7F) ||
-		(buf[0x410] == 0x7F && buf[0x411] == 0x13) ||
-		(buf[0x410] == 0x8F && buf[0x411] == 0x13) ||
-		(buf[0x410] == 0x68 && buf[0x411] == 0x24) ||
-		(buf[0x410] == 0x78 && buf[0x411] == 0x24)
+		check_magic(fd, 0x410, (char[]){0x13, 0x7F}, 2) ||
+		check_magic(fd, 0x410, (char[]){0x7F, 0x13}, 2) ||
+		check_magic(fd, 0x410, (char[]){0x8F, 0x13}, 2) ||
+		check_magic(fd, 0x410, (char[]){0x68, 0x24}, 2) ||
+		check_magic(fd, 0x410, (char[]){0x78, 0x24}, 2)
 	) {
 		retval = "minix";
 	}
-	if(str_eq((char*)(buf+0x36), "FAT", 3)) {
+	if(check_magic(fd, 0x36, "FAT", 3)) {
 		retval = "vfat";
 	}
-	if(str_eq((char*)(buf+3), "NTFS    ", 8)) {
+	if(check_magic(fd, 0x03, "NTFS    ", 8)) {
 		retval = "ntfs";
 	}
 	if(
-		str_eq((char*)(buf+32769), "CD001", 5) ||
-		str_eq((char*)(buf+37633), "CD001", 5) ||
-		str_eq((char*)(buf+32776), "CDROM", 5)
+		check_magic(fd, 32769, "CD001", 5) ||
+		check_magic(fd, 37633, "CD001", 5) ||
+		check_magic(fd, 32776, "CDROM", 5)
 	) {
 		retval = "iso9660";
 	}
 	
 	CLEANUP:
-	if(buf != MAP_FAILED && munmap(buf, MAGIC_BUF_SIZE) == -1) {
-		debug("Failed to unmap device buf: %s\n", strerror(errno));
-	}
 	while(fd >= 0 && close(fd) == -1) {
 		if(errno == EINTR) {
 			continue;
@@ -415,4 +405,56 @@ char const *mount_dev(char const *idev, char const *mpoint) {
 		free(device);
 	}
 	return errmsg;
+}
+
+/* Check for magic value at an offset
+ *
+ * Returns nonzero if the device is at least offset+len bytes in size and the
+ * magic value is at offset, zero otherwise.
+*/
+static int check_magic(int fd, off_t offset, char const *magic, size_t len) {
+	int blocks;
+	char buf[len];
+	size_t count = 0;
+	ssize_t rret;
+	
+	if(ioctl(fd, BLKGETSIZE, &blocks) == -1) {
+		debug("Failed to get block count: %s\n", strerror(errno));
+		return 0;
+	}
+	
+	if((blocks * 512) < (offset + len)) {
+		return 0;
+	}
+	
+	if(lseek(fd, offset, SEEK_CUR) == (off_t)-1) {
+		debug("Failed to seek: %s\n", strerror(errno));
+		return 0;
+	}
+	
+	while(count < len) {
+		rret = read(fd, buf+count, len-count);
+		
+		if(rret == -1) {
+			if(errno == EINTR) {
+				continue;
+			}
+			
+			debug("Failed to read: %s\n", strerror(errno));
+			return 0;
+		}
+		
+		count += rret;
+	}
+	
+	/* Hacky interface alert! */
+	if(str_eq(magic, "EXT3_CHECK", 11) && buf[0] & 4) {
+		return 1;
+	}
+	
+	if(memcmp(buf, magic, len) == 0) {
+		return 1;
+	}
+	
+	return 0;
 }
