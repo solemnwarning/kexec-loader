@@ -149,6 +149,8 @@ void print2(int flags, int colour, int level, char const *fmt, ...) {
 	size_t alen = (level > 0 ? level+1 : 0);
 	
 	char msg[vsnprintf(NULL, 0, fmt, argv)+alen];
+	va_end(argv);
+	va_start(argv, fmt);
 	vsprintf(msg+alen, fmt, argv);
 	
 	va_end(argv);

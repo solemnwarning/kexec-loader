@@ -70,6 +70,8 @@ char *str_printf(char const *fmt, ...) {
 	va_start(argv, fmt);
 	
 	char *dest = allocate(vsnprintf(NULL, 0, fmt, argv)+1);
+	va_end(argv);
+	va_start(argv, fmt);
 	vsprintf(dest, fmt, argv);
 	
 	va_end(argv);
