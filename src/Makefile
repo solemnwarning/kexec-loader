@@ -30,8 +30,8 @@
 DEPS := main.o mount.o config.o console.o misc.o kexec.o grub.o shell.o mystring.o elf.o kexec.a
 OBJS := $(DEPS) `cat kexec_libs`
 
-KT_VER := 1.101
-KT_URL := http://www.xmission.com/~ebiederm/files/kexec/kexec-tools-$(KT_VER).tar.gz
+KT_VER := 2.0.0
+KT_URL := http://www.kernel.org/pub/linux/kernel/people/horms/kexec-tools/kexec-tools-$(KT_VER).tar.gz
 KT_CONFIGURE :=
 
 ifdef HOST
@@ -89,6 +89,5 @@ kexec.a:
 	tar -xzf kexec-tools-$(KT_VER).tar.gz
 	cd kexec-tools-$(KT_VER)/ && \
 	./configure $(KT_CONFIGURE) && \
-	patch -Np1 -i $(KLBASE)/patches/kexec-tools-1.101-merge.diff && \
-	patch -Np1 -i $(KLBASE)/patches/kexec-tools-1.101-mini.diff && \
+	patch -Np1 -i $(KLBASE)/patches/kexec-tools-2.0.0.diff && \
 	make

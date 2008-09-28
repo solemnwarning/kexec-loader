@@ -1,0 +1,27 @@
+diff -ru kexec-tools-2.0.0.orig/kexec/kexec.c kexec-tools-2.0.0/kexec/kexec.c
+--- kexec-tools-2.0.0.orig/kexec/kexec.c	2008-07-14 13:28:19.000000000 +0200
++++ kexec-tools-2.0.0/kexec/kexec.c	2008-09-21 01:07:55.000000000 +0200
+@@ -891,7 +891,7 @@
+ }
+ 
+ 
+-int main(int argc, char *argv[])
++int kexec_main(int argc, char *argv[])
+ {
+ 	int do_load = 1;
+ 	int do_exec = 0;
+diff -ru kexec-tools-2.0.0.orig/kexec/Makefile kexec-tools-2.0.0/kexec/Makefile
+--- kexec-tools-2.0.0.orig/kexec/Makefile	2008-07-14 13:28:19.000000000 +0200
++++ kexec-tools-2.0.0/kexec/Makefile	2008-09-28 22:18:10.000000000 +0200
+@@ -69,8 +69,9 @@
+ 
+ $(KEXEC): LDFLAGS+=$(LIBS)
+ $(KEXEC): $(KEXEC_OBJS) $(UTIL_LIB)
+-	@$(MKDIR) -p $(@D)
+-	$(LINK.o) -o $@ $^
++	echo $(LIBS) > $(KLBASE)/src/kexec_libs
++	cp $(UTIL_LIB) $(KLBASE)/src/kexec.a
++	ar -r $(KLBASE)/src/kexec.a $(KEXEC_OBJS)
+ 
+ $(KEXEC): CPPFLAGS+=-I$(srcdir)/kexec/arch/$(ARCH)/include
+ 
