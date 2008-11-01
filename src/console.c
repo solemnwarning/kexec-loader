@@ -122,8 +122,8 @@ void console_getsize(int* rows, int* cols) {
 		return;
 	}
 	
-	*rows = cons_size.ws_row;
-	*cols = cons_size.ws_col;
+	*rows = (cons_size.ws_row ? cons_size.ws_row : 24);
+	*cols = (cons_size.ws_col ? cons_size.ws_col : 80);
 }
 
 /* Erase the current line */
