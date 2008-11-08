@@ -73,6 +73,7 @@ extern int bgcolour;
 
 void console_init(void);
 void console_setpos(int row, int column);
+void console_getpos(int *row, int *col);
 void console_clear(void);
 void console_fgcolour(int colour);
 void console_bgcolour(int colour);

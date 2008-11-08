@@ -86,6 +86,39 @@ void console_setpos(int row, int column) {
 	printf("%c[%d;%dH", 0x1B, row, column);
 }
 
+#define INBUF_APPEND(c) \
+	if(insize < 256) { \
+		inbuf[++insize] = c; \
+	}
+
+/* Fetch the cursor position */
+void console_getpos(int *row, int *col) {
+	char inbuf[256], c;
+	int insize = 0;
+	
+	printf("%c[6n", 0x1B);
+	
+	while(1) {
+		c = getchar();
+		
+		if(c == 0x1B) {
+			if((c = getchar()) == '[') {
+				break;
+			}
+			
+			INBUF_APPEND(0x1B);
+		}
+		
+		INBUF_APPEND(c);
+	}
+	
+	scanf("%d;%dR", row, col);
+	
+	while(insize > 0) {
+		ungetc(inbuf[--insize], stdin);
+	}
+}
+
 /* Clear the console */
 void console_clear(void) {
 	if(alert) {
