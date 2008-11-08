@@ -88,6 +88,6 @@ kexec.a:
 	wget -nc $(KT_URL)
 	tar -xzf kexec-tools-$(KT_VER).tar.gz
 	cd kexec-tools-$(KT_VER)/ && \
-	./configure $(KT_CONFIGURE) && \
 	patch -Np1 -i $(KLBASE)/patches/kexec-tools-2.0.0.diff && \
+	./configure $(KT_CONFIGURE) && \
 	make
