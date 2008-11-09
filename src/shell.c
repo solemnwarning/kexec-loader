@@ -53,15 +53,16 @@ extern int rows, cols;
 void list_devices(void);
 static char *next_arg(char *args);
 static void add_module(char const *module);
-static void set_command(int *srow, int scol, char const *cmd);
+static void set_command(char const *cmd);
 
 static kl_target cons_target = TARGET_DEFAULTS_DEFINE;
 static char *history[HISTORY_MAX];
+static int srow, scol;
 
 void shell_main(void) {
 	char cmdbuf[1024];
 	size_t len, offset;
-	int c, hnum, srow, scol;
+	int c, hnum;
 	char *cmd, *arg1, *arg2, *nhist;
 	
 	for(hnum = 0; hnum < HISTORY_MAX; hnum++) {
@@ -119,7 +120,7 @@ void shell_main(void) {
 				strcpy(cmdbuf, history[++hnum]);
 				len = strlen(cmdbuf);
 				
-				set_command(&srow, scol, cmdbuf);
+				set_command(cmdbuf);
 			}
 			if(c == 66 && hnum >= 0) {
 				if(--hnum == -1) {
@@ -130,7 +131,7 @@ void shell_main(void) {
 					len = strlen(cmdbuf);
 				}
 				
-				set_command(&srow, scol, cmdbuf);
+				set_command(cmdbuf);
 			}
 			
 			continue;
@@ -276,13 +277,13 @@ static void add_module(char const *module) {
 }
 
 /* Replace the command which is displayed on the terminal */
-static void set_command(int *srow, int scol, char const *cmd) {
+static void set_command(char const *cmd) {
 	int row, len = strlen(cmd);
 	
 	console_getpos(&row, NULL);
 	console_setpos(row, scol);
 	
-	while(row > *srow) {
+	while(row > srow) {
 		console_eline(ELINE_ALL);
 		console_setpos(--row, scol);
 	}
@@ -291,8 +292,8 @@ static void set_command(int *srow, int scol, char const *cmd) {
 	
 	printf("%s", cmd);
 	
-	if(rows - (*srow) < ((scol-1) + len) / cols) {
-		(*srow) -= ((scol-1) + len) / cols;
+	if(rows - srow < ((scol-1) + len) / cols) {
+		srow -= ((scol-1) + len) / cols;
 	}
 	
 	if(((scol-1) + len) % cols == 0) {
