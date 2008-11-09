@@ -56,6 +56,7 @@ extern int rows, cols;
 void list_devices(void);
 static void set_command(char const *cmd, int offset);
 static void move_cursor(int offset);
+static void parse_command(char *cmd, int *argc, char **argv);
 
 static void cmd_mount(int argc, char **argv);
 static void cmd_module(int argc, char **argv);
@@ -84,7 +85,7 @@ void shell_main(void) {
 	char cmdbuf[1024];
 	size_t len, offset;
 	int c, hnum, argc, cnum;
-	char *cmd, *nhist, *argv[ARGV_SIZE];
+	char *nhist, *argv[ARGV_SIZE];
 	
 	for(hnum = 0; hnum < HISTORY_MAX; hnum++) {
 		history[hnum] = NULL;
@@ -200,26 +201,7 @@ void shell_main(void) {
 		history[0] = nhist;
 	}
 	
-	cmd = cmdbuf+strspn(cmdbuf, " ");
-	argc = 0;
-	
-	while(cmd[0] != '\0') {
-		argv[argc] = cmd;
-		cmd += strcspn(cmd, " ");
-		
-		if(++argc == ARGV_SIZE-1) {
-			break;
-		}
-		
-		if(cmd[0] != '\0') {
-			cmd[0] = '\0';
-			cmd++;
-			
-			cmd += strspn(cmd, " ");
-		}
-	}
-	
-	argv[argc] = NULL;
+	parse_command(cmdbuf, &argc, argv);
 	
 	if(argc == 0) {
 		goto READLINE;
@@ -322,6 +304,30 @@ static void move_cursor(int offset) {
 	int col = (scol + offset) % cols;
 	
 	console_setpos(row, col);
+}
+
+/* Parse a command */
+static void parse_command(char *cmd, int *argc, char **argv) {
+	cmd += strspn(cmd, " ");
+	*argc = 0;
+	
+	while(cmd[0] != '\0') {
+		argv[*argc] = cmd;
+		cmd += strcspn(cmd, " ");
+		
+		if(++(*argc) == ARGV_SIZE-1) {
+			break;
+		}
+		
+		if(cmd[0] != '\0') {
+			cmd[0] = '\0';
+			cmd++;
+			
+			cmd += strspn(cmd, " ");
+		}
+	}
+	
+	argv[*argc] = NULL;
 }
 
 /* Mount a filesystem and add it to cons_target.mounts */
