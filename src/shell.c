@@ -53,6 +53,7 @@ extern int rows, cols;
 void list_devices(void);
 static char *next_arg(char *args);
 static void add_module(char const *module);
+static void set_command(int *srow, int scol, char const *cmd);
 
 static kl_target cons_target = TARGET_DEFAULTS_DEFINE;
 static char *history[HISTORY_MAX];
@@ -60,7 +61,7 @@ static char *history[HISTORY_MAX];
 void shell_main(void) {
 	char cmdbuf[1024];
 	size_t len, offset;
-	int c, hnum;
+	int c, hnum, srow, scol;
 	char *cmd, *arg1, *arg2, *nhist;
 	
 	for(hnum = 0; hnum < HISTORY_MAX; hnum++) {
@@ -79,6 +80,8 @@ void shell_main(void) {
 	
 	printf("> ");
 	
+	console_getpos(&srow, &scol);
+	
 	while(1) {
 		c = getchar();
 		
@@ -87,51 +90,39 @@ void shell_main(void) {
 			break;
 		}
 		if(c == 0x7F) {
+			/* 0x7F == DEL (Backspace) */
+			
 			if(len > 0) {
-				cmdbuf[--len] = '\0';
-				
-				if(offset > 0) {
-					if(--offset == 0) {
-						console_eline(ELINE_ALL);
-						printf("\r> %s", cmdbuf);
-					}
+				if(((scol-1) + len) % cols == 0) {
+					console_setpos((srow-1) + (((scol-1) + len) / cols), cols);
+					putchar(' ');
 				}else{
 					console_cback(1);
 					putchar(' ');
 					console_cback(1);
 				}
+				
+				cmdbuf[--len] = '\0';
 			}
-		}
-		if(c >= 0x20 && c <= 0x7E && len < 1023) {
-			cmdbuf[len++] = c;
-			cmdbuf[len] = '\0';
 			
-			if(len+2 >= cols) {
-				offset++;
-			}else{
-				putchar(c);
-			}
+			continue;
 		}
-		if(c == 0x1B && getchar() == '[') {
+		if(c == 0x1B) {
+			if((c = getchar()) != '[') {
+				ungetc(c, stdin);
+				continue;
+			}
+			
 			c = getchar();
 			
 			if(c == 65 && (hnum+1) < HISTORY_MAX && history[hnum+1]) {
 				strcpy(cmdbuf, history[++hnum]);
 				len = strlen(cmdbuf);
 				
-				if(len+2 >= cols) {
-					offset = (len+3) - cols;
-				}else{
-					offset = 0;
-					
-					console_eline(ELINE_ALL);
-					printf("\r> %s", cmdbuf);
-				}
+				set_command(&srow, scol, cmdbuf);
 			}
 			if(c == 66 && hnum >= 0) {
-				hnum--;
-				
-				if(hnum == -1) {
+				if(--hnum == -1) {
 					cmdbuf[0] = '\0';
 					len = 0;
 				}else{
@@ -139,20 +130,24 @@ void shell_main(void) {
 					len = strlen(cmdbuf);
 				}
 				
-				if(len+2 >= cols) {
-					offset = (len+3) - cols;
-				}else{
-					offset = 0;
-					
-					console_eline(ELINE_ALL);
-					printf("\r> %s", cmdbuf);
-				}
+				set_command(&srow, scol, cmdbuf);
 			}
+			
+			continue;
 		}
 		
-		if(offset > 0) {
-			console_eline(ELINE_ALL);
-			printf("\r> $%s", cmdbuf+offset+1);
+		if(len < 1023) {
+			cmdbuf[len++] = c;
+			cmdbuf[len] = '\0';
+			putchar(c);
+			
+			if(((scol-1) + len) % cols == 0) {
+				putchar('\n');
+				
+				if(srow == rows) {
+					srow--;
+				}
+			}
 		}
 	}
 	
@@ -276,4 +271,29 @@ static void add_module(char const *module) {
 	nptr->module = str_printf("/mnt/target/%s", module);
 	nptr->next = cons_target.modules;
 	cons_target.modules = nptr;
+}
+
+/* Replace the command which is displayed on the terminal */
+static void set_command(int *srow, int scol, char const *cmd) {
+	int row, len = strlen(cmd);
+	
+	console_getpos(&row, NULL);
+	console_setpos(row, scol);
+	
+	while(row > *srow) {
+		console_eline(ELINE_ALL);
+		console_setpos(--row, scol);
+	}
+	
+	console_eline(ELINE_TOEND);
+	
+	printf("%s", cmd);
+	
+	if(rows - (*srow) < ((scol-1) + len) / cols) {
+		(*srow) -= ((scol-1) + len) / cols;
+	}
+	
+	if(((scol-1) + len) % cols == 0) {
+		putchar('\n');
+	}
 }

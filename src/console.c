@@ -92,9 +92,9 @@ void console_setpos(int row, int column) {
 	}
 
 /* Fetch the cursor position */
-void console_getpos(int *row, int *col) {
+void console_getpos(int *rptr, int *cptr) {
 	char inbuf[256], c;
-	int insize = 0;
+	int insize = 0, row, col;
 	
 	printf("%c[6n", 0x1B);
 	
@@ -112,7 +112,10 @@ void console_getpos(int *row, int *col) {
 		INBUF_APPEND(c);
 	}
 	
-	scanf("%d;%dR", row, col);
+	scanf("%d;%dR", &row, &col);
+	
+	if(rptr) { *rptr = row; }
+	if(cptr) { *cptr = col; }
 	
 	while(insize > 0) {
 		ungetc(inbuf[--insize], stdin);
