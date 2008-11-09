@@ -151,16 +151,18 @@ void shell_main(void) {
 		}
 	}
 	
-	nhist = str_copy(NULL, cmdbuf, -1);
-	free(history[HISTORY_MAX-1]);
-	
-	for(hnum = (HISTORY_MAX-1); hnum > 0; hnum--) {
-		if(history[hnum-1]) {
-			history[hnum] = history[hnum-1];
+	if(len > 0 && (history[0] == NULL || !str_eq(history[0], cmdbuf, -1))) {
+		nhist = str_copy(NULL, cmdbuf, -1);
+		free(history[HISTORY_MAX-1]);
+		
+		for(hnum = (HISTORY_MAX-1); hnum > 0; hnum--) {
+			if(history[hnum-1]) {
+				history[hnum] = history[hnum-1];
+			}
 		}
+		
+		history[0] = nhist;
 	}
-	
-	history[0] = nhist;
 	
 	cmd = cmdbuf+strspn(cmdbuf, " ");
 	arg1 = next_arg(cmd);
