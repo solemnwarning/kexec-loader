@@ -43,28 +43,48 @@
 #include "kexec.h"
 #include "mystring.h"
 
-#define CONSOLE_CMD(str) \
-	}else if(strcasecmp(cmd, str) == 0) {
-
 #define HISTORY_MAX 32
+#define ARGV_SIZE 128
+
+struct shell_command {
+	char const *name;
+	void (*func)(int, char**);
+};
 
 extern int rows, cols;
 
 void list_devices(void);
-static char *next_arg(char *args);
-static void add_module(char const *module);
 static void set_command(char const *cmd, int offset);
 static void move_cursor(int offset);
+
+static void cmd_mount(int argc, char **argv);
+static void cmd_module(int argc, char **argv);
+static void cmd_boot(int argc, char **argv);
+static void cmd_kernel(int argc, char **argv);
+static void cmd_initrd(int argc, char **argv);
 
 static kl_target cons_target = TARGET_DEFAULTS_DEFINE;
 static char *history[HISTORY_MAX];
 static int srow, scol;
 
+static struct shell_command commands[] = {
+	{"mount", &cmd_mount},
+	{"module", &cmd_module},
+	{"boot", &cmd_boot},
+	{"kernel", &cmd_kernel},
+	{"initrd", &cmd_initrd},
+	{"append", NULL},
+	{"cmdline", NULL},
+	{"reset-vga", NULL},
+	{"disks", NULL},
+	{NULL, NULL}
+};
+
 void shell_main(void) {
 	char cmdbuf[1024];
 	size_t len, offset;
-	int c, hnum;
-	char *cmd, *arg1, *arg2, *nhist;
+	int c, hnum, argc, cnum;
+	char *cmd, *nhist, *argv[ARGV_SIZE];
 	
 	for(hnum = 0; hnum < HISTORY_MAX; hnum++) {
 		history[hnum] = NULL;
@@ -72,7 +92,6 @@ void shell_main(void) {
 	
 	free_modules(cons_target.modules);
 	TARGET_DEFAULTS(&cons_target);
-	kl_mount *nmount;
 	
 	READLINE:
 	cmdbuf[0] = '\0';
@@ -80,7 +99,7 @@ void shell_main(void) {
 	offset = 0;
 	hnum = -1;
 	
-	printf("> ");
+	printf("\n> ");
 	
 	console_getpos(&srow, &scol);
 	
@@ -182,114 +201,90 @@ void shell_main(void) {
 	}
 	
 	cmd = cmdbuf+strspn(cmdbuf, " ");
-	arg1 = next_arg(cmd);
+	argc = 0;
 	
-	debug("Shell cmd='%s' arg1='%s'\n", cmd, arg1);
+	while(cmd[0] != '\0') {
+		argv[argc] = cmd;
+		cmd += strcspn(cmd, " ");
+		
+		if(++argc == ARGV_SIZE-1) {
+			break;
+		}
+		
+		if(cmd[0] != '\0') {
+			cmd[0] = '\0';
+			cmd++;
+			
+			cmd += strspn(cmd, " ");
+		}
+	}
 	
-	if(cmd[0] == '\0') {
-	CONSOLE_CMD("exit")
+	argv[argc] = NULL;
+	
+	if(argc == 0) {
+		goto READLINE;
+	}
+	
+	if(str_eq(argv[0], "exit", -1)) {
 		unmount_list(cons_target.mounts);
 		free_mounts(cons_target.mounts);
 		
+		for(hnum = 0; hnum < HISTORY_MAX; hnum++) {
+			free(history[hnum]);
+		}
+		
 		return;
-	CONSOLE_CMD("mount")
-		arg2 = next_arg(arg1);
+	}
+	
+	if(str_eq(argv[0], "help", -1)) {
+		printf("Available commands:\n");
+		printf("exit help");
 		
-		if(arg1[0] == '\0' || arg2[0] == '\0') {
-			printm(0, 0, "Usage: mount [<fstype>:]<device> <mount point>");
-			goto ENDCMD;
+		for(cnum = 0; commands[cnum].name; cnum++) {
+			printf(" %s", commands[cnum].name);
 		}
 		
-		nmount = allocate(sizeof(struct kl_mount));
-		INIT_MOUNT(nmount);
-		
-		str_copy(&nmount->device, arg1, -1);
-		nmount->mpoint = str_printf("/mnt/target/%s", arg2);
-		
-		if(!mount_list(nmount)) {
-			free(nmount);
-			goto ENDCMD;
-		}
-		
-		nmount->next = cons_target.mounts;
-		cons_target.mounts = nmount;
-	CONSOLE_CMD("disks")
+		putchar('\n');
+		goto READLINE;
+	}
+	
+	if(str_eq(argv[0], "disks", -1)) {
 		list_devices();
-	CONSOLE_CMD("help")
-		printm(0, 0, "Available commands:");
-		printm(0, 0, "exit mount disks help kernel initrd append cmdline boot reset-vga");
-	CONSOLE_CMD("kernel")
-		if(arg1[0] == '\0') {
-			printm(0, 0, "Usage: kernel <filename>");
-			goto ENDCMD;
+		goto READLINE;
+	}
+	
+	if(str_eq(argv[0], "append", -1)) {
+		if(argc > 1) {
+			str_copy(&cons_target.append, argv[1], -1);
+		}else{
+			cons_target.append = NULL;
 		}
 		
-		cons_target.kernel = str_printf("/mnt/target/%s", arg1);
-	CONSOLE_CMD("initrd")
-		if(arg1[0] == '\0') {
-			printm(0, 0, "Usage: initrd <filename>");
-			goto ENDCMD;
+		goto READLINE;
+	}
+	if(str_eq(argv[0], "cmdline", -1)) {
+		if(argc > 1) {
+			str_copy(&cons_target.cmdline, argv[1], -1);
+		}else{
+			cons_target.cmdline = NULL;
 		}
 		
-		cons_target.initrd = str_printf("/mnt/target/%s", arg1);
-	CONSOLE_CMD("append")
-		str_copy(&cons_target.append, arg1, -1);
-	CONSOLE_CMD("cmdline")
-		str_copy(&cons_target.cmdline, arg1, -1);
-	CONSOLE_CMD("boot")
-		if(!load_kernel(&cons_target)) {
-			goto ENDCMD;
-		}
-		
-		unmount_list(cons_target.mounts);
-		
-		console_fgcolour(CONS_GREEN);
-		printd(GREEN, 1, "Executing kernel...");
-		console_fgcolour(CONS_WHITE);
-		
-		sync();
-		syscall(
-			__NR_reboot,
-			LINUX_REBOOT_MAGIC1, LINUX_REBOOT_MAGIC2,
-			LINUX_REBOOT_CMD_KEXEC, NULL
-		);
-		
-		console_fgcolour(CONS_RED);
-		printD(RED, 2, "Reboot failed: %s", strerror(errno));
-		console_fgcolour(CONS_WHITE);
-	CONSOLE_CMD("reset-vga")
+		goto READLINE;
+	}
+	if(str_eq(argv[0], "reset-vga", -1)) {
 		cons_target.flags |= TARGET_RESET_VGA;
-	CONSOLE_CMD("module")
-		add_module(arg1);
-	}else{
-		printd(0, 0, "Unknown command: %s", cmd);
+		goto READLINE;
 	}
 	
-	ENDCMD:
-	putchar('\n');
+	for(cnum = 0; commands[cnum].func; cnum++) {
+		if(str_eq(commands[cnum].name, argv[0], -1)) {
+			commands[cnum].func(argc, argv);
+			goto READLINE;
+		}
+	}
+	
+	printf("Unknown command: %s\n", argv[0]);
 	goto READLINE;
-}
-
-static char *next_arg(char *args) {
-	char *retval = args+strcspn(args, " ");
-	
-	if(retval[0] != '\0') {
-		retval[0] = '\0';
-		retval++;
-		
-		retval += strspn(retval, " ");
-	}
-	
-	return retval;
-}
-
-static void add_module(char const *module) {
-	kl_module *nptr = allocate(sizeof(kl_module));
-	INIT_MODULE(nptr);
-	
-	nptr->module = str_printf("/mnt/target/%s", module);
-	nptr->next = cons_target.modules;
-	cons_target.modules = nptr;
 }
 
 /* Replace the command which is displayed on the terminal */
@@ -327,4 +322,88 @@ static void move_cursor(int offset) {
 	int col = (scol + offset) % cols;
 	
 	console_setpos(row, col);
+}
+
+/* Mount a filesystem and add it to cons_target.mounts */
+static void cmd_mount(int argc, char **argv) {
+	if(argc != 3) {
+		printf("Usage: mount [<fstype>:]<device> <mount point>\n");
+		return;
+	}
+	
+	kl_mount *nmount = allocate(sizeof(struct kl_mount));
+	INIT_MOUNT(nmount);
+	
+	str_copy(&nmount->device, argv[1], -1);
+	nmount->mpoint = str_printf("/mnt/target/%s", argv[1]);
+	
+	if(!mount_list(nmount)) {
+		free(nmount);
+		return;
+	}
+	
+	nmount->next = cons_target.mounts;
+	cons_target.mounts = nmount;
+}
+
+/* Add a multiboot module to cons_target.modules */
+static void cmd_module(int argc, char **argv) {
+	if(argc != 2) {
+		printf("Usage: module <module name>\n");
+		return;
+	}
+	
+	kl_module *nptr = allocate(sizeof(kl_module));
+	INIT_MODULE(nptr);
+	
+	nptr->module = str_printf("/mnt/target/%s", argv[1]);
+	
+	nptr->next = cons_target.modules;
+	cons_target.modules = nptr;
+}
+
+/* Boot the kernel */
+static void cmd_boot(int argc, char **argv) {
+	if(!load_kernel(&cons_target)) {
+		return;
+	}
+	
+	unmount_list(cons_target.mounts);
+	
+	console_fgcolour(CONS_GREEN);
+	printd(GREEN, 1, "Executing kernel...");
+	console_fgcolour(CONS_WHITE);
+	
+	sync();
+	syscall(
+		__NR_reboot,
+		LINUX_REBOOT_MAGIC1, LINUX_REBOOT_MAGIC2,
+		LINUX_REBOOT_CMD_KEXEC, NULL
+	);
+	
+	console_fgcolour(CONS_RED);
+	printD(RED, 2, "Reboot failed: %s", strerror(errno));
+	console_fgcolour(CONS_WHITE);
+}
+
+/* Set the kernel path */
+static void cmd_kernel(int argc, char **argv) {
+	if(argc != 2) {
+		printf("Usage: kernel <filename>\n");
+		return;
+	}
+	
+	free(cons_target.kernel);
+	cons_target.kernel = str_printf("/mnt/target/%s", argv[1]);
+}
+
+/* Set the kernel path */
+static void cmd_initrd(int argc, char **argv) {
+	if(argc != 2) {
+		printf("Usage: initrd <filename>\n");
+		return;
+	}
+	
+	free(cons_target.initrd);
+	cons_target.initrd = str_printf("/mnt/target/%s", argv[1]);
 }
