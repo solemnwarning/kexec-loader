@@ -35,6 +35,8 @@
 #include <linux/reboot.h>
 #include <sys/syscall.h>
 #include <unistd.h>
+#include <sys/types.h>
+#include <sys/stat.h>
 
 #include "shell.h"
 #include "console.h"
@@ -57,15 +59,17 @@ void list_devices(void);
 static void set_command(char const *cmd, int offset);
 static void move_cursor(int offset);
 static void parse_command(char *cmd, int *argc, char **argv);
+static char *shell_path(char const *spath);
 
 static void cmd_mount(int argc, char **argv);
 static void cmd_module(int argc, char **argv);
 static void cmd_boot(int argc, char **argv);
 static void cmd_kernel(int argc, char **argv);
 static void cmd_initrd(int argc, char **argv);
+static void cmd_cd(int argc, char **argv);
 
 static kl_target cons_target = TARGET_DEFAULTS_DEFINE;
-static char *history[HISTORY_MAX];
+static char *history[HISTORY_MAX], cwd[2048];
 static int srow, scol;
 
 static struct shell_command commands[] = {
@@ -74,6 +78,7 @@ static struct shell_command commands[] = {
 	{"boot", &cmd_boot},
 	{"kernel", &cmd_kernel},
 	{"initrd", &cmd_initrd},
+	{"cd", &cmd_cd},
 	{"append", NULL},
 	{"cmdline", NULL},
 	{"reset-vga", NULL},
@@ -94,13 +99,15 @@ void shell_main(void) {
 	free_modules(cons_target.modules);
 	TARGET_DEFAULTS(&cons_target);
 	
+	strcpy(cwd, "/");
+	
 	READLINE:
 	cmdbuf[0] = '\0';
 	len = 0;
 	offset = 0;
 	hnum = -1;
 	
-	printf("\n> ");
+	printf("\n%s > ", cwd);
 	
 	console_getpos(&srow, &scol);
 	
@@ -357,6 +364,58 @@ static void parse_command(char *cmd, int *argc, char **argv) {
 	argv[*argc] = NULL;
 }
 
+/* Convert a shell path to a complete path
+ * Shell paths are like a virtual chroot/chdir
+*/
+static char *shell_path(char const *spath) {
+	static char path[2048];
+	char ptmp[2048], *ptok;
+	int depth = 0, pos, len;
+	
+	strcpy(path, "/mnt/target");
+	
+	if(spath[0] != '/') {
+		strlcat(path, cwd, 2048);
+		
+		len = strlen(path);
+		if(path[--len] == '/') {
+			path[len] = '\0';
+		}
+		
+		for(pos = 1; cwd[pos]; pos++) {
+			if(cwd[pos] == '/') {
+				depth++;
+			}
+		}
+	}
+	
+	strlcpy(ptmp, spath, 2048);
+	
+	ptok = strtok(ptmp, "/");
+	while(ptok) {
+		if(str_eq(ptok, "..", -1)) {
+			if(depth > 0) {
+				strrchr(path, '/')[0] = '\0';
+				depth--;
+			}
+			
+			goto NEXT;
+		}
+		if(str_eq(ptok, ".", -1) || str_eq(ptok, "", -1)) {
+			goto NEXT;
+		}
+		
+		strlcat(path, "/", 2048);
+		strlcat(path, ptok, 2048);
+		depth++;
+		
+		NEXT:
+		ptok = strtok(NULL, "/");
+	}
+	
+	return path;
+}
+
 /* Mount a filesystem and add it to cons_target.mounts */
 static void cmd_mount(int argc, char **argv) {
 	if(argc != 3) {
@@ -439,4 +498,28 @@ static void cmd_initrd(int argc, char **argv) {
 	
 	free(cons_target.initrd);
 	cons_target.initrd = str_printf("/mnt/target/%s", argv[1]);
+}
+
+/* Change the shell CWD */
+static void cmd_cd(int argc, char **argv) {
+	if(argc > 2) {
+		printf("Usage: cd [<path>]\n");
+		return;
+	}
+	
+	if(argc == 1 || str_eq(argv[1], "/", -1)) {
+		strcpy(cwd, "/");
+	}else{
+		char *path = shell_path(argv[1]);
+		char *spath = path+strlen("/mnt/target");
+		strlcat(path, "/", 2048);
+		
+		struct stat stbuf;
+		if(stat(path, &stbuf) == -1) {
+			printf("%s: %s\n", spath, strerror(errno));
+			return;
+		}
+		
+		strcpy(cwd, spath);
+	}
 }
