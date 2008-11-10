@@ -316,6 +316,7 @@ static void parse_command(char *cmd, int *argc, char **argv) {
 	while(cmd[0] != '\0') {
 		argv[*argc] = cmd;
 		pos = 0;
+		quoted = 0;
 		
 		while(cmd[pos] != '\0') {
 			if(cmd[pos] == '"') {
