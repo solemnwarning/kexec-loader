@@ -311,9 +311,35 @@ static void parse_command(char *cmd, int *argc, char **argv) {
 	cmd += strspn(cmd, " ");
 	*argc = 0;
 	
+	int pos, len = strlen(cmd), quoted;
+	
 	while(cmd[0] != '\0') {
 		argv[*argc] = cmd;
-		cmd += strcspn(cmd, " ");
+		pos = 0;
+		
+		while(cmd[pos] != '\0') {
+			if(cmd[pos] == '"') {
+				quoted = 1 & ~quoted;
+				
+				memmove(cmd+pos, cmd+pos+1, len-pos);
+				len--;
+				
+				continue;
+			}
+			if(cmd[pos] == ' ' && !quoted) {
+				break;
+			}
+			
+			if(cmd[pos] == '\\') {
+				memmove(cmd+pos, cmd+pos+1, len-pos);
+				len--;
+			}
+			
+			pos++;
+		}
+		
+		cmd += pos;
+		len -= pos;
 		
 		if(++(*argc) == ARGV_SIZE-1) {
 			break;
