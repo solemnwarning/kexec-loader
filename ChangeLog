@@ -1,3 +1,19 @@
+Version 1.6:
+	Replaced unsafe mmap() code in detect_fstype() which crashed on small
+	partitions, such as MS-DOS extended.
+	
+	Upgraded kexec-tools to version 2.0.0
+	
+	Fixed a bug: console_getsize() returned 0x0 on serial consoles, it now
+	defaults to 80x24 if the ioctl() call returns 0x0.
+	
+	Rewrote shell input code to support decent line editing.
+	
+	Updated shell history code to not log empty lines, or repeat commands.
+	
+	Rewrote command parsing code to be more like that of a normal shell,
+	the new parser stores arguments in argv[] and sets argc.
+
 Version 1.5:
 	Rewrote code which finds the boot disk.
 	
