@@ -431,7 +431,7 @@ static void cmd_mount(int argc, char **argv) {
 	INIT_MOUNT(nmount);
 	
 	str_copy(&nmount->device, argv[1], -1);
-	nmount->mpoint = str_printf("/mnt/target/%s", argv[1]);
+	str_copy(&nmount->mpoint, shell_path(argv[2]), -1);
 	
 	if(!mount_list(nmount)) {
 		free(nmount);
@@ -536,6 +536,7 @@ static void cmd_ls(int argc, char **argv) {
 	}
 	
 	char *path = shell_path(argc == 2 ? argv[1] : "./");
+	char filename[2048];
 	
 	DIR *dir = opendir(path);
 	if(!dir) {
@@ -548,13 +549,20 @@ static void cmd_ls(int argc, char **argv) {
 	char timestr[1024];
 	
 	while((node = readdir(dir))) {
-		if(lstat(node->d_name, &stbuf) == -1) {
+		snprintf(filename, 2048, "%s/%s", path, node->d_name);
+		
+		if(lstat(filename, &stbuf) == -1) {
 			printf("%s: %s\n", node->d_name, strerror(errno));
 			break;
 		}
 		
 		strftime(timestr, 1024, "%Y-%m-%d %H:%M", gmtime(&(stbuf.st_mtime)));
-		printf("%s\t%s\n", timestr, node->d_name);
+		
+		if(stbuf.st_mode & S_IFDIR) {
+			printf("%s\t%s/\n", timestr, node->d_name);
+		}else{
+			printf("%s\t%s\n", timestr, node->d_name);
+		}
 	}
 	
 	closedir(dir);
