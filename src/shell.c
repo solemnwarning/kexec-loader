@@ -37,6 +37,8 @@
 #include <unistd.h>
 #include <sys/types.h>
 #include <sys/stat.h>
+#include <dirent.h>
+#include <time.h>
 
 #include "shell.h"
 #include "console.h"
@@ -67,6 +69,7 @@ static void cmd_boot(int argc, char **argv);
 static void cmd_kernel(int argc, char **argv);
 static void cmd_initrd(int argc, char **argv);
 static void cmd_cd(int argc, char **argv);
+static void cmd_ls(int argc, char **argv);
 
 static kl_target cons_target = TARGET_DEFAULTS_DEFINE;
 static char *history[HISTORY_MAX], cwd[2048];
@@ -79,6 +82,7 @@ static struct shell_command commands[] = {
 	{"kernel", &cmd_kernel},
 	{"initrd", &cmd_initrd},
 	{"cd", &cmd_cd},
+	{"ls", &cmd_ls},
 	{"append", NULL},
 	{"cmdline", NULL},
 	{"reset-vga", NULL},
@@ -522,4 +526,36 @@ static void cmd_cd(int argc, char **argv) {
 		
 		strcpy(cwd, spath);
 	}
+}
+
+/* List directory contents */
+static void cmd_ls(int argc, char **argv) {
+	if(argc > 2) {
+		printf("Usage: ls [<path>]\n");
+		return;
+	}
+	
+	char *path = shell_path(argc == 2 ? argv[1] : "./");
+	
+	DIR *dir = opendir(path);
+	if(!dir) {
+		printf("%s: %s\n", path, strerror(errno));
+		return;
+	}
+	
+	struct dirent *node;
+	struct stat stbuf;
+	char timestr[1024];
+	
+	while((node = readdir(dir))) {
+		if(lstat(node->d_name, &stbuf) == -1) {
+			printf("%s: %s\n", node->d_name, strerror(errno));
+			break;
+		}
+		
+		strftime(timestr, 1024, "%Y-%m-%d %H:%M", gmtime(&(stbuf.st_mtime)));
+		printf("%s\t%s\n", timestr, node->d_name);
+	}
+	
+	closedir(dir);
 }
