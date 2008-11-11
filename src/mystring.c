@@ -180,6 +180,10 @@ int globcmp(char const *str, char const *expr, int flags, ...) {
 			if(expr[n] == '*') {
 				while(!mycmp(str, expr, n, flags)) {
 					str++;
+					
+					if(str[0] == '\0') {
+						return 0;
+					}
 				}
 			}else{
 				if((l = strlen(str)) < n) {

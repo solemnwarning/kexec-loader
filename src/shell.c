@@ -46,6 +46,7 @@
 #include "mount.h"
 #include "kexec.h"
 #include "mystring.h"
+#include "globcmp.h"
 
 #define HISTORY_MAX 32
 #define ARGV_SIZE 128
@@ -62,6 +63,7 @@ static void set_command(char const *cmd, int offset);
 static void move_cursor(int offset);
 static void parse_command(char *cmd, int *argc, char **argv);
 static char *shell_path(char const *spath);
+static char *shell_spath(char const *path);
 
 static void cmd_mount(int argc, char **argv);
 static void cmd_module(int argc, char **argv);
@@ -70,6 +72,8 @@ static void cmd_kernel(int argc, char **argv);
 static void cmd_initrd(int argc, char **argv);
 static void cmd_cd(int argc, char **argv);
 static void cmd_ls(int argc, char **argv);
+static void cmd_find(int argc, char **argv);
+static void find_files(char *path, char const *name);
 
 static kl_target cons_target = TARGET_DEFAULTS_DEFINE;
 static char *history[HISTORY_MAX], cwd[2048];
@@ -83,6 +87,7 @@ static struct shell_command commands[] = {
 	{"initrd", &cmd_initrd},
 	{"cd", &cmd_cd},
 	{"ls", &cmd_ls},
+	{"find", &cmd_find},
 	{"append", NULL},
 	{"cmdline", NULL},
 	{"reset-vga", NULL},
@@ -420,6 +425,15 @@ static char *shell_path(char const *spath) {
 	return path;
 }
 
+/* Return a shell path */
+static char *shell_spath(char const *path) {
+	if(str_eq(path, "/mnt/target", 11)) {
+		return (char*)path+11;
+	}else{
+		return (char*)path;
+	}
+}
+
 /* Mount a filesystem and add it to cons_target.mounts */
 static void cmd_mount(int argc, char **argv) {
 	if(argc != 3) {
@@ -563,6 +577,61 @@ static void cmd_ls(int argc, char **argv) {
 		}else{
 			printf("%s\t%s\n", timestr, node->d_name);
 		}
+	}
+	
+	closedir(dir);
+}
+
+/* Search for a file */
+static void cmd_find(int argc, char **argv) {
+	if(argc < 2 || argc > 3) {
+		printf("Usage: find <filename> [<directory>]\n");
+		return;
+	}
+	
+	char *path = shell_path(argc == 3 ? argv[2] : "./");
+	find_files(path, argv[1]);
+}
+
+/* Do the actual work */
+static void find_files(char *path, char const *name) {
+	DIR *dir = opendir(path);
+	if(!dir) {
+		printf("%s: %s\n", path, strerror(errno));
+		return;
+	}
+	
+	struct dirent *node;
+	struct stat stbuf;
+	
+	while((node = readdir(dir))) {
+		if(str_eq(node->d_name, ".", -1) || str_eq(node->d_name, "..", -1)) {
+			continue;
+		}
+		
+		strlcat(path, "/", 2048);
+		strlcat(path, node->d_name, 2048);
+		
+		if(stat(path, &stbuf) == -1) {
+			printf("%s: %s\n", shell_spath(path), strerror(errno));
+			
+			strrchr(path, '/')[0] = '\0';
+			continue;
+		}
+		
+		if(globcmp(node->d_name, name, GLOB_IGNCASE | GLOB_STAR | GLOB_SINGLE)) {
+			if(stbuf.st_mode & S_IFDIR) {
+				printf("%s/\n", shell_spath(path));
+			}else{
+				printf("%s\n", shell_spath(path));
+			}
+		}
+		
+		if(stbuf.st_mode & S_IFDIR) {
+			find_files(path, name);
+		}
+		
+		strrchr(path, '/')[0] = '\0';
 	}
 	
 	closedir(dir);
