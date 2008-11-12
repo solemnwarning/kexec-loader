@@ -49,6 +49,7 @@
 
 #define HISTORY_MAX 32
 #define ARGV_SIZE 128
+#define SHELL_ROOT "/mnt/target"
 
 struct shell_command {
 	char const *name;
@@ -380,7 +381,7 @@ static char *shell_path(char const *spath) {
 	char ptmp[2048], *ptok;
 	int depth = 0, pos, len;
 	
-	strcpy(path, "/mnt/target");
+	strcpy(path, SHELL_ROOT);
 	
 	if(spath[0] != '/') {
 		strlcat(path, cwd, 2048);
@@ -426,8 +427,10 @@ static char *shell_path(char const *spath) {
 
 /* Return a shell path */
 static char *shell_spath(char const *path) {
-	if(str_eq(path, "/mnt/target", 11)) {
-		return (char*)path+11;
+	int rlen = strlen(SHELL_ROOT);
+	
+	if(str_eq(path, SHELL_ROOT, rlen)) {
+		return (char*)path+rlen;
 	}else{
 		return (char*)path;
 	}
@@ -528,7 +531,7 @@ static void cmd_cd(int argc, char **argv) {
 		strcpy(cwd, "/");
 	}else{
 		char *path = shell_path(argv[1]);
-		char *spath = path+strlen("/mnt/target");
+		char *spath = shell_spath(argv[1]);
 		strlcat(path, "/", 2048);
 		
 		struct stat stbuf;
