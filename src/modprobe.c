@@ -225,7 +225,6 @@ void load_modconf(void) {
 /* Next argument */
 static char *next_arg(char *arg) {
 	arg += strcspn(arg, "\t ");
-	arg += strspn(arg, "\t ");
 	
 	if(arg[0] != '\0') {
 		arg[0] = '\0';
