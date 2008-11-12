@@ -60,18 +60,13 @@ static int argc;
  *
  * Returns the exit status, or -1 on failure
 */
-static int run_kexec(char** kexec_argv, char const *root) {
+static int run_kexec(char** kexec_argv) {
 	pid_t newpid = fork();
 	if(newpid == -1) {
 		printD(RED, 2, "Can't fork: %s", strerror(errno));
 		return -1;
 	}
 	if(newpid == 0) {
-		if(root && chroot(root) == -1) {
-			printD(RED, 2, "Can't chroot: %s", strerror(errno));
-			exit(1);
-		}
-		
 		exit(kexec_main(argc, kexec_argv));
 	}
 	
@@ -98,18 +93,12 @@ int load_kernel(kl_target *target) {
 		module = module->next;
 	}
 	
-	char* kexec_argv[8+n], *root = NULL;
+	char* kexec_argv[8+n];
 	argc = 0;
 	
 	argv_append("kexec");
 	argv_append("-l");
-	
-	if(str_eq(target->kernel, "/mnt/target/", 12)) {
-		root = "/mnt/target/";
-		argv_append(target->kernel+12);
-	}else{
-		argv_append(target->kernel);
-	}
+	argv_append(target->kernel);
 	
 	if(target->flags & TARGET_RESET_VGA) {
 		argv_append("--reset-vga");
@@ -139,7 +128,7 @@ int load_kernel(kl_target *target) {
 		module = module->next;
 	}
 	
-	if(run_kexec(kexec_argv, root) != 0) {
+	if(run_kexec(kexec_argv) != 0) {
 		retval = 1;
 	}
 	
