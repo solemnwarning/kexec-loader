@@ -1,4 +1,4 @@
-/* kexec-loader - ELF header
+/* kexec-loader - Module loading header
  * Copyright (C) 2007, Daniel Collins <solemnwarning@solemnwarning.net>
  * All rights reserved.
  *
@@ -28,10 +28,11 @@
  * EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
-#ifndef KEXEC_LOADER_ELF_H
-#define KEXEC_LOADER_ELF_H
+#ifndef KEXEC_LOADER_MODPROBE_H
+#define KEXEC_LOADER_MODPROBE_H
 #include <stdlib.h>
 
-char *elf_getsection(char const *elf, char const *name, size_t *size);
+void load_modconf(void);
+void modprobe_all(void);
 
-#endif /* !KEXEC_LOADER_ELF_H */
+#endif /* !KEXEC_LOADER_MODPROBE_H */

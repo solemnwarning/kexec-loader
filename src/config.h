@@ -59,13 +59,16 @@ struct kl_mount {
 
 #define INIT_MODULE(ptr) \
 	(ptr)->module = NULL;\
+	(ptr)->args = NULL;\
 	(ptr)->next = NULL;
 
-#define DINIT_MODULE {NULL,NULL}
+#define DINIT_MODULE {NULL,NULL,NULL}
 
 struct kl_module {
 	char *module;
-	struct kl_module *next;
+	char *args;
+	
+	kl_module *next;
 };
 
 #define TARGET_DEFAULTS(ptr) \
@@ -108,11 +111,9 @@ struct kl_config {
 };
 
 extern struct kl_config config;
-extern kl_module *k_modules;
 
 void config_load(void);
 void config_parse(char* line, unsigned int lnum);
 void config_finish(void);
-int check_module(char const *name);
 
 #endif /* !KEXEC_LOADER_CONF_H */

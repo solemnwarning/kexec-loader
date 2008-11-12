@@ -48,6 +48,7 @@
 #include "misc.h"
 #include "grub.h"
 #include "shell.h"
+#include "modprobe.h"
 
 static void main_menu(void);
 static void draw_skel(void);
@@ -78,6 +79,13 @@ int main(int argc, char** argv) {
 	debug("scol = %d, ecol = %d\n", scol, ecol);
 	
 	if(mount_boot()) {
+		if(access("/boot/modules/modules.conf", F_OK) == 0) {
+			load_modconf();
+		}
+		if(access("/boot/modules/", F_OK) == 0) {
+			modprobe_all();
+		}
+		
 		config_load();
 		
 		if(umount("/boot") == -1) {

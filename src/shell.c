@@ -46,7 +46,6 @@
 #include "mount.h"
 #include "kexec.h"
 #include "mystring.h"
-#include "globcmp.h"
 
 #define HISTORY_MAX 32
 #define ARGV_SIZE 128

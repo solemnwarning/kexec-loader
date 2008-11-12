@@ -47,15 +47,10 @@
 #include "console.h"
 #include "grub.h"
 #include "mystring.h"
-#include "elf.h"
 
 struct kl_config config = CONFIG_DEFAULTS_DEFINE;
-kl_module *k_modules = NULL;
 
 static struct kl_target target = TARGET_DEFAULTS_DEFINE;
-
-static int modprobe(char const *name, char const *args, int lvl);
-static const char *moderror(int err);
 
 /* Add a mount
  * This changes the device string passed to it
@@ -313,16 +308,6 @@ void config_parse(char* line, unsigned int lnum) {
 		add_module(lnum, value);
 		return;
 	}
-	if(str_ceq(name, "modprobe", -1)) {
-		if(value[0] == '\0') {
-			printD(RED, 2, "Line %u: modprobe requires an argument", lnum);
-			return;
-		}
-		
-		value2 = next_value(value);
-		modprobe(value, value2, 2);
-		return;
-	}
 	
 	printD(RED, 2, "Line %u: Unknown directive '%s'", lnum, name);
 }
@@ -332,127 +317,4 @@ void config_finish(void) {
 	if(target.name) {
 		cfg_add_target();
 	}
-}
-
-/* Load a kernel module */
-static int modprobe(char const *name, char const *args, int lvl) {
-	char *filename = str_printf("/boot/modules/%s.ko", name);
-	gzFile fh = NULL;
-	char *buf = NULL, *nbuf;
-	size_t bsize = 0, rbytes = 0;
-	int retval = 0, fret;
-	
-	if(check_module(name)) {
-		printd(RED, lvl, "Module '%s' already loaded", name);
-		goto CLEANUP;
-	}
-	
-	printd(GREEN, lvl++, "Loading module '%s'...", name);
-	
-	if(!(fh = gzopen(filename, "rb"))) {
-		printD(RED, lvl, "Failed to open %s.ko: %s", name, strerror(errno));
-		goto CLEANUP;
-	}
-	
-	while(!gzeof(fh)) {
-		bsize += 64000;
-		
-		if(!(nbuf = realloc(buf, bsize))) {
-			printD(RED, lvl, "Failed to realloc buffer to %u", bsize);
-			goto CLEANUP;
-		}
-		
-		buf = nbuf;
-		
-		if((fret = gzread(fh, buf+rbytes, 64000)) == -1) {
-			printD(RED, lvl, "Failed to read %s.ko: %s", name, gzerror(fh, &fret));
-			goto CLEANUP;
-		}
-		
-		rbytes += fret;
-	}
-	
-	size_t secsize, n = 0;
-	char *sec = elf_getsection(buf, ".modinfo", &secsize);
-	
-	while(sec && n < secsize) {
-		if(!str_eq(sec, "depends=", 8)) {
-			n += (strlen(sec)+1);
-			sec += (strlen(sec)+1);
-			continue;
-		}
-		
-		sec += 8;
-		while(sec[0] != '\0') {
-			char *dep = str_copy(NULL, sec, strcspn(sec, ","));
-			
-			if(!check_module(dep) && !modprobe(dep, "", lvl)) {
-				free(dep);
-				goto CLEANUP;
-			}
-			
-			free(dep);
-			sec += (strcspn(sec, ",")+1);
-		}
-		
-		break;
-	}
-	
-	if(syscall(SYS_init_module, buf, rbytes, args) != 0) {
-		if(errno == EEXIST) {
-			printd(RED, lvl, "Module '%s' already loaded", name);
-			goto CLEANUP;
-		}
-		
-		printD(RED, lvl, "Failed to load module '%s': %s", name, moderror(errno));
-		goto CLEANUP;
-	}
-	
-	kl_module *nmod = allocate(sizeof(kl_module));
-	INIT_MODULE(nmod);
-	
-	nmod->module = str_copy(NULL, name, -1);
-	nmod->next = k_modules;
-	k_modules = nmod;
-	
-	retval = 1;
-	
-	CLEANUP:
-	if(fh && (fret = gzclose(fh)) != Z_OK) {
-		debug("Failed to close '%s': %s\n", filename, gzerror(fh, &fret));
-	}
-	
-	free(filename);
-	free(buf);
-	return retval;
-}
-
-static const char *moderror(int err) {
-	switch (err) {
-		case ENOEXEC:
-			return "Invalid module format";
-		case ENOENT:
-			return "Unknown symbol in module";
-		case ESRCH:
-			return "Module has wrong symbol version";
-		case EINVAL:
-			return "Invalid parameters";
-		default:
-			return strerror(err);
-	}
-}
-
-/* Check if a module has been loaded */
-int check_module(char const *name) {
-	kl_module *module = k_modules;
-	
-	while(module) {
-		if(str_eq(name, module->module, -1)) {
-			return 1;
-		}
-		
-		module = module->next;
-	}
-	
-	return 0;
 }

@@ -43,13 +43,23 @@
 #include "mystring.h"
 
 /* Error checking malloc() wrapper, also zeros memory */
-void* allocate_r(char const* file, unsigned int line, size_t size) {
+void* allocate(size_t size) {
 	void* ptr = malloc(size);
 	if(ptr == NULL) {
-		fatal("Can't allocate %u bytes: %s", strerror(errno));
+		fatal("Can't allocate memory (%uB)", size);
 	}
 	
 	memset(ptr, 0, size);
+	return(ptr);
+}
+
+/* Error checking realloc() wrapper */
+void* reallocate(void *ptr, size_t size) {
+	ptr = realloc(ptr, size);
+	if(ptr == NULL) {
+		fatal("Can't (re)allocate memory (%uB)", size);
+	}
+	
 	return(ptr);
 }
 

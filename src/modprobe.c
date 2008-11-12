@@ -1,4 +1,4 @@
-/* kexec-loader - ELF functions
+/* kexec-loader - Module loading functions
  * Copyright (C) 2007, Daniel Collins <solemnwarning@solemnwarning.net>
  * All rights reserved.
  *
@@ -32,21 +32,39 @@
 #include <elf.h>
 #include <stdint.h>
 #include <string.h>
+#include <stdio.h>
+#include <errno.h>
+#include <zlib.h>
+#include <sys/syscall.h>
+#include <sys/types.h>
+#include <dirent.h>
 
-#include "elf.h"
+#include "modprobe.h"
 #include "mystring.h"
+#include "console.h"
+#include "misc.h"
+#include "config.h"
 
 #define elf2host(dest, src, size) \
 	elf2host_(dest, src, size, elf[EI_DATA])
 
+static kl_module *mod_options = NULL;
+static kl_module *k_modules = NULL;
+
+static char *elf_getsection(char const *elf, char const *name, size_t *size);
 static char *elf32_getsection(char const *elf, char const *name, size_t *size);
 static char *elf64_getsection(char const *elf, char const *name, size_t *size);
 static void elf2host_(void *dest, void const *src, size_t size, char eidata);
+static char *next_arg(char *arg);
+static int modprobe(char const *name, int lvl);
+static const char *moderror(int err);
+static void module_add(kl_module **list, char const *module, char const *args);
+static kl_module *module_search(kl_module *list, char const *module);
 
 /* Load a section from an ELF binary
  * Calls elf32_getsection() or elf64_getsection() depending on ELF format
 */
-char *elf_getsection(char const *elf, char const *name, size_t *size) {
+static char *elf_getsection(char const *elf, char const *name, size_t *size) {
 	union {
 		uint16_t i;
 		char c[2];
@@ -159,4 +177,212 @@ static void elf2host_(void *dest, void const *src, size_t size, char eidata) {
 	}else{
 		memcpy(dest, src, size);
 	}
+}
+
+/* Load modules.conf */
+void load_modconf(void) {
+	char line[1024], *name, *module, *args;
+	int lnum = 0;
+	
+	FILE *fh = fopen("/boot/modules/modules.conf", "r");
+	if(!fh) {
+		printD(RED, 2, "Can't open /modules/modules.conf: %s", strerror(errno));
+		return;
+	}
+	
+	while(fgets(line, 1024, fh)) {
+		line[strcspn(line, "\r\n")] = '\0';
+		lnum++;
+		
+		name = line+strspn(line, "\r\n\t ");
+		module = next_arg(name);
+		args = next_arg(module);
+		
+		if(name[0] == '#' || name[0] == '\0') {
+			continue;
+		}
+		
+		if(str_eq(name, "options", -1)) {
+			if(module[0] == '\0') {
+				printD(RED, 2, "modules.conf:%u: Usage: options <module> <args>", lnum);
+				continue;
+			}
+			
+			module_add(&mod_options, module, args);
+			continue;
+		}
+		
+		printD(RED, 2, "modules.conf:%u: Unknown directive '%s'", lnum, name);
+	}
+	
+	if(ferror(fh)) {
+		printD(RED, 2, "Can't read /modules/modules.conf: %s", strerror(errno));
+	}
+	
+	fclose(fh);
+}
+
+/* Next argument */
+static char *next_arg(char *arg) {
+	arg += strcspn(arg, "\t ");
+	arg += strspn(arg, "\t ");
+	
+	if(arg[0] != '\0') {
+		arg[0] = '\0';
+		arg++;
+		
+		arg += strspn(arg, "\t ");
+	}
+	
+	return arg;
+}
+
+/* Load a module */
+static int modprobe(char const *name, int lvl) {
+	char *filename = str_printf("/boot/modules/%s.ko", name);
+	gzFile fh = NULL;
+	char *buf = NULL, *args = "";
+	size_t bsize = 64000, rbytes = 0;
+	int retval = 0, fret;
+	kl_module *optptr;
+	
+	if(module_search(k_modules, name)) {
+		goto CLEANUP;
+	}
+	
+	optptr = module_search(mod_options, name);
+	if(optptr) {
+		args = optptr->args;
+	}
+	
+	if(args[0] == '\0') {
+		printd(GREEN, lvl++, "Loading module %s...", name);
+	}else{
+		printd(GREEN, lvl++, "Loading module %s (%s)...", name, args);
+	}
+	
+	if(!(fh = gzopen(filename, "rb"))) {
+		printD(RED, lvl, "Failed to open %s.ko: %s", name, strerror(errno));
+		goto CLEANUP;
+	}
+	
+	while(!gzeof(fh)) {
+		buf = reallocate(buf, bsize);
+		
+		if((fret = gzread(fh, buf+rbytes, 64000)) == -1) {
+			printD(RED, lvl, "Failed to read %s.ko: %s", name, gzerror(fh, &fret));
+			goto CLEANUP;
+		}
+		
+		rbytes += fret;
+		bsize += fret;
+	}
+	
+	size_t secsize, n = 0;
+	char *sec = elf_getsection(buf, ".modinfo", &secsize);
+	
+	while(sec && n < secsize) {
+		if(!str_eq(sec, "depends=", 8)) {
+			n += (strlen(sec)+1);
+			sec += (strlen(sec)+1);
+			continue;
+		}
+		
+		sec += 8;
+		while(sec[0] != '\0') {
+			char *dep = str_copy(NULL, sec, strcspn(sec, ","));
+			
+			if(!module_search(k_modules, dep) && !modprobe(dep, lvl)) {
+				free(dep);
+				goto CLEANUP;
+			}
+			
+			free(dep);
+			sec += (strcspn(sec, ",")+1);
+		}
+		
+		break;
+	}
+	
+	if(syscall(SYS_init_module, buf, rbytes, args) != 0) {
+		if(errno == EEXIST) {
+			goto CLEANUP;
+		}
+		
+		printD(RED, lvl, "Failed to load module '%s': %s", name, moderror(errno));
+		goto CLEANUP;
+	}
+	
+	module_add(&k_modules, name, args);
+	
+	retval = 1;
+	
+	CLEANUP:
+	if(fh && (fret = gzclose(fh)) != Z_OK) {
+		debug("Failed to close '%s': %s\n", filename, gzerror(fh, &fret));
+	}
+	
+	free(filename);
+	free(buf);
+	return retval;
+}
+
+/* Return a module error string */
+static const char *moderror(int err) {
+	switch (err) {
+		case ENOEXEC:
+			return "Invalid module format";
+		case ENOENT:
+			return "Unknown symbol in module";
+		case ESRCH:
+			return "Module has wrong symbol version";
+		case EINVAL:
+			return "Invalid parameters";
+		default:
+			return strerror(err);
+	}
+}
+
+/* Add a node to a kl_module list */
+static void module_add(kl_module **list, char const *module, char const *args) {
+	kl_module *nptr = allocate(sizeof(kl_module));
+	INIT_MODULE(nptr);
+	
+	nptr->module = str_copy(NULL, module, -1);
+	nptr->args = str_copy(NULL, args, -1);
+	
+	nptr->next = *list;
+	*list = nptr;
+}
+
+/* Search a kl_module list */
+static kl_module *module_search(kl_module *list, char const *module) {
+	while(list) {
+		if(str_eq(list->module, module, -1)) {
+			break;
+		}
+		
+		list = list->next;
+	}
+	
+	return list;
+}
+
+/* Load all modules */
+void modprobe_all(void) {
+	DIR *dir = opendir("/boot/modules/");
+	if(!dir) {
+		printD(RED, 2, "Can't open /modules/: %s", strerror(errno));
+		return;
+	}
+	
+	struct dirent *child;
+	while((child = readdir(dir))) {
+		if(globcmp(child->d_name, "*.ko", GLOB_IGNCASE | GLOB_STAR)) {
+			strstr(child->d_name, ".ko")[0] = '\0';
+			modprobe(child->d_name, 2);
+		}
+	}
+	
+	closedir(dir);
 }
