@@ -465,7 +465,7 @@ static void cmd_module(int argc, char **argv) {
 	kl_module *nptr = allocate(sizeof(kl_module));
 	INIT_MODULE(nptr);
 	
-	nptr->module = str_printf("/mnt/target/%s", argv[1]);
+	nptr->module = str_printf("/%s", argv[1]);
 	
 	nptr->next = cons_target.modules;
 	cons_target.modules = nptr;
@@ -514,7 +514,7 @@ static void cmd_initrd(int argc, char **argv) {
 	}
 	
 	free(cons_target.initrd);
-	cons_target.initrd = str_printf("/mnt/target/%s", argv[1]);
+	cons_target.initrd = str_printf("/%s", argv[1]);
 }
 
 /* Change the shell CWD */

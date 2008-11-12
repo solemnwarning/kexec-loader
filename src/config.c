@@ -128,7 +128,7 @@ static void add_module(unsigned int lnum, char const *module) {
 	kl_module *nptr = allocate(sizeof(kl_module));
 	INIT_MODULE(nptr);
 	
-	nptr->module = str_printf("/mnt/target/%s", module);
+	nptr->module = str_printf("/%s", module);
 	nptr->next = target.modules;
 	target.modules = nptr;
 }
@@ -236,7 +236,7 @@ void config_parse(char* line, unsigned int lnum) {
 			return;
 		}
 		
-		str_printf("/mnt/target/%s", value);
+		str_printf("/%s", value);
 		return;
 	}
 	if(str_ceq(name, "append", -1)) {
