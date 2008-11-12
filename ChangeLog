@@ -13,6 +13,11 @@ Version 1.6:
 	
 	Rewrote command parsing code to be more like that of a normal shell,
 	the new parser stores arguments in argv[] and sets argc.
+	
+	Added basic shell commands (cd, ls, find, etc...)
+	
+	Changed module loading behaviour: All files in /modules/ named *.ko are
+	loaded automatically, options may be set in /modules/modules.conf
 
 Version 1.5:
 	Rewrote code which finds the boot disk.
