@@ -39,6 +39,7 @@
 #include <sys/stat.h>
 #include <dirent.h>
 #include <time.h>
+#include <sys/utsname.h>
 
 #include "shell.h"
 #include "console.h"
@@ -49,6 +50,7 @@
 
 #define HISTORY_MAX 32
 #define ARGV_SIZE 128
+#define SHELL_ROOT "/mnt/target"
 
 struct shell_command {
 	char const *name;
@@ -73,6 +75,7 @@ static void cmd_cd(int argc, char **argv);
 static void cmd_ls(int argc, char **argv);
 static void cmd_find(int argc, char **argv);
 static void find_files(char *path, char const *name);
+static void cmd_uname(int argc, char **argv);
 
 static kl_target cons_target = TARGET_DEFAULTS_DEFINE;
 static char *history[HISTORY_MAX], cwd[2048];
@@ -87,6 +90,7 @@ static struct shell_command commands[] = {
 	{"cd", &cmd_cd},
 	{"ls", &cmd_ls},
 	{"find", &cmd_find},
+	{"uname", &cmd_uname},
 	{"append", NULL},
 	{"cmdline", NULL},
 	{"reset-vga", NULL},
@@ -380,7 +384,7 @@ static char *shell_path(char const *spath) {
 	char ptmp[2048], *ptok;
 	int depth = 0, pos, len;
 	
-	strcpy(path, "/mnt/target");
+	strcpy(path, SHELL_ROOT);
 	
 	if(spath[0] != '/') {
 		strlcat(path, cwd, 2048);
@@ -426,8 +430,10 @@ static char *shell_path(char const *spath) {
 
 /* Return a shell path */
 static char *shell_spath(char const *path) {
-	if(str_eq(path, "/mnt/target", 11)) {
-		return (char*)path+11;
+	int rlen = strlen(SHELL_ROOT);
+	
+	if(str_eq(path, SHELL_ROOT, rlen)) {
+		return (char*)path+rlen;
 	}else{
 		return (char*)path;
 	}
@@ -465,7 +471,7 @@ static void cmd_module(int argc, char **argv) {
 	kl_module *nptr = allocate(sizeof(kl_module));
 	INIT_MODULE(nptr);
 	
-	nptr->module = str_printf("/%s", argv[1]);
+	nptr->module = str_printf("/mnt/target/%s", argv[1]);
 	
 	nptr->next = cons_target.modules;
 	cons_target.modules = nptr;
@@ -514,7 +520,7 @@ static void cmd_initrd(int argc, char **argv) {
 	}
 	
 	free(cons_target.initrd);
-	cons_target.initrd = str_printf("/%s", argv[1]);
+	cons_target.initrd = str_printf("/mnt/target/%s", argv[1]);
 }
 
 /* Change the shell CWD */
@@ -528,7 +534,7 @@ static void cmd_cd(int argc, char **argv) {
 		strcpy(cwd, "/");
 	}else{
 		char *path = shell_path(argv[1]);
-		char *spath = path+strlen("/mnt/target");
+		char *spath = shell_spath(argv[1]);
 		strlcat(path, "/", 2048);
 		
 		struct stat stbuf;
@@ -634,4 +640,17 @@ static void find_files(char *path, char const *name) {
 	}
 	
 	closedir(dir);
+}
+
+/* Display kernel information */
+static void cmd_uname(int argc, char **argv) {
+	if(argc != 1) {
+		printf("Usage: uname\n");
+		return;
+	}
+	
+	struct utsname undata;
+	uname(&undata);
+	
+	printf("Linux %s %s\n", undata.release, undata.version);
 }
