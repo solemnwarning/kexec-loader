@@ -33,13 +33,45 @@ color: red;
 <h1>kexec-loader manual</h1>
 <p>Version: 1.6</p>
 <p>&copy; 2008 Daniel Collins<br />&copy; 2008 Philip Kent</p>
+<ul>
+	<li><a href="#s1">1. Compilation</a>
+	<ul>
+		<li><a href="#s1s1">1.1. Introduction</a></li>
+		<li><a href="#s1s2">1.2. New in kexec-loader 1.6</a></li>
+		<li><a href="#s1s3">1.3. Requirements</a></li>
+		<li><a href="#s1s4">1.4. Build Instructions</a></li>
+		<li><a href="#s1s5">1.5. Creating a Disk Image</a></li>
+	</ul>
+	</li>
+	<li><a href="#s2">2. Usage</a>
+	<ul>
+		<li><a href="#s2s1">2.1. Configuration File</a></li>
+		<li><a href="#s2s2">2.2. Using the Menu</a></li>
+		<li><a href="#s2s3">2.3. Built in shell</a></li>
+		<li><a href="#s2s4">2.4. Debug Console</a></li>
+		<li><a href="#s2s5">2.5. Kernel Modules</a></li>
+	</ul>
+	</li>
+	<li><a href="#s3">3. Support</a>
+	<ul>
+		<li><a href="#s3s1">3.1. Website</a></li>
+		<li><a href="#s3s2">3.2. Developer</a></li>
+	</ul>
+	</li>
+</ul>
 
-<h2>1. Compilation</h2>
-<h3>1.1. Introduction</h3>
+<h2><a name="s1">1. Compilation</a></h2>
+<h3><a name="s1s1">1.1. Introduction</a></h3>
 <p>kexec-loader is a boot loader which loads a Linux kernel, then displays a GRUB-like menu so you can select a kernel to boot
 using kexec. It is designed for systems where the BIOS does not support booting from some devices (e.g. your kernel is on a USB memory key which the BIOS does not support).</p>
-<p>If you have downloaded one of the pre-built disk images, you do not need to read the rest of this section, and you can skip to Section 2. A pre-made disk image is probably more suitable to the end user in most cases, as the provided image supports IDE, SATA and USB and is pre-compiled. You can obtain it from the project's webpage.</p>
-<h3>1.2. New in kexec-loader 1.6</h3>
+<p>
+If you have downloaded one of the pre-built disk images, you do not need to read
+the rest of this section, and you can skip to Section 2. A pre-made disk image
+is probably more suitable to the end user in most cases, as the provided image
+supports most hardware and is pre-compiled. You can obtain it from the project's
+webpage, along with kernel modules for that version.
+</p>
+<h3><a name="s1s2">1.2. New in kexec-loader 1.6</a></h3>
 <p>A summary of the new features in this release of kexec-loader is below. For a more detailed changelog, please see the ChangeLog file.</p>
 <ul>
 <li>Upgraded kexec-tools to version 2.0.0</li>
@@ -47,7 +79,7 @@ using kexec. It is designed for systems where the BIOS does not support booting 
 <li>Rewrote shell input code for better line editing</li>
 <li>Changed module loading behaviour</li>
 </ul>
-<h3>1.3. Requirements</h3>
+<h3><a name="s1s3">1.3. Requirements</a></h3>
 <p>To build kexec-loader, you require the following tools.</p>
 <ul>
   <li>gcc C compiler</li>
@@ -62,11 +94,11 @@ using kexec. It is designed for systems where the BIOS does not support booting 
 
 </ul>
 <p>kexec-tools is included and built as part of the build process.</p>
-<h3>1.4. Build Instructions</h3>
+<h3><a name="s1s4">1.4. Build Instructions</a></h3>
 <p>In order to build kexec-loader, you first need a Linux kernel with support for the hardware you want to boot from. This kernel will need fit onto the device that will be used to boot, with sufficient space left for other files that will need to be on the device (such as kexec-loader itself and the boot loader).</p>
 <p>Once you have your kernel, simply run "make" from the root of the kexec-loader source to build the kexec-loader binary. This will include downloading and building kexec-tools. It is recommended that you build a uclibc toolchain prior to this, then building kexec-loader using it, as this will make the resulting file smaller. To use a uclibc toolchain, do "HOST=i386-linux-uclibc make" instead of make.</p>
 <p>Then run mkinitramfs.sh from the root directory of the distribution to build an initramfs containing kexec-loader.</p>
-<h3>1.5. Creating a Disk Image</h3>
+<h3><a name="s1s5">1.5. Creating a Disk Image</a></h3>
 <p>Once you have a kernel and initramfs, you can then build a disk image. There are two ways to assemble the disk, which are below.</p>
 <ol>
 <li>Embed your initramfs inside your kernel (this is what is done by the prebuilt images) using menuconfig. You will have to rebuild your kernel.</li>
@@ -74,8 +106,8 @@ using kexec. It is designed for systems where the BIOS does not support booting 
 <li>Just load it as an initramfs along with your kernel with a boot loader.</li>
 </ol>
 <p>Regardless of the method you choose, you will need a bootloader such as syslinux. Build your image using your favourite method (such as using dd to produce an empty floppy image, formatting it then loop mounting it), put the kernel and initramfs (if any) on the disk, along with any boot loader configuration, install the boot loader and your disk is prepared.</p>
-<h2>2. Usage</h2>
-<h3>2.1. Configuration File</h3>
+<h2><a name="s2">2. Usage</a></h2>
+<h3><a name="s2s1">2.1. Configuration File</a></h3>
 <p>
 kexec-loader uses a simple configuration file to store target kernels and settings.
 If you have downloaded one of the pre-made disk images, a sample configuration
@@ -173,11 +205,11 @@ should be seperated by spaces/tabs, empty lines and lines beginning with a hash
   <li>ISO-9660 (aka CD-ROM)</li>
 </ul>
 <p>Specifying no filesystem or "auto" will result in auto detection. For manual specification, enter the name of any filesystem that your kernel supports.</p>
-<h3>2.2. Using the Menu</h3>
+<h3><a name="s2s2">2.2. Using the Menu</a></h3>
 <p>To navigate the kexec-loader menu, use your arrow keys to select an item and press enter to boot it. A number of functions are available; press L to list the detected devices and their filesystems. Press enter if you are on the device screen or an error and you want to escape.</p>
 <p>Upon asking a kernel to boot, it may take a few seconds for it to load the kernel and switch to it. After switching, your new kernel will start and the boot process will happen as it would normally.</p>
 
-<h3>2.3. Built in shell</h3>
+<h3><a name="s2s3">2.3. Built in shell</a></h3>
 <p>kexec-loader has a built in shell. To access it press "s" on the menu screen. This shell allows </p>
 <p>There are two further directives used to control kexec-loader, rather than set up a kernel to boot. They are:</p>
 <ul>
@@ -222,7 +254,7 @@ should be seperated by spaces/tabs, empty lines and lines beginning with a hash
 </ul>
 <p>To scroll through the command history, use the up and down keys. A maximum of 32 commands are remembered (upon exceeding this, the oldest command will be removed from the history to make space). Commands that are longer than the screen can hold will scroll, similar to the 'nano' text editor. Please note that this shell will be improved in subsequent releases.</p>
 
-<h3>2.4. Debug Console</h3>
+<h3><a name="s2s4">2.4. Debug Console</a></h3>
 <p>
 Once kexec-loader has started all debugging messages, as well as Linux kernel
 messages are sent to a separate debug console. By default the debug console is
@@ -231,7 +263,7 @@ kexec_debug=/dev/ttyS0 writes all debug messages and kernel messages to the
 first serial port.
 </p>
 
-<h3>2.5 Kernel Modules</h3>
+<h3><a name="s2s5">2.5. Kernel Modules</a></h3>
 <p>
 Kernel modules can be loaded by kexec-loader to add support for extra devices or
 filesystems which target systems can be loaded from. To add extra modules, simply
@@ -239,14 +271,24 @@ copy them to /modules/ on the kexec-loader disk, to specify module arguments, us
 the /modules/modules.conf file. Modules loaded this way only affect the kernel
 running kexec-loader, not those loaded by kexec-loader.
 </p>
+<p>
+If you are using an official kexec-loader disk image, kernel modules are
+available on the downloads page of the project site, named somthing like
+modules-XXX.tar.gz, make sure you download the correct modules for your kernel.
+</p>
 
-<h2>3. Support</h2>
-<h3>3.1. Website</h3>
-<p>For information on kexec-loader, including current development and latest releases, please see its website at <a href="http://www.solemnwarning.net">http://www.solemnwarning.net</a>.</p>
+<h2><a name="s3">3. Support</a></h2>
+<h3><a name="s3s1">3.1. Website</a></h3>
+<p>
+For information on kexec-loader, including current development and latest
+releases, please see the project <a href="http://www.solemnwarning.net/kexec-loader/">website</a>.
+</p>
 
-<h3>3.2. Mailing List</h3>
-<p>A mailing is available for kexec-loader, subscription information and archives can be found at <a href="http://www.solemnwarning.net/kexec-loader/list">http://www.solemnwarning.net/kexec-loader/list</a>.</p>
-<h3>3.3. Developer</h3>
-<p>The developer of kexec-loader, Daniel Collins (aka solemnwarning), can often be found on the Freenode IRC network. To contact solemnwarning, you can use the following e-mail address: <em>solemnwarning@solemnwarning.net</em>.</p>
+<h3><a name="s3s2">3.2. Developer</a></h3>
+<p>
+The developer of kexec-loader, Daniel Collins (aka solemnwarning), can often be
+found on the Freenode IRC network. To contact solemnwarning, you can use the
+following e-mail address: <em>solemnwarning@solemnwarning.net</em>.
+</p>
 </body>
 </html>
