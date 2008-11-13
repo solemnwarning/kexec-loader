@@ -39,6 +39,7 @@
 #include <sys/stat.h>
 #include <dirent.h>
 #include <time.h>
+#include <sys/utsname.h>
 
 #include "shell.h"
 #include "console.h"
@@ -74,6 +75,7 @@ static void cmd_cd(int argc, char **argv);
 static void cmd_ls(int argc, char **argv);
 static void cmd_find(int argc, char **argv);
 static void find_files(char *path, char const *name);
+static void cmd_uname(int argc, char **argv);
 
 static kl_target cons_target = TARGET_DEFAULTS_DEFINE;
 static char *history[HISTORY_MAX], cwd[2048];
@@ -88,6 +90,7 @@ static struct shell_command commands[] = {
 	{"cd", &cmd_cd},
 	{"ls", &cmd_ls},
 	{"find", &cmd_find},
+	{"uname", &cmd_uname},
 	{"append", NULL},
 	{"cmdline", NULL},
 	{"reset-vga", NULL},
@@ -637,4 +640,17 @@ static void find_files(char *path, char const *name) {
 	}
 	
 	closedir(dir);
+}
+
+/* Display kernel information */
+static void cmd_uname(int argc, char **argv) {
+	if(argc != 1) {
+		printf("Usage: uname\n");
+		return;
+	}
+	
+	struct utsname undata;
+	uname(&undata);
+	
+	printf("Linux %s %s\n", undata.release, undata.version);
 }
