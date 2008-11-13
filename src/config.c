@@ -236,7 +236,7 @@ void config_parse(char* line, unsigned int lnum) {
 			return;
 		}
 		
-		str_printf("/mnt/target/%s", value);
+		target.initrd = str_printf("/mnt/target/%s", value);
 		return;
 	}
 	if(str_ceq(name, "append", -1)) {
