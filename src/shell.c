@@ -229,22 +229,13 @@ void shell_main(void) {
 			
 			if(argc == 0) {
 				for(n = 0; commands[n].name; n++) {
-					if(str_eq(acbuf, commands[n].name, aclen)) {
-						strlcpy(mbuf, commands[n].name, 1024);
-						strlcat(mbuf, " ", 1024);
-						
-						ac_suggest(mbuf);
-					}
+					snprintf(mbuf, 1024, "%s ", commands[n].name);
+					ac_suggest(mbuf);
 				}
 			}else{
 				char *dpath = shell_path(acbuf);
-				char *fname = "";
-				int fnlen = 0;
 				
 				if(!str_eq(dpath, SHELL_ROOT, -1) && acbuf[aclen-1] != '/') {
-					fname = strrchr(dpath, '/')+1;
-					fnlen = strlen(fname);
-					
 					strrchr(dpath, '/')[0] = '\0';
 				}
 				
@@ -258,28 +249,26 @@ void shell_main(void) {
 				struct stat cinfo;
 				
 				while((child = readdir(dir))) {
-					if(str_eq(child->d_name, fname, fnlen)) {
-						snprintf(mbuf, 1024, "%s/%s", dpath, child->d_name);
-						
-						if(stat(mbuf, &cinfo) == -1) {
-							continue;
-						}
-						
-						if(cinfo.st_mode & S_IFDIR) {
-							snprintf(mbuf, 1024, "%s/", child->d_name);
-						}else{
-							snprintf(mbuf, 1024, "%s ", child->d_name);
-						}
-						
-						ac_suggest(mbuf);
+					snprintf(mbuf, 1024, "%s/%s", dpath, child->d_name);
+					
+					if(stat(mbuf, &cinfo) == -1) {
+						continue;
 					}
+					
+					if(cinfo.st_mode & S_IFDIR) {
+						snprintf(mbuf, 1024, "%s/", child->d_name);
+					}else{
+						snprintf(mbuf, 1024, "%s ", child->d_name);
+					}
+					
+					ac_suggest(mbuf);
 				}
 				
 				closedir(dir);
 				
 				if(strrchr(acbuf, '/')) {
-					aclen = strlen(strrchr(acbuf, '/')+1);
 					accheck = strrchr(acbuf, '/')+1;
+					aclen = strlen(accheck);
 				}
 			}
 			
