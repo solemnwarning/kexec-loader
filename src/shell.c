@@ -51,6 +51,7 @@
 #define HISTORY_MAX 32
 #define ARGV_SIZE 128
 #define SHELL_ROOT "/mnt/target"
+#define ARRAY_STEP 16
 
 struct shell_command {
 	char const *name;
@@ -77,10 +78,13 @@ static void cmd_find(int argc, char **argv);
 static void find_files(char *path, char const *name);
 static void cmd_uname(int argc, char **argv);
 static void cmd_shutdown(int argc, char **argv);
+static void ac_suggest(char const *str);
+static char *ac_finish(char const *exp);
 
 static kl_target cons_target = TARGET_DEFAULTS_DEFINE;
 static char *history[HISTORY_MAX], cwd[2048];
 static int srow, scol;
+static char **ac_list = NULL;
 
 static struct shell_command commands[] = {
 	{"mount", &cmd_mount},
@@ -103,7 +107,7 @@ static struct shell_command commands[] = {
 };
 
 void shell_main(void) {
-	char cmdbuf[1024], acbuf[1024], *acword;
+	char cmdbuf[1024], acbuf[1024], *acword, mbuf[1024];
 	size_t len, offset, aclen;
 	int c, hnum, argc, cnum, n, acc;
 	char *nhist, *argv[ARGV_SIZE];
@@ -223,39 +227,30 @@ void shell_main(void) {
 			if(argc == 0) {
 				for(n = 0; commands[n].name; n++) {
 					if(str_eq(acbuf, commands[n].name, aclen)) {
-						if(acc == 1) {
-							putchar('\n');
-						}
-						if(acc > 1) {
-							putchar(' ');
-						}
-						if(acc++ > 0) {
-							printf("%s", acword);
-						}
+						strlcpy(mbuf, commands[n].name, 1024);
+						strlcat(mbuf, " ", 1024);
 						
-						acword = (char*)commands[n].name;
+						ac_suggest(mbuf);
 					}
 				}
 				
-				if(acc > 1) {
-					putchar(' ');
-					printf("%s", acword);
-					
-					goto REINIT;
-				}else if(acc == 1) {
-					acword += aclen;
-					n = strlen(acword);
+				acword = ac_finish(acbuf);
+				
+				if(acword) {
+					n = strlen(acword)-aclen;
 					
 					if(len+n < 1023) {
 						memmove(cmdbuf+offset+n, cmdbuf+offset, len-offset+1);
-						strncpy(cmdbuf+offset, acword, n);
+						strncpy(cmdbuf+offset, acword+aclen, n);
 						len += n;
 						
-						set_command(cmdbuf, offset);
-						move_cursor((offset = offset+n));
-						ungetc(' ', stdin);
+						offset += n;
 					}
+					
+					goto REINIT;
 				}
+				
+				free(acword);
 			}
 			
 			continue;
@@ -744,4 +739,56 @@ static void cmd_shutdown(int argc, char **argv) {
 	}
 	
 	puts(strerror(errno));
+}
+
+/* Add to the suggestion list */
+static void ac_suggest(char const *str) {
+	int lsize = 0, npos = 0;
+	
+	while(ac_list && ac_list[lsize++]) { npos++; }
+	
+	if(lsize % ARRAY_STEP == 0) {
+		lsize += ARRAY_STEP;
+		ac_list = reallocate(ac_list, lsize * sizeof(char*));
+	}
+	
+	ac_list[npos++] = str_copy(NULL, str, -1);
+	ac_list[npos] = NULL;
+}
+
+/* Search the return list for most complete match and cleanup */
+static char *ac_finish(char const *exp) {
+	char *match = NULL;
+	int pos, mlen, elen = strlen(exp), mcount = 0;
+	
+	for(pos = 0; ac_list && ac_list[pos]; pos++) {
+		if(str_eq(ac_list[pos], exp, elen)) {
+			if(match) {
+				mlen = str_fdiff(match, ac_list[pos], mlen);
+				
+				if(mcount++ == 1) {
+					printf("\n%s", match);
+				}
+				
+				printf(" %s", ac_list[pos]);
+			}else{
+				match = ac_list[pos];
+				mlen = strlen(match);
+				mcount = 1;
+			}
+		}
+	}
+	
+	if(match) {
+		match = str_copy(NULL, match, mlen);
+	}
+	
+	for(pos = 0; ac_list && ac_list[pos]; pos++) {
+		free(ac_list[pos]);
+	}
+	
+	free(ac_list);
+	ac_list = NULL;
+	
+	return match;
 }

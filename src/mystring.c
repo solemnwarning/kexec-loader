@@ -216,3 +216,18 @@ int globcmp(char const *str, char const *expr, int flags, ...) {
 	
 	return 1;
 }
+
+/* Find the first difference */
+int str_fdiff(char const *s1, char const *s2, int max) {
+	int n = 0;
+	
+	while(s1[n] && s2[n] && (n < max || max < 0)) {
+		if(s1[n] != s2[n]) {
+			break;
+		}
+		
+		n++;
+	}
+	
+	return n;
+}

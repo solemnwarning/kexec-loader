@@ -43,5 +43,6 @@ char *str_append(char *dest, char const *src, int max);
 int str_eq(char const *s1, char const *s2, int max);
 int str_ceq(char const *s1, char const *s2, int max);
 int globcmp(char const *str, char const *expr, int flags, ...);
+int str_fdiff(char const *s1, char const *s2, int max);
 
 #endif /* !KEXEC_LOADER_MYSTRING_H */
