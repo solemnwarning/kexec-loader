@@ -109,7 +109,7 @@ static struct shell_command commands[] = {
 };
 
 void shell_main(void) {
-	char cmdbuf[1024], acbuf[1024], *acword, mbuf[1024];
+	char cmdbuf[1024], acbuf[1024], *acword, mbuf[1024], *accheck;
 	size_t len, offset, aclen;
 	int c, hnum, argc, cnum, n, acc;
 	char *nhist, *argv[ARGV_SIZE];
@@ -225,6 +225,7 @@ void shell_main(void) {
 			aclen = offset - (acword-cmdbuf);
 			strlcpy(acbuf, acword, aclen+1);
 			acc = 0;
+			accheck = acbuf;
 			
 			if(argc == 0) {
 				for(n = 0; commands[n].name; n++) {
@@ -235,25 +236,70 @@ void shell_main(void) {
 						ac_suggest(mbuf);
 					}
 				}
+			}else{
+				char *dpath = shell_path(acbuf);
+				char *fname = "";
+				int fnlen = 0;
 				
-				acword = ac_finish(acbuf);
-				
-				if(acword) {
-					n = strlen(acword)-aclen;
+				if(!str_eq(dpath, SHELL_ROOT, -1) && acbuf[aclen-1] != '/') {
+					fname = strrchr(dpath, '/')+1;
+					fnlen = strlen(fname);
 					
-					if(len+n < 1023) {
-						memmove(cmdbuf+offset+n, cmdbuf+offset, len-offset+1);
-						strncpy(cmdbuf+offset, acword+aclen, n);
-						len += n;
-						
-						offset += n;
-					}
-					
-					goto REINIT;
+					strrchr(dpath, '/')[0] = '\0';
 				}
 				
-				free(acword);
+				DIR *dir = opendir(dpath);
+				if(!dir) {
+					debug("Failed diropen: %s\n", strerror(errno));
+					continue;
+				}
+				
+				struct dirent *child;
+				struct stat cinfo;
+				
+				while((child = readdir(dir))) {
+					if(str_eq(child->d_name, fname, fnlen)) {
+						snprintf(mbuf, 1024, "%s/%s", dpath, child->d_name);
+						
+						if(stat(mbuf, &cinfo) == -1) {
+							continue;
+						}
+						
+						if(cinfo.st_mode & S_IFDIR) {
+							snprintf(mbuf, 1024, "%s/", child->d_name);
+						}else{
+							snprintf(mbuf, 1024, "%s ", child->d_name);
+						}
+						
+						ac_suggest(mbuf);
+					}
+				}
+				
+				closedir(dir);
+				
+				if(strrchr(acbuf, '/')) {
+					aclen = strlen(strrchr(acbuf, '/')+1);
+					accheck = strrchr(acbuf, '/')+1;
+				}
 			}
+			
+			acword = ac_finish(accheck);
+			
+			if(acword) {
+				n = strlen(acword)-aclen;
+				
+				if(len+n < 1023) {
+					memmove(cmdbuf+offset+n, cmdbuf+offset, len-offset+1);
+					strncpy(cmdbuf+offset, acword+aclen, n);
+					len += n;
+					
+					offset += n;
+				}
+				
+				goto REINIT;
+			}
+			
+			free(acword);
 			
 			continue;
 		}
