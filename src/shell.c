@@ -76,6 +76,7 @@ static void cmd_ls(int argc, char **argv);
 static void cmd_find(int argc, char **argv);
 static void find_files(char *path, char const *name);
 static void cmd_uname(int argc, char **argv);
+static void cmd_shutdown(int argc, char **argv);
 
 static kl_target cons_target = TARGET_DEFAULTS_DEFINE;
 static char *history[HISTORY_MAX], cwd[2048];
@@ -91,6 +92,8 @@ static struct shell_command commands[] = {
 	{"ls", &cmd_ls},
 	{"find", &cmd_find},
 	{"uname", &cmd_uname},
+	{"reboot", &cmd_shutdown},
+	{"halt", &cmd_shutdown},
 	{"append", NULL},
 	{"cmdline", NULL},
 	{"reset-vga", NULL},
@@ -653,4 +656,31 @@ static void cmd_uname(int argc, char **argv) {
 	uname(&undata);
 	
 	printf("Linux %s %s\n", undata.release, undata.version);
+}
+
+/* Shutdown or reboot */
+static void cmd_shutdown(int argc, char **argv) {
+	if(argc != 1) {
+		printf("Usage: %s\n", argv[0]);
+		return;
+	}
+	
+	unmount_list(cons_target.mounts);
+	sync();
+	
+	if(str_eq(argv[0], "reboot", -1)) {
+		syscall(
+			__NR_reboot,
+			LINUX_REBOOT_MAGIC1, LINUX_REBOOT_MAGIC2,
+			LINUX_REBOOT_CMD_RESTART, NULL
+		);
+	}else{
+		syscall(
+			__NR_reboot,
+			LINUX_REBOOT_MAGIC1, LINUX_REBOOT_MAGIC2,
+			LINUX_REBOOT_CMD_POWER_OFF, NULL
+		);
+	}
+	
+	puts(strerror(errno));
 }
