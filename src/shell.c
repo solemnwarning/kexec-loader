@@ -98,13 +98,14 @@ static struct shell_command commands[] = {
 	{"cmdline", NULL},
 	{"reset-vga", NULL},
 	{"disks", NULL},
+	{"exit", NULL},
 	{NULL, NULL}
 };
 
 void shell_main(void) {
-	char cmdbuf[1024];
-	size_t len, offset;
-	int c, hnum, argc, cnum;
+	char cmdbuf[1024], acbuf[1024], *acword;
+	size_t len, offset, aclen;
+	int c, hnum, argc, cnum, n, acc;
 	char *nhist, *argv[ARGV_SIZE];
 	
 	for(hnum = 0; hnum < HISTORY_MAX; hnum++) {
@@ -122,9 +123,11 @@ void shell_main(void) {
 	offset = 0;
 	hnum = -1;
 	
+	REINIT:
 	printf("\n%s > ", cwd);
-	
 	console_getpos(&srow, &scol);
+	set_command(cmdbuf, 0);
+	move_cursor(offset);
 	
 	while(1) {
 		c = getchar();
@@ -195,6 +198,64 @@ void shell_main(void) {
 			if(c == 52) {
 				getchar();
 				move_cursor(offset = len);
+			}
+			
+			continue;
+		}
+		if(c == '\t') {
+			acword = cmdbuf;
+			argc = 0;
+			
+			for(n = 0; n < offset; n++) {
+				if(cmdbuf[n] == ' ') {
+					acword = cmdbuf+n+1;
+					
+					if(n > 0 && cmdbuf[n-1] != ' ') {
+						argc++;
+					}
+				}
+			}
+			
+			aclen = offset - (acword-cmdbuf);
+			strlcpy(acbuf, acword, aclen+1);
+			acc = 0;
+			
+			if(argc == 0) {
+				for(n = 0; commands[n].name; n++) {
+					if(str_eq(acbuf, commands[n].name, aclen)) {
+						if(acc == 1) {
+							putchar('\n');
+						}
+						if(acc > 1) {
+							putchar(' ');
+						}
+						if(acc++ > 0) {
+							printf("%s", acword);
+						}
+						
+						acword = (char*)commands[n].name;
+					}
+				}
+				
+				if(acc > 1) {
+					putchar(' ');
+					printf("%s", acword);
+					
+					goto REINIT;
+				}else if(acc == 1) {
+					acword += aclen;
+					n = strlen(acword);
+					
+					if(len+n < 1023) {
+						memmove(cmdbuf+offset+n, cmdbuf+offset, len-offset+1);
+						strncpy(cmdbuf+offset, acword, n);
+						len += n;
+						
+						set_command(cmdbuf, offset);
+						move_cursor((offset = offset+n));
+						ungetc(' ', stdin);
+					}
+				}
 			}
 			
 			continue;
