@@ -128,7 +128,7 @@ void shell_main(void) {
 	hnum = -1;
 	
 	REINIT:
-	printf("\n%s > ", cwd);
+	printf("\r%s > ", cwd);
 	console_getpos(&srow, &scol);
 	set_command(cmdbuf, 0);
 	move_cursor(offset);
@@ -779,6 +779,9 @@ static char *ac_finish(char const *exp) {
 		}
 	}
 	
+	if(mcount > 1) {
+		putchar('\n');
+	}
 	if(match) {
 		match = str_copy(NULL, match, mlen);
 	}
