@@ -80,6 +80,7 @@ static void cmd_uname(int argc, char **argv);
 static void cmd_shutdown(int argc, char **argv);
 static void ac_suggest(char const *str);
 static char *ac_finish(char const *exp);
+static void cmd_cat(int argc, char **argv);
 
 static kl_target cons_target = TARGET_DEFAULTS_DEFINE;
 static char *history[HISTORY_MAX], cwd[2048];
@@ -98,6 +99,7 @@ static struct shell_command commands[] = {
 	{"uname", &cmd_uname},
 	{"reboot", &cmd_shutdown},
 	{"halt", &cmd_shutdown},
+	{"cat", &cmd_cat},
 	{"append", NULL},
 	{"cmdline", NULL},
 	{"reset-vga", NULL},
@@ -794,4 +796,35 @@ static char *ac_finish(char const *exp) {
 	ac_list = NULL;
 	
 	return match;
+}
+
+/* Display the contents of a file */
+static void cmd_cat(int argc, char **argv) {
+	if(argc != 2) {
+		printf("Usage: cat <file>\n");
+		return;
+	}
+	
+	char *filename = shell_path(argv[1]);
+	
+	FILE *fh = fopen(filename, "r");
+	if(!fh) {
+		printf("Can't open %s: %s\n", argv[1], strerror(errno));
+		return;
+	}
+	
+	char buf[1024];
+	while(fgets(buf, 1024, fh)) {
+		printf("%s", buf);
+	}
+	
+	if(buf[strlen(buf)-1] != '\n') {
+		putchar('\n');
+	}
+	
+	if(ferror(fh)) {
+		printf("Failed to read %s: %s\n", argv[1], strerror(errno));
+	}
+	
+	fclose(fh);
 }
