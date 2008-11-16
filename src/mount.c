@@ -93,7 +93,7 @@ int mount_boot(void) {
 	
 	while(1) {
 		if(poll(&pevents, 1, 0)) {
-			while(getchar() != EOF) {}
+			getchar();
 			return 0;
 		}
 		

@@ -4,6 +4,9 @@ Version 1.6.1:
 	Added reboot, halt and cat commands to shell.
 	
 	Implemented autocompletion for commands and filenames in the shell.
+	
+	Fixed a bug: pressing a key to stop searching for boot disk no longer
+	results in an infinite loop.
 
 Version 1.6:
 	Replaced unsafe mmap() code in detect_fstype() which crashed on small
