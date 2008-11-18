@@ -62,7 +62,6 @@ int mount_boot(void) {
 		"/dev/sdb",
 		"/dev/sdc",
 		"/dev/sdd",
-		NULL,
 		NULL
 	};
 	
@@ -77,23 +76,16 @@ int mount_boot(void) {
 	printm(GREEN, 1, "Searching for " CONFIG_FILE "...");
 	printm(0, 1, "Press any key to abort");
 	
-	if((devname = get_cmdline("kexec_config"))) {
-		for(devnum = 0; devices[devnum]; devnum++) {}
-		
-		while(devnum > 0) {
-			devices[devnum] = devices[devnum-1];
-			devnum--;
-		}
-		
-		devices[0] = devname;
-	}
+	char *kdevice = get_cmdline("kexec_config");
 	
 	devnum = 0;
-	devname = devices[0];
+	devname = (kdevice ? kdevice : devices[0]);
 	
 	while(1) {
 		if(poll(&pevents, 1, 0)) {
 			getchar();
+			
+			free(kdevice);
 			return 0;
 		}
 		
@@ -104,6 +96,8 @@ int mount_boot(void) {
 		
 		if(access("/boot/" CONFIG_FILE, F_OK) == 0) {
 			printd(GREEN, 2, "Found " CONFIG_FILE " on %s", devname);
+			
+			free(kdevice);
 			return 1;
 		}
 		
@@ -112,14 +106,17 @@ int mount_boot(void) {
 		}
 		
 		ENDLOOP:
-		if(!devices[++devnum]) {
-			sleep(1);
-			devnum = 0;
+		if(!kdevice) {
+			if(!devices[++devnum]) {
+				sleep(1);
+				devnum = 0;
+			}
+			
+			devname = devices[devnum];
 		}
-		
-		devname = devices[devnum];
 	}
 	
+	free(kdevice);
 	return 0;
 }
 

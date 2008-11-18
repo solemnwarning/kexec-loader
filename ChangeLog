@@ -7,6 +7,9 @@ Version 1.6.1:
 	
 	Fixed a bug: pressing a key to stop searching for boot disk no longer
 	results in an infinite loop.
+	
+	Changed behaviour of kexec_config kernel option, it now forces the boot
+	device instead of just adding it to the top of the search list.
 
 Version 1.6:
 	Replaced unsafe mmap() code in detect_fstype() which crashed on small
