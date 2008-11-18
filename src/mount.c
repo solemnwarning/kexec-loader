@@ -113,6 +113,8 @@ int mount_boot(void) {
 			}
 			
 			devname = devices[devnum];
+		}else{
+			sleep(1);
 		}
 	}
 	
