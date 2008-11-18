@@ -76,7 +76,7 @@ int mount_boot(void) {
 	printm(GREEN, 1, "Searching for " CONFIG_FILE "...");
 	printm(0, 1, "Press any key to abort");
 	
-	char *kdevice = get_cmdline("kexec_config");
+	char *kdevice = get_cmdline("kexec_root");
 	
 	devnum = 0;
 	devname = (kdevice ? kdevice : devices[0]);

@@ -70,29 +70,22 @@ The kexec-loader project site has prebuilt disk images available for download, u
 <h2><a name="s2">2. Usage</a></h2>
 <h3><a name="s2s1">2.1. Configuration File</a></h3>
 <p>
-kexec-loader uses a simple configuration file to store target kernels and settings.
-If you have downloaded one of the pre-made disk images, a sample configuration
-is included which might be able to boot a Debian system.
+The configuration for kexec-loader is stored on the boot floppy in a file named /kexec-loader.conf, it must exist, as kexec-loader locates the boot floppy by checking for its presence. The following devices are searched by default:
 </p>
-<p>kexec-loader will attempt to find a configuration in the following places in order:</p>
-<ul>
+<ol style="font-family: monospace;">
 	<li>/dev/fd0</li>
 	<li>/dev/fd1</li>
 	<li>/dev/sda</li>
 	<li>/dev/sdb</li>
 	<li>/dev/scd</li>
 	<li>/dev/sdd</li>
-</ul>
+</ol>
 <p>
-You can insert a device at the beginning of this list by passing kexec_config=/dev/foo
-to the kexec-loader kernel at boot.
+If the kexec-loader boot floppy is not in that list, you can override the default search list by using the kexec_root kernel option, for example: <span style="font-family:monospace;">kexec_root=/dev/hda</span>.
 </p>
 
 <p>
-The configuration must be called kexec-loader.conf and should be stored in the
-root of the kexec-loader boot disk. Configuration directives and their arguments
-should be seperated by spaces/tabs, empty lines and lines beginning with a hash
-(#) are ignored.
+The file contains directives in the form <span style="font-family:monospace;">"&lt;directive&gt; [args]"</span>, directives and argument should be seperated with whitespace, empty lines and lines beginning with a hash (#) are ignored.
 </p>
 <p>The directives are as follows.</p>
 <ul>
