@@ -95,40 +95,50 @@ The file contains directives in the form <span style="font-family:monospace;">"&
 	loaded. If this is omitted, and a grub config file is loaded, it will
 	use the timeout from there (otherwise it will not timeout).
 	</li>
+	
 	<li><b>title &lt;text&gt;</b><br />
 	Title of the entry. This starts an item on the list, and all following
 	directives will be processed as a part of this entry until the next
 	title directive.
 	</li>
+	
 	<li><b>kernel &lt;filename&gt;</b><br />
 	Filename of the kernel in the rootfs (see below).
 	</li>
+	
 	<li><b>initrd &lt;filename&gt;</b><br />
 	As above but for the initrd.
 	</li>
+	
 	<li><b>cmdline &lt;string&gt;</b><br />
 	Set the command line which will be passed to the target kernel.
 	</li>
+	
 	<li><b>append &lt;string&gt;</b><br />
 	Set the kernel command line using --append, this appears to do exactly
 	the same thing as cmdline, but is implemented for completeness.
 	</li>
+	
 	<li><b>rootfs [fstype:]&lt;device&gt;</b><br />
 	Device to mount as / so as to find the kernel and initrd to load.
 	</li>
-	<li><b>mount [fstype:]&lt;device&gt;  &lt;mountpoint&gt;</b><br />
+	
+	<li><b>mount [fstype:]&lt;device&gt; &lt;mountpoint&gt;</b><br />
 	Device to mount at a certain mountpoint. This is not for filesystems to
 	load under the new kernel, just any other filesystems that may be needed
 	to start the new kernel running (e.g. if the initrd is stored on another
 	filesystem).
 	</li>
+	
 	<li><b>default</b><br />
 	Make this kernel the default kernel to boot  if the timeout expires.
 	</li>
+	
 	<li><b>grub_root [fstype:]&lt;device&gt;</b><br />
 	Load menu.lst and device.map from a GRUB installation, GRUB should
 	either be installed to /boot/grub/ or /grub/ on the selected device.
 	</li>
+	
 	<li><b>grub_first &lt;hdx/sdx&gt;</b><br />
 	Default is hdx. If hdx is specified, (hd0) will be hda, then all devices
 	will follow as normal, with sd devices following at the end. If it's
@@ -137,28 +147,19 @@ The file contains directives in the form <span style="font-family:monospace;">"&
 	found:</b> kexec-loader will attempt to load settings from this, before
 	failing back to this directive.
 	</li>
+	
 	<li><b>reset-vga</b><br />
 	Reset the VGA adaptor before starting the kernel, may be useful if you get garbled or no output on bootup.
 	</li>
+	
 	<li><b>module &lt;filename&gt; [&lt;args&gt;]</b><br />
 	Load a multiboot module for the target kernel.
 	</li>
 </ul>
-<p>Where parameters are shown in &lt;angled brackets&gt;, they are required for that directive. Ones in [square brackets] are optional. For mount and rootfs, if you do specify a fstype, it should be specified as ext2:/dev/hda1 for example.</p>
+<p>
+Where parameters are shown in &lt;angled brackets&gt;, they are required for that directive. Ones in [square brackets] are optional. For mount and rootfs, if you do specify a fstype, it should be specified as ext2:/dev/hda1 for example.
+</p>
 
-<p>Normally kexec-loader can detect the filesystem type, it supports autodetection for the following types.</p>
-<ul>
-  <li>ext2</li>
-  <li>ext3</li>
-  <li>XFS</li>
-  <li>reiserfs</li>
-  <li>Minix</li>
-
-  <li>FAT</li>
-  <li>NTFS</li>
-  <li>ISO-9660 (aka CD-ROM)</li>
-</ul>
-<p>Specifying no filesystem or "auto" will result in auto detection. For manual specification, enter the name of any filesystem that your kernel supports.</p>
 <h3><a name="s2s2">2.2. Using the Menu</a></h3>
 <p>To navigate the kexec-loader menu, use your arrow keys to select an item and press enter to boot it. A number of functions are available; press L to list the detected devices and their filesystems. Press enter if you are on the device screen or an error and you want to escape.</p>
 <p>Upon asking a kernel to boot, it may take a few seconds for it to load the kernel and switch to it. After switching, your new kernel will start and the boot process will happen as it would normally.</p>
