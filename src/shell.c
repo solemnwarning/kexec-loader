@@ -78,8 +78,8 @@ static void cmd_find(int argc, char **argv);
 static void find_files(char *path, char const *name);
 static void cmd_uname(int argc, char **argv);
 static void cmd_shutdown(int argc, char **argv);
-static void ac_suggest(char const *str);
-static char *ac_finish(char const *exp);
+static void ac_suggest(char const *str, char const *sofar);
+static char *ac_finish(void);
 static void cmd_cat(int argc, char **argv);
 
 static kl_target cons_target = TARGET_DEFAULTS_DEFINE;
@@ -109,7 +109,7 @@ static struct shell_command commands[] = {
 };
 
 void shell_main(void) {
-	char cmdbuf[1024], acbuf[1024], *acword, mbuf[1024], *accheck;
+	char cmdbuf[1024], acbuf[1024], *acword, mbuf[1024];
 	size_t len, offset, aclen;
 	int c, hnum, argc, cnum, n, acc;
 	char *nhist, *argv[ARGV_SIZE];
@@ -225,18 +225,23 @@ void shell_main(void) {
 			aclen = offset - (acword-cmdbuf);
 			strlcpy(acbuf, acword, aclen+1);
 			acc = 0;
-			accheck = acbuf;
 			
 			if(argc == 0) {
 				for(n = 0; commands[n].name; n++) {
 					snprintf(mbuf, 1024, "%s ", commands[n].name);
-					ac_suggest(mbuf);
+					ac_suggest(mbuf, acbuf);
 				}
 			}else{
 				char *dpath = shell_path(acbuf);
+				char *fnode = acbuf;
 				
 				if(!str_eq(dpath, SHELL_ROOT, -1) && acbuf[aclen-1] != '/') {
 					strrchr(dpath, '/')[0] = '\0';
+				}
+				
+				if(strrchr(fnode, '/')) {
+					fnode = strrchr(fnode, '/')+1;
+					aclen = strlen(fnode);
 				}
 				
 				DIR *dir = opendir(dpath);
@@ -261,18 +266,13 @@ void shell_main(void) {
 						snprintf(mbuf, 1024, "%s ", child->d_name);
 					}
 					
-					ac_suggest(mbuf);
+					ac_suggest(mbuf, fnode);
 				}
 				
 				closedir(dir);
-				
-				if(strrchr(acbuf, '/')) {
-					accheck = strrchr(acbuf, '/')+1;
-					aclen = strlen(accheck);
-				}
 			}
 			
-			acword = ac_finish(accheck);
+			acword = ac_finish();
 			
 			if(acword) {
 				n = strlen(acword)-aclen;
@@ -779,8 +779,12 @@ static void cmd_shutdown(int argc, char **argv) {
 }
 
 /* Add to the suggestion list */
-static void ac_suggest(char const *str) {
+static void ac_suggest(char const *str, char const *sofar) {
 	int lsize = 0, npos = 0;
+	
+	if(!str_eq(str, sofar, strlen(sofar))) {
+		return;
+	}
 	
 	while(ac_list && ac_list[lsize++]) { npos++; }
 	
@@ -793,33 +797,30 @@ static void ac_suggest(char const *str) {
 	ac_list[npos] = NULL;
 }
 
-/* Search the return list for most complete match and cleanup */
-static char *ac_finish(char const *exp) {
+/* Return the best match from the autocomplete list */
+static char *ac_finish(void) {
 	char *match = NULL;
-	int pos, mlen, elen = strlen(exp), mcount = 0;
+	int pos, mlen;
 	
 	for(pos = 0; ac_list && ac_list[pos]; pos++) {
-		if(str_eq(ac_list[pos], exp, elen)) {
-			if(match) {
-				mlen = str_fdiff(match, ac_list[pos], mlen);
-				
-				if(mcount++ == 1) {
-					printf("\n%s", match);
-				}
-				
-				printf(" %s", ac_list[pos]);
-			}else{
-				match = ac_list[pos];
-				mlen = strlen(match);
-				mcount = 1;
+		if(pos == 0) {
+			match = ac_list[0];
+			mlen = strlen(match);
+		}else{
+			mlen = str_fdiff(match, ac_list[pos], mlen);
+			
+			if(pos == 1) {
+				printf("\n%s", match);
 			}
+			
+			printf(" %s", ac_list[pos]);
 		}
 	}
 	
-	if(mcount > 1) {
+	if(pos > 1) {
 		putchar('\n');
 	}
-	if(match) {
+	if(match && mlen > 0) {
 		match = str_copy(NULL, match, mlen);
 	}
 	
