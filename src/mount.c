@@ -350,7 +350,7 @@ int check_device(char const *device) {
 */
 char const *mount_dev(char const *idev, char const *mpoint) {
 	char *fstype = NULL, fsbuf[16];
-	char *errmsg = NULL, *device = (char*)idev;
+	char *errmsg = NULL, *device = (char*)idev, *freeme = NULL;
 	size_t fslen;
 	
 	if(strchr(device, ':')) {
@@ -364,15 +364,16 @@ char const *mount_dev(char const *idev, char const *mpoint) {
 	}
 	
 	if(device[0] == '(') {
-		device = grub_cdevice(device);
+		freeme = device = grub_cdevice(device);
 		
 		if(!device) {
 			errmsg = "Unknown GRUB device";
 			goto END;
 		}
 	}
+	
 	if(device[0] != '/') {
-		device = str_printf("/dev/%s", device);
+		freeme = device = str_printf("/dev/%s", device);
 	}
 	
 	if(!check_device(device)) {
@@ -400,9 +401,7 @@ char const *mount_dev(char const *idev, char const *mpoint) {
 	}
 	
 	END:
-	if(device != idev) {
-		free(device);
-	}
+	free(freeme);
 	return errmsg;
 }
 
