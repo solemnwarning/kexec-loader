@@ -48,6 +48,9 @@ static int alert = 0;
 int fgcolour = CONS_WHITE;
 int bgcolour = CONS_BLACK;
 
+int term_cols = -1;
+int term_rows = -1;
+
 /* Initialize console(s) */
 void console_init(void) {
 	debug("Disabling printk() to console...\n");
@@ -73,12 +76,9 @@ void console_init(void) {
 		fatal("Can't set stdin attributes: %s", strerror(errno));
 	}
 	
-	if(setvbuf(stdout, NULL, _IONBF, 0) != 0) {
-		debug("Can't set stdout buffer: %s\n", strerror(errno));
-	}
-	if(setvbuf(stderr, NULL, _IONBF, 0) != 0) {
-		debug("Can't set stderr buffer: %s\n", strerror(errno));
-	}
+	setvbuf(stdin, NULL, _IONBF, 0);
+	setvbuf(stdout, NULL, _IONBF, 0);
+	setvbuf(stderr, NULL, _IONBF, 0);
 }
 
 /* Set cursor position */
@@ -151,15 +151,21 @@ void console_attrib(int attrib) {
 }
 
 /* Get size of console */
-void console_getsize(int* rows, int* cols) {
-	struct winsize cons_size;
-	if(ioctl(fileno(stdout), TIOCGWINSZ, &cons_size) == -1) {
-		debug("Can't ioctl(TIOCGWINSZ): %s\n", strerror(errno));
-		return;
+void console_getsize(int* cols_p, int* rows_p) {
+	int old = -1, rows, cols;
+	
+	term_getpos(&cols, &rows);
+	
+	while(rows+cols != old) {
+		printf("%c[99C", 0x1B);
+		printf("%c[99B", 0x1B);
+		
+		old = rows+cols;
+		term_getpos(&cols, &rows);
 	}
 	
-	*rows = (cons_size.ws_row ? cons_size.ws_row : 24);
-	*cols = (cons_size.ws_col ? cons_size.ws_col : 80);
+	if(cols_p) { *cols_p = cols+1; }
+	if(rows_p) { *rows_p = rows+1; }
 }
 
 /* Erase the current line */
@@ -170,6 +176,54 @@ void console_eline(char const* mode) {
 /* Move the cursor back N columns */
 void console_cback(int n) {
 	printf("%c[%dD", 0x1B, n);
+}
+
+/* Fetch the cursor position
+ * rptr and/or cptr may be NULL if they are not required
+*/
+void term_getpos(int *cptr, int *rptr) {
+	char inbuf[256], c;
+	int insize = 0, row, col;
+	
+	printf("%c[6n", 0x1B);
+	
+	while(1) {
+		c = getchar();
+		
+		if(c == 0x1B) {
+			if((c = getchar()) == '[') {
+				break;
+			}
+			
+			INBUF_APPEND(0x1B);
+		}
+		
+		INBUF_APPEND(c);
+	}
+	
+	scanf("%d;%dR", &row, &col);
+	
+	if(rptr) { *rptr = row - 1; }
+	if(cptr) { *cptr = col - 1; }
+	
+	while(insize > 0) {
+		ungetc(inbuf[--insize], stdin);
+	}
+}
+
+/* Set cursor position */
+void term_setpos(int col, int row) {
+	printf("%c[%d;%dH", 0x1B, row+1, col+1);
+}
+
+/* Erase part of the terminal  display */
+void term_erase(char const *mode) {
+	int col, row;
+	term_getpos(&col, &row);
+	
+	printf("%c[%s", 0x1B, mode);
+	
+	term_setpos(col, row);
 }
 
 /* Print output */

@@ -59,6 +59,14 @@
 #define ELINE_TOSTART	"1"
 #define ELINE_ALL	"2"
 
+/* Erase modes */
+#define ERASE_EOL	"K"
+#define ERASE_SOL	"1K"
+#define ERASE_LINE	"2K"
+#define ERASE_DOWN	"J"
+#define ERASE_UP	"1J"
+#define ERASE_ALL	"2J"
+
 /* Flags for print2() */
 #define P2_DEBUG	(1<<0)
 #define P2_ALERT	(1<<1)
@@ -70,6 +78,8 @@
 
 extern int fgcolour;
 extern int bgcolour;
+extern int term_cols;
+extern int term_rows;
 
 void console_init(void);
 void console_setpos(int row, int column);
@@ -78,9 +88,13 @@ void console_clear(void);
 void console_fgcolour(int colour);
 void console_bgcolour(int colour);
 void console_attrib(int attrib);
-void console_getsize(int* rows, int* cols);
+void console_getsize(int* cols_p, int* rows_p);
 void console_eline(char const* mode);
 void console_cback(int n);
+
+void term_getpos(int *cptr, int *rptr);
+void term_setpos(int col, int row);
+void term_erase(char const *mode);
 
 void print2(int flags, int fgcolour, int level, char const *fmt, ...);
 

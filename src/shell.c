@@ -61,11 +61,14 @@ struct shell_command {
 extern int rows, cols;
 
 void list_devices(void);
-static void set_command(char const *cmd, int offset);
-static void move_cursor(int offset);
-static void parse_command(char *cmd, int *argc, char **argv);
 static char *shell_path(char const *spath);
 static char *shell_spath(char const *path);
+static char *read_cmd(char **history);
+static void erase_input(int offset, int len);
+static void replace_input(char const *cmd, int offset);
+static void set_cursor(int offset);
+static char *parse_arg(char const *arg, int single, char **next);
+static void parse_cmdline(char *cmdline, int *argc, char ***argv, char **args);
 
 static void cmd_mount(int argc, char **argv);
 static void cmd_module(int argc, char **argv);
@@ -83,7 +86,7 @@ static char *ac_finish(void);
 static void cmd_cat(int argc, char **argv);
 
 static kl_target cons_target = TARGET_DEFAULTS_DEFINE;
-static char *history[HISTORY_MAX], cwd[2048];
+static char cwd[2048];
 static int srow, scol;
 static char **ac_list = NULL;
 
@@ -108,11 +111,23 @@ static struct shell_command commands[] = {
 	{NULL, NULL}
 };
 
-void shell_main(void) {
-	char cmdbuf[1024], acbuf[1024], *acword, mbuf[1024];
-	size_t len, offset, aclen;
-	int c, hnum, argc, cnum, n, acc;
-	char *nhist, *argv[ARGV_SIZE];
+#define SMAIN_CLEANUP() \
+	for(i = 0; i < argc; i++) { \
+		free(argv[i]); \
+	} \
+	free(command); \
+	free(argv); \
+	free(args); \
+	command = NULL; \
+	argv = NULL; \
+	args = NULL;
+
+void shell_main(void) {;
+	int hnum, cnum;
+	char *command = NULL, **argv = NULL, *args = NULL;
+	int argc = 0, i;
+	
+	char *history[HISTORY_MAX];
 	
 	for(hnum = 0; hnum < HISTORY_MAX; hnum++) {
 		history[hnum] = NULL;
@@ -123,203 +138,24 @@ void shell_main(void) {
 	
 	strcpy(cwd, "/");
 	
-	READLINE:
-	cmdbuf[0] = '\0';
-	len = 0;
-	offset = 0;
-	hnum = -1;
-	
-	REINIT:
+	INPUT:
+	SMAIN_CLEANUP();
 	printf("\r%s > ", cwd);
-	console_getpos(&srow, &scol);
-	set_command(cmdbuf, 0);
-	move_cursor(offset);
 	
-	while(1) {
-		c = getchar();
-		
-		if(c == '\n') {
-			putchar('\n');
-			break;
-		}
-		if(c == 0x7F) {
-			/* 0x7F == DEL (Backspace) */
-			
-			if(offset > 0) {
-				memmove(cmdbuf+offset-1, cmdbuf+offset, len-offset+1);
-				set_command(cmdbuf, --offset);
-				move_cursor(offset);
-				
-				len--;
-			}
-			
-			continue;
-		}
-		if(c == 0x1B) {
-			if((c = getchar()) != '[') {
-				ungetc(c, stdin);
-				continue;
-			}
-			
-			c = getchar();
-			
-			if(c == 65 && (hnum+1) < HISTORY_MAX && history[hnum+1]) {
-				strcpy(cmdbuf, history[++hnum]);
-				offset = len = strlen(cmdbuf);
-				
-				set_command(cmdbuf, 0);
-			}
-			if(c == 66 && hnum >= 0) {
-				if(--hnum == -1) {
-					cmdbuf[0] = '\0';
-					offset = len = 0;
-				}else{
-					strcpy(cmdbuf, history[hnum]);
-					offset = len = strlen(cmdbuf);
-				}
-				
-				set_command(cmdbuf, 0);
-			}
-			if(c == 68 && offset > 0) {
-				move_cursor(--offset);
-			}
-			if(c == 67 && len - offset > 0) {
-				move_cursor(++offset);
-			}
-			if(c == 51) {
-				getchar();
-				
-				if(len - offset > 0) {
-					memmove(cmdbuf+offset, cmdbuf+offset+1, len-offset);
-					set_command(cmdbuf, offset);
-					move_cursor(offset);
-					
-					len--;
-				}
-			}
-			if(c == 49) {
-				getchar();
-				move_cursor(offset = 0);
-			}
-			if(c == 52) {
-				getchar();
-				move_cursor(offset = len);
-			}
-			
-			continue;
-		}
-		if(c == '\t') {
-			acword = cmdbuf;
-			argc = 0;
-			
-			for(n = 0; n < offset; n++) {
-				if(cmdbuf[n] == ' ') {
-					acword = cmdbuf+n+1;
-					
-					if(n > 0 && cmdbuf[n-1] != ' ') {
-						argc++;
-					}
-				}
-			}
-			
-			aclen = offset - (acword-cmdbuf);
-			strlcpy(acbuf, acword, aclen+1);
-			acc = 0;
-			
-			if(argc == 0) {
-				for(n = 0; commands[n].name; n++) {
-					snprintf(mbuf, 1024, "%s ", commands[n].name);
-					ac_suggest(mbuf, acbuf);
-				}
-			}else{
-				char *dpath = shell_path(acbuf);
-				char *fnode = acbuf;
-				
-				if(!str_eq(dpath, SHELL_ROOT, -1) && acbuf[aclen-1] != '/') {
-					strrchr(dpath, '/')[0] = '\0';
-				}
-				
-				if(strrchr(fnode, '/')) {
-					fnode = strrchr(fnode, '/')+1;
-					aclen = strlen(fnode);
-				}
-				
-				DIR *dir = opendir(dpath);
-				if(!dir) {
-					debug("Failed diropen: %s\n", strerror(errno));
-					continue;
-				}
-				
-				struct dirent *child;
-				struct stat cinfo;
-				
-				while((child = readdir(dir))) {
-					snprintf(mbuf, 1024, "%s/%s", dpath, child->d_name);
-					
-					if(stat(mbuf, &cinfo) == -1) {
-						continue;
-					}
-					
-					if(cinfo.st_mode & S_IFDIR) {
-						snprintf(mbuf, 1024, "%s/", child->d_name);
-					}else{
-						snprintf(mbuf, 1024, "%s ", child->d_name);
-					}
-					
-					ac_suggest(mbuf, fnode);
-				}
-				
-				closedir(dir);
-			}
-			
-			acword = ac_finish();
-			
-			if(acword) {
-				n = strlen(acword)-aclen;
-				
-				if(len+n < 1023) {
-					memmove(cmdbuf+offset+n, cmdbuf+offset, len-offset+1);
-					strncpy(cmdbuf+offset, acword+aclen, n);
-					len += n;
-					
-					offset += n;
-				}
-				
-				goto REINIT;
-			}
-			
-			free(acword);
-			
-			continue;
-		}
-		
-		if(len < 1023) {
-			memmove(cmdbuf+offset+1, cmdbuf+offset, len-offset+1);
-			cmdbuf[offset] = c;
-			len++;
-			
-			set_command(cmdbuf, offset++);
-			move_cursor(offset);
-		}
+	command = read_cmd((char**)&history);
+	
+	parse_cmdline(command, &argc, &argv, &args);
+	
+	debug("command = '%s'\n", command);
+	debug("args = '%s'\n", args);
+	debug("argc = %d\n", argc);
+	
+	for(i = 0; i < argc; i++) {
+		debug("argv[%d] = '%s'\n", i, argv[i]);
 	}
-	
-	if(len > 0 && (history[0] == NULL || !str_eq(history[0], cmdbuf, -1))) {
-		nhist = str_copy(NULL, cmdbuf, -1);
-		free(history[HISTORY_MAX-1]);
-		
-		for(hnum = (HISTORY_MAX-1); hnum > 0; hnum--) {
-			if(history[hnum-1]) {
-				history[hnum] = history[hnum-1];
-			}
-		}
-		
-		history[0] = nhist;
-	}
-	
-	parse_command(cmdbuf, &argc, argv);
 	
 	if(argc == 0) {
-		goto READLINE;
+		goto INPUT;
 	}
 	
 	if(str_eq(argv[0], "exit", -1)) {
@@ -342,12 +178,12 @@ void shell_main(void) {
 		}
 		
 		putchar('\n');
-		goto READLINE;
+		goto INPUT;
 	}
 	
 	if(str_eq(argv[0], "disks", -1)) {
 		list_devices();
-		goto READLINE;
+		goto INPUT;
 	}
 	
 	if(str_eq(argv[0], "append", -1)) {
@@ -357,7 +193,7 @@ void shell_main(void) {
 			cons_target.append = NULL;
 		}
 		
-		goto READLINE;
+		goto INPUT;
 	}
 	if(str_eq(argv[0], "cmdline", -1)) {
 		if(argc > 1) {
@@ -366,110 +202,22 @@ void shell_main(void) {
 			cons_target.cmdline = NULL;
 		}
 		
-		goto READLINE;
+		goto INPUT;
 	}
 	if(str_eq(argv[0], "reset-vga", -1)) {
 		cons_target.flags |= TARGET_RESET_VGA;
-		goto READLINE;
+		goto INPUT;
 	}
 	
 	for(cnum = 0; commands[cnum].func; cnum++) {
 		if(str_eq(commands[cnum].name, argv[0], -1)) {
 			commands[cnum].func(argc, argv);
-			goto READLINE;
+			goto INPUT;
 		}
 	}
 	
 	printf("Unknown command: %s\n", argv[0]);
-	goto READLINE;
-}
-
-/* Replace the command which is displayed on the terminal */
-static void set_command(char const *cmd, int offset) {
-	int len = strlen(cmd), erows;
-	
-	int row = srow + (((scol-1) + offset) / cols);
-	int col = (scol + offset) % cols;
-	int erow = srow + (((scol-1) + len) / cols);
-	
-	while(erow > row) {
-		console_setpos(erow, 0);
-		console_eline(ELINE_ALL);
-	}
-	
-	console_setpos(row, col);
-	console_eline(ELINE_TOEND);
-	
-	printf("%s", cmd+offset);
-	
-	erows = ((col-1) + (len-offset)) / cols;
-	
-	if(rows - srow < erows) {
-		srow -= (erows - (rows - srow));
-	}
-	
-	if(((col-1) + (len-offset)) % cols == 0) {
-		putchar('\n');
-	}
-}
-
-/* Move the terminal cursor to the correct offset */
-static void move_cursor(int offset) {
-	int row = srow + (((scol-1) + offset) / cols);
-	int col = (scol + offset) % cols;
-	
-	console_setpos(row, col);
-}
-
-/* Parse a command */
-static void parse_command(char *cmd, int *argc, char **argv) {
-	cmd += strspn(cmd, " ");
-	*argc = 0;
-	
-	int pos, len = strlen(cmd), quoted;
-	
-	while(cmd[0] != '\0') {
-		argv[*argc] = cmd;
-		pos = 0;
-		quoted = 0;
-		
-		while(cmd[pos] != '\0') {
-			if(cmd[pos] == '"') {
-				quoted = 1 & ~quoted;
-				
-				memmove(cmd+pos, cmd+pos+1, len-pos);
-				len--;
-				
-				continue;
-			}
-			if(cmd[pos] == ' ' && !quoted) {
-				break;
-			}
-			
-			if(cmd[pos] == '\\') {
-				memmove(cmd+pos, cmd+pos+1, len-pos);
-				len--;
-			}
-			
-			pos++;
-		}
-		
-		cmd += pos;
-		len -= pos;
-		
-		if(++(*argc) == ARGV_SIZE-1) {
-			break;
-		}
-		
-		if(cmd[0] != '\0') {
-			cmd[0] = '\0';
-			cmd++;
-			
-			cmd += strspn(cmd, " ");
-		}
-	}
-	
-	argv[*argc] = NULL;
+	goto INPUT;
 }
 
 /* Convert a shell path to a complete path
@@ -532,6 +280,228 @@ static char *shell_spath(char const *path) {
 		return (char*)path+rlen;
 	}else{
 		return (char*)path;
+	}
+}
+
+static char *read_cmd(char **history) {
+	char *cmdbuf = str_copy(NULL, "", -1);
+	int cmdsize = 1, cmdlen = 0, c, offset = 0, i, hnum = -1;
+	
+	term_getpos(&scol, &srow);
+	
+	while(1) {
+		c = getchar();
+		
+		if(c == '\n') {
+			putchar('\n');
+			break;
+		}
+		if(c == 0x7F) {
+			/* 0x7F == DEL (Backspace??) */
+			
+			if(offset > 0) {
+				memmove(cmdbuf+offset-1, cmdbuf+offset, cmdlen--);
+				erase_input(--offset, 1);
+				replace_input(cmdbuf, offset);
+				set_cursor(offset);
+			}
+			
+			continue;
+		}
+		if(c == 0x1B) {
+			if((c = getchar()) != '[') {
+				ungetc(c, stdin);
+				continue;
+			}
+			
+			c = getchar();
+			
+			if(c == 0x44 && offset > 0) {
+				/* Left arrow */
+				set_cursor(--offset);
+			}
+			if(c == 0x43 && cmdlen - offset > 0) {
+				/* Right arrow */
+				set_cursor(++offset);
+			}
+			if(c == 0x31) {
+				/* Home */
+				
+				getchar();
+				set_cursor(offset = 0);
+			}
+			if(c == 0x34) {
+				/* End */
+				
+				getchar();
+				set_cursor(offset = cmdlen);
+			}
+			
+			if(c == 0x41 && hnum+1 < HISTORY_MAX && history[hnum+1]) {
+				/* Up arrow */
+				
+				erase_input(0, cmdlen);
+				
+				str_copy(&cmdbuf, history[++hnum], -1);
+				offset = cmdlen = strlen(cmdbuf);
+				cmdsize = cmdlen+1;
+				
+				replace_input(cmdbuf, 0);
+			}
+			if(c == 0x42 && hnum >= 0) {
+				/* Down arrow */
+				
+				erase_input(0, cmdlen);
+				
+				if(--hnum == -1) {
+					cmdbuf[0] = '\0';
+					offset = cmdlen = 0;
+				}else{
+					str_copy(&cmdbuf, history[hnum], -1);
+					offset = cmdlen = strlen(cmdbuf);
+					cmdsize = cmdlen+1;
+				}
+				
+				replace_input(cmdbuf, 0);
+			}
+			
+			continue;
+		}
+		if(c == '\t') {
+			continue;
+		}
+		
+		if(cmdlen+2 > cmdsize) {
+			cmdbuf = reallocate(cmdbuf, cmdsize += 256);
+		}
+		
+		memmove(cmdbuf+offset+1, cmdbuf+offset, cmdlen-offset);
+		cmdbuf[offset] = c;
+		cmdbuf[++cmdlen] = '\0';
+		
+		replace_input(cmdbuf, offset);
+		set_cursor(++offset);
+	}
+	
+	if(cmdbuf+strspn(cmdbuf, " ") != '\0') {
+		free(history[HISTORY_MAX-1]);
+		
+		for(i = HISTORY_MAX-1; i > 0; i--) {
+			history[i] = history[i-1];
+		}
+		
+		history[0] = str_copy(NULL, cmdbuf, -1);
+	}
+	
+	return cmdbuf;
+}
+
+/* Erase len bytes at offset from the display */
+static void erase_input(int offset, int len) {
+	int row = srow + ((scol + offset) / term_cols);
+	int col = (scol + offset) % term_cols;
+	
+	int erow = row + ((col + len) / term_cols);
+	
+	while(erow > row) {
+		term_setpos(0, erow);
+		term_erase(ERASE_LINE);
+		
+		erow--;
+	}
+	
+	term_setpos(col, row);
+	term_erase(ERASE_EOL);
+}
+
+/* Overwrite text on the display */
+static void replace_input(char const *cmd, int offset) {
+	int row = srow + ((scol + offset) / term_cols);
+	int col = (scol + offset) % term_cols;
+	
+	int nrows = row + ((col + strlen(cmd+offset)) / term_cols) + 1;
+	
+	while(nrows > term_rows) {
+		putchar('\n');
+		srow--;
+		row--;
+		nrows--;
+	}
+	
+	term_setpos(col, row);
+	
+	fputs(cmd+offset, stdout);
+}
+
+/* Move the cursor to the correct offset */
+static void set_cursor(int offset) {
+	int row = srow + ((scol + offset) / term_cols);
+	int col = (scol + offset) % term_cols;
+	
+	term_setpos(col, row);
+}
+
+/* Parse one or more arguments */
+static char *parse_arg(char const *arg, int single, char **next) {
+	int i, len = 0, q = 0;
+	
+	for(i = 0; arg[i]; i++) {
+		if(arg[i] == ' ' && single && !q) {
+			break;
+		}
+		if(arg[i] == '\"') {
+			q = ~q;
+			continue;
+		}
+		if(arg[i] == '\\') {
+			i++;
+		}
+		
+		len++;
+	}
+	
+	char *ret = allocate(len+1);
+	len = 0, q = 0;
+	
+	for(i = 0; arg[i]; i++) {
+		if(arg[i] == ' ' && single && !q) {
+			break;
+		}
+		if(arg[i] == '\"') {
+			q = ~q;
+			continue;
+		}
+		if(arg[i] == '\\') {
+			i++;
+		}
+		
+		ret[len++] = arg[i];
+	}
+	
+	if(next) {
+		*next = (char*)(arg + i + strspn(arg+i, " "));
+	}
+	
+	ret[len] = '\0';
+	return ret;
+}
+
+/* Parse a command */
+static void parse_cmdline(char *cmdline, int *argc, char ***argv, char **args) {
+	*argc = 0;
+	*argv = allocate(sizeof(char*));
+	*argv[0] = NULL;
+	
+	cmdline += strspn(cmdline, " ");
+	
+	while(cmdline[0]) {
+		*argv = reallocate(*argv, sizeof(char*) * ((*argc) + 2));
+		(*argv)[(*argc)++] = parse_arg(cmdline, 1, &cmdline);
+		(*argv)[*argc] = NULL;
+		
+		if(*argc == 1) {
+			*args = parse_arg(cmdline, 0, NULL);
+		}
 	}
 }
 
