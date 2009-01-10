@@ -54,11 +54,6 @@
 #define CONS_INVERT	7
 #define CONS_HIDDEN	8
 
-/* Erase line modes */
-#define ELINE_TOEND	""
-#define ELINE_TOSTART	"1"
-#define ELINE_ALL	"2"
-
 /* Erase modes */
 #define ERASE_EOL	"K"
 #define ERASE_SOL	"1K"
@@ -89,8 +84,6 @@ void console_fgcolour(int colour);
 void console_bgcolour(int colour);
 void console_attrib(int attrib);
 void console_getsize(int* cols_p, int* rows_p);
-void console_eline(char const* mode);
-void console_cback(int n);
 
 void term_getpos(int *cptr, int *rptr);
 void term_setpos(int col, int row);

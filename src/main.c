@@ -149,7 +149,7 @@ static void main_menu(void) {
 		
 		for(rnum = srow; rnum <= erow; rnum++) {
 			console_setpos(rnum, ecol);
-			console_eline(ELINE_TOSTART);
+			term_erase(ERASE_SOL);
 			
 			console_setpos(rnum, 1);
 			printf("| ");
@@ -196,7 +196,7 @@ static void main_menu(void) {
 		MENU_INPUT:
 		
 		console_setpos(rows-3, cols-13);
-		console_eline(ELINE_ALL);
+		term_erase(ERASE_LINE);
 		
 		if(tremain) {
 			printf("Timeout: %u", tremain);

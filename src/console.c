@@ -168,16 +168,6 @@ void console_getsize(int* cols_p, int* rows_p) {
 	if(rows_p) { *rows_p = rows+1; }
 }
 
-/* Erase the current line */
-void console_eline(char const* mode) {
-	printf("%c[%sK", 0x1B, mode);
-}
-
-/* Move the cursor back N columns */
-void console_cback(int n) {
-	printf("%c[%dD", 0x1B, n);
-}
-
 /* Fetch the cursor position
  * rptr and/or cptr may be NULL if they are not required
 */
