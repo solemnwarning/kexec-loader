@@ -67,7 +67,7 @@ int main(int argc, char** argv) {
 		fatal("Can't mount /proc filesystem: %s", strerror(errno));
 	}
 	
-	//kmsg_monitor();
+	kmsg_monitor();
 	console_init();
 	
 	console_getsize(&cols, &rows);

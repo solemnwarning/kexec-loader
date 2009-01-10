@@ -55,6 +55,8 @@
 
 struct shell_command {
 	char const *name;
+	char const *help;
+	
 	void (*func)(int, char**);
 };
 
@@ -79,7 +81,6 @@ static void cmd_cd(int argc, char **argv);
 static void cmd_ls(int argc, char **argv);
 static void cmd_find(int argc, char **argv);
 static void find_files(char *path, char const *name);
-static void cmd_uname(int argc, char **argv);
 static void cmd_shutdown(int argc, char **argv);
 static void ac_suggest(char const *str, char const *sofar);
 static char *ac_finish(void);
@@ -91,23 +92,22 @@ static int srow, scol;
 static char **ac_list = NULL;
 
 static struct shell_command commands[] = {
-	{"mount", &cmd_mount},
-	{"module", &cmd_module},
-	{"boot", &cmd_boot},
-	{"kernel", &cmd_kernel},
-	{"initrd", &cmd_initrd},
-	{"cd", &cmd_cd},
-	{"ls", &cmd_ls},
-	{"find", &cmd_find},
-	{"uname", &cmd_uname},
-	{"reboot", &cmd_shutdown},
-	{"halt", &cmd_shutdown},
-	{"cat", &cmd_cat},
-	{"append", NULL},
-	{"cmdline", NULL},
-	{"reset-vga", NULL},
-	{"disks", NULL},
-	{"exit", NULL},
+	{"mount", "mount <device> <path>\tMount device at path", &cmd_mount},
+	{"kernel", "kernel <file>\t\tSelect a kernel", &cmd_kernel},
+	{"initrd", "initrd <file>\t\tSelect an initrd", &cmd_initrd},
+	{"cmdline", "cmdline <text>\t\tSet the kernel command line", NULL},
+	{"append", "append <text>\t\tLike cmdline, but less portable", NULL},
+	{"reset-vga", "reset-vga\t\tToggle the kexec --reset-vga switch", NULL},
+	{"module", "module <file> [<args>]\tLoad a multiboot module", &cmd_module},
+	{"boot", "boot\t\t\tBoot the system", &cmd_boot},
+	{"cd", "cd <path>\t\tChange directory", &cmd_cd},
+	{"ls", "ls [<path>]\t\tList the contents of a directory", &cmd_ls},
+	{"find", "find <name> [<path>]\tSearch for files named <name>", &cmd_find},
+	{"cat", "cat <file>\t\tDisplay the contents of a file", &cmd_cat},
+	{"reboot", "reboot\t\t\tReboot the system", &cmd_shutdown},
+	{"shutdown", "shutdown\t\tPower off the system", &cmd_shutdown},
+	{"disks", "disks\t\t\tDisplay disks which have been detected", NULL},
+	{"exit", "exit\t\t\tReturn to the menu", NULL},
 	{NULL, NULL}
 };
 
@@ -123,14 +123,13 @@ static struct shell_command commands[] = {
 	args = NULL;
 
 void shell_main(void) {;
-	int hnum, cnum;
 	char *command = NULL, **argv = NULL, *args = NULL;
-	int argc = 0, i;
+	int argc = 0, i, match;
 	
 	char *history[HISTORY_MAX];
 	
-	for(hnum = 0; hnum < HISTORY_MAX; hnum++) {
-		history[hnum] = NULL;
+	for(i = 0; i < HISTORY_MAX; i++) {
+		history[i] = NULL;
 	}
 	
 	free_modules(cons_target.modules);
@@ -138,86 +137,94 @@ void shell_main(void) {;
 	
 	strcpy(cwd, "/");
 	
-	INPUT:
+	while(1) {
+		printf("\r%s > ", cwd);
+		
+		SMAIN_CLEANUP();
+		command = read_cmd((char**)&history);
+		
+		parse_cmdline(command, &argc, &argv, &args);
+		
+		debug("command = '%s'\n", command);
+		debug("args = '%s'\n", args);
+		debug("argc = %d\n", argc);
+		
+		for(i = 0; i < argc; i++) {
+			debug("argv[%d] = '%s'\n", i, argv[i]);
+		}
+		
+		if(argc == 0) {
+			continue;
+		}
+		
+		if(str_eq(argv[0], "exit", -1)) {
+			break;
+		}
+		
+		if(str_eq(argv[0], "help", -1)) {
+			printf("Available commands:\n\n");
+			
+			for(i = 0; commands[i].name; i++) {
+				puts(commands[i].help);
+			}
+			
+			continue;
+		}
+		
+		if(str_eq(argv[0], "disks", -1)) {
+			list_devices();
+			continue;
+		}
+		
+		if(str_eq(argv[0], "append", -1)) {
+			if(args) {
+				str_copy(&cons_target.append, args, -1);
+			}else{
+				free(cons_target.append);
+				cons_target.append = NULL;
+			}
+			
+			continue;
+		}
+		
+		if(str_eq(argv[0], "cmdline", -1)) {
+			if(args) {
+				str_copy(&cons_target.cmdline, args, -1);
+			}else{
+				free(cons_target.cmdline);
+				cons_target.cmdline = NULL;
+			}
+			
+			continue;
+		}
+		
+		if(str_eq(argv[0], "reset-vga", -1)) {
+			cons_target.flags |= TARGET_RESET_VGA;
+			continue;
+		}
+		
+		for(i = 0; commands[i].name; i++) {
+			if(str_eq(commands[i].name, argv[0], -1)) {
+				commands[i].func(argc, argv);
+				
+				match = 1;
+				break;
+			}
+		}
+		
+		if(!match) {
+			printf("Unknown command: %s\n", argv[0]);
+		}
+	}
+	
 	SMAIN_CLEANUP();
-	printf("\r%s > ", cwd);
 	
-	command = read_cmd((char**)&history);
+	unmount_list(cons_target.mounts);
+	free_mounts(cons_target.mounts);
 	
-	parse_cmdline(command, &argc, &argv, &args);
-	
-	debug("command = '%s'\n", command);
-	debug("args = '%s'\n", args);
-	debug("argc = %d\n", argc);
-	
-	for(i = 0; i < argc; i++) {
-		debug("argv[%d] = '%s'\n", i, argv[i]);
+	for(i = 0; i < HISTORY_MAX; i++) {
+		free(history[i]);
 	}
-	
-	if(argc == 0) {
-		goto INPUT;
-	}
-	
-	if(str_eq(argv[0], "exit", -1)) {
-		unmount_list(cons_target.mounts);
-		free_mounts(cons_target.mounts);
-		
-		for(hnum = 0; hnum < HISTORY_MAX; hnum++) {
-			free(history[hnum]);
-		}
-		
-		return;
-	}
-	
-	if(str_eq(argv[0], "help", -1)) {
-		printf("Available commands:\n");
-		printf("exit help");
-		
-		for(cnum = 0; commands[cnum].name; cnum++) {
-			printf(" %s", commands[cnum].name);
-		}
-		
-		putchar('\n');
-		goto INPUT;
-	}
-	
-	if(str_eq(argv[0], "disks", -1)) {
-		list_devices();
-		goto INPUT;
-	}
-	
-	if(str_eq(argv[0], "append", -1)) {
-		if(argc > 1) {
-			str_copy(&cons_target.append, argv[1], -1);
-		}else{
-			cons_target.append = NULL;
-		}
-		
-		goto INPUT;
-	}
-	if(str_eq(argv[0], "cmdline", -1)) {
-		if(argc > 1) {
-			str_copy(&cons_target.cmdline, argv[1], -1);
-		}else{
-			cons_target.cmdline = NULL;
-		}
-		
-		goto INPUT;
-	}
-	if(str_eq(argv[0], "reset-vga", -1)) {
-		cons_target.flags |= TARGET_RESET_VGA;
-		goto INPUT;
-	}
-	
-	for(cnum = 0; commands[cnum].func; cnum++) {
-		if(str_eq(commands[cnum].name, argv[0], -1)) {
-			commands[cnum].func(argc, argv);
-			goto INPUT;
-		}
-	}
-	
-	printf("Unknown command: %s\n", argv[0]);
-	goto INPUT;
 }
 
 /* Convert a shell path to a complete path
@@ -495,13 +502,13 @@ static void parse_cmdline(char *cmdline, int *argc, char ***argv, char **args) {
 	cmdline += strspn(cmdline, " ");
 	
 	while(cmdline[0]) {
-		*argv = reallocate(*argv, sizeof(char*) * ((*argc) + 2));
-		(*argv)[(*argc)++] = parse_arg(cmdline, 1, &cmdline);
-		(*argv)[*argc] = NULL;
-		
 		if(*argc == 1) {
 			*args = parse_arg(cmdline, 0, NULL);
 		}
+		
+		*argv = reallocate(*argv, sizeof(char*) * ((*argc) + 2));
+		(*argv)[(*argc)++] = parse_arg(cmdline, 1, &cmdline);
+		(*argv)[*argc] = NULL;
 	}
 }
 
@@ -706,19 +713,6 @@ static void find_files(char *path, char const *name) {
 	}
 	
 	closedir(dir);
-}
-
-/* Display kernel information */
-static void cmd_uname(int argc, char **argv) {
-	if(argc != 1) {
-		printf("Usage: uname\n");
-		return;
-	}
-	
-	struct utsname undata;
-	uname(&undata);
-	
-	printf("Linux %s %s\n", undata.release, undata.version);
 }
 
 /* Shutdown or reboot */
