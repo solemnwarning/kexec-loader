@@ -1,6 +1,13 @@
 Version 1.6.2:
 	Fixed a bug: specifying filesystem type AND /dev/ for a non-existant
 	device no longer attempts to free an invalid address.
+	
+	Rewrote the shell input code, autocompletion will be re-implemented in a
+	later version, after some design choices are finalized.
+	
+	Updated the shell to accept arguments containing spaces without them
+	being quoted or escaped for the kernel, initrd, cmdline and append
+	commands.
 
 Version 1.6.1:
 	Fixed a bug: config_parse() silently ignored initrd due to a typo.
