@@ -1,5 +1,5 @@
 /* kexec-loader - String functions
- * Copyright (C) 2007, Daniel Collins <solemnwarning@solemnwarning.net>
+ * Copyright (C) 2007-2009 Daniel Collins <solemnwarning@solemnwarning.net>
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without

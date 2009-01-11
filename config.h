@@ -1,5 +1,5 @@
 /* kexec-loader - Compile-time configuration
- * Copyright (C) 2007,2008 Daniel Collins <solemnwarning@solemnwarning.net>
+ * Copyright (C) 2007-2009 Daniel Collins <solemnwarning@solemnwarning.net>
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -31,7 +31,7 @@
 #ifndef KEXEC_LOADER_CTCONFIG_H
 #define KEXEC_LOADER_CTCONFIG_H
 
-#define COPYRIGHT "Copyright (C) 2007,2008 Daniel Collins"
+#define COPYRIGHT "Copyright (C) 2007-2009 Daniel Collins"
 
 #define CONFIG_FILE "kexec-loader.conf"
 
