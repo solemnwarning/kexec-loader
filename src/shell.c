@@ -75,8 +75,6 @@ static void parse_cmdline(char *cmdline, int *argc, char ***argv, char **args);
 static void cmd_mount(int argc, char **argv);
 static void cmd_module(int argc, char **argv);
 static void cmd_boot(int argc, char **argv);
-static void cmd_kernel(int argc, char **argv);
-static void cmd_initrd(int argc, char **argv);
 static void cmd_cd(int argc, char **argv);
 static void cmd_ls(int argc, char **argv);
 static void cmd_find(int argc, char **argv);
@@ -93,8 +91,8 @@ static char **ac_list = NULL;
 
 static struct shell_command commands[] = {
 	{"mount", "mount <device> <path>\tMount device at path", &cmd_mount},
-	{"kernel", "kernel <file>\t\tSelect a kernel", &cmd_kernel},
-	{"initrd", "initrd <file>\t\tSelect an initrd", &cmd_initrd},
+	{"kernel", "kernel <file>\t\tSelect a kernel", NULL},
+	{"initrd", "initrd <file>\t\tSelect an initrd", NULL},
 	{"cmdline", "cmdline <text>\t\tSet the kernel command line", NULL},
 	{"append", "append <text>\t\tLike cmdline, but less portable", NULL},
 	{"reset-vga", "reset-vga\t\tToggle the kexec --reset-vga switch", NULL},
@@ -121,6 +119,17 @@ static struct shell_command commands[] = {
 	command = NULL; \
 	argv = NULL; \
 	args = NULL;
+
+#define TEXT_COMMAND(name, ptr) \
+	if(str_eq(argv[0], name, -1)) { \
+		if(args) { \
+			str_copy(&(ptr), args, -1); \
+		}else{ \
+			free(ptr); \
+			ptr = NULL; \
+		} \
+		continue; \
+	}
 
 void shell_main(void) {;
 	char *command = NULL, **argv = NULL, *args = NULL;
@@ -176,27 +185,10 @@ void shell_main(void) {;
 			continue;
 		}
 		
-		if(str_eq(argv[0], "append", -1)) {
-			if(args) {
-				str_copy(&cons_target.append, args, -1);
-			}else{
-				free(cons_target.append);
-				cons_target.append = NULL;
-			}
-			
-			continue;
-		}
-		
-		if(str_eq(argv[0], "cmdline", -1)) {
-			if(args) {
-				str_copy(&cons_target.cmdline, args, -1);
-			}else{
-				free(cons_target.cmdline);
-				cons_target.cmdline = NULL;
-			}
-			
-			continue;
-		}
+		TEXT_COMMAND("kernel", cons_target.kernel);
+		TEXT_COMMAND("initrd", cons_target.initrd);
+		TEXT_COMMAND("cmdline", cons_target.cmdline);
+		TEXT_COMMAND("append", cons_target.append);
 		
 		if(str_eq(argv[0], "reset-vga", -1)) {
 			cons_target.flags |= TARGET_RESET_VGA;
@@ -572,28 +564,6 @@ static void cmd_boot(int argc, char **argv) {
 	console_fgcolour(CONS_RED);
 	printD(RED, 2, "Reboot failed: %s", strerror(errno));
 	console_fgcolour(CONS_WHITE);
-}
-
-/* Set the kernel path */
-static void cmd_kernel(int argc, char **argv) {
-	if(argc != 2) {
-		printf("Usage: kernel <filename>\n");
-		return;
-	}
-	
-	free(cons_target.kernel);
-	cons_target.kernel = str_printf("/mnt/target/%s", argv[1]);
-}
-
-/* Set the kernel path */
-static void cmd_initrd(int argc, char **argv) {
-	if(argc != 2) {
-		printf("Usage: initrd <filename>\n");
-		return;
-	}
-	
-	free(cons_target.initrd);
-	cons_target.initrd = str_printf("/mnt/target/%s", argv[1]);
 }
 
 /* Change the shell CWD */
