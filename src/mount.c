@@ -40,6 +40,7 @@
 #include <sys/mman.h>
 #include <fcntl.h>
 #include <linux/kdev_t.h>
+#include <stdint.h>
 
 #include "mount.h"
 #include "misc.h"
@@ -250,8 +251,10 @@ char* detect_fstype(char const *device) {
 	}
 	
 	if(check_magic(fd, 0x438, (char[]){0x53, 0xEF}, 2)) {
-		if(check_magic(fd, 0x45C, "EXT3_CHECK", 1)) {
+		if(check_magic(fd, 0x45C, "EXT3_CHECK", 12)) {
 			retval = "ext3";
+		}else if(check_magic(fd, 0x45C, "EXT4_CHECK", 12)) {
+			retval = "ext4";
 		}else{
 			retval = "ext2";
 		}
@@ -446,7 +449,34 @@ static int check_magic(int fd, off_t offset, char const *magic, size_t len) {
 	}
 	
 	/* Hacky interface alert! */
-	if(str_eq(magic, "EXT3_CHECK", 11) && buf[0] & 4) {
+	if(str_eq(magic, "EXT3_CHECK", 11)) {
+		if(!((uint32_t)(buf) & 4)) {
+			return 0;
+		}
+		if((uint32_t)(buf+4) >= 0x40) {
+			return 0;
+		}
+		if((uint32_t)(buf+8) >= 8) {
+			return 0;
+		}
+		
+		return 1;
+	}
+	
+	if(str_eq(magic, "EXT4_CHECK", 11)) {
+		if(!((uint32_t)(buf) & 4)) {
+			return 0;
+		}
+		if((uint32_t)(buf+4) > 0x3F) {
+			return 1;
+		}
+		if((uint32_t)(buf+4) >= 0x40) {
+			return 0;
+		}
+		if((uint32_t)(buf+8) <= 7) {
+			return 0;
+		}
+		
 		return 1;
 	}
 	
