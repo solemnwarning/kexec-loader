@@ -39,6 +39,12 @@ print <<EOF;
 <title>Kernel modules</title>
 <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
 <style type="text/css">
+body {
+	color: #000000;
+	background-color: #FFFFFF;
+	font-family: sans-serif;
+}
+
 table {
 	border-top: 1px solid #0000FF;
 	border-bottom: 1px solid #0000FF;
@@ -82,7 +88,7 @@ open(DIRLIST, "<$dirlist") or die("Error opening $dirlist: $!");
 foreach my $dline(<DIRLIST>) {
 	my ($dir, $title) = split(/\t+/, $dline, 2);
 	
-	print "<li><a href=\"#dir_$dir\">$title ($dir/)</a></li>\n";
+	print "<li><a class=\"link\" href=\"#dir_$dir\">$title ($dir/)</a></li>\n";
 }
 
 close(DIRLIST);
