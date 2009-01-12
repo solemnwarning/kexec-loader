@@ -273,7 +273,9 @@ static void main_menu(void) {
 			continue;
 		}
 		if(key == 's' || key == 'S') {
-			prepare_text();
+			console_clear();
+			console_setpos(1,1);
+			
 			shell_main();
 			draw_skel();
 			

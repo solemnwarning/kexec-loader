@@ -146,6 +146,9 @@ void shell_main(void) {;
 	free_modules(cons_target.modules);
 	TARGET_DEFAULTS(&cons_target);
 	
+	printf("kexec-loader " VERSION ", " COPYRIGHT "\n");
+	printf("Type 'help' for a list of commands\n\n");
+	
 	strcpy(cwd, "/");
 	
 	while(1) {
