@@ -83,6 +83,7 @@ static void cmd_shutdown(int argc, char **argv);
 static void ac_suggest(char const *str, char const *sofar);
 static char *ac_finish(void);
 static void cmd_cat(int argc, char **argv);
+static void cmd_uname(int argc, char **argv);
 
 static kl_target cons_target = TARGET_DEFAULTS_DEFINE;
 static char cwd[2048];
@@ -102,9 +103,10 @@ static struct shell_command commands[] = {
 	{"ls", "ls [<path>]\t\tList the contents of a directory", &cmd_ls},
 	{"find", "find <name> [<path>]\tSearch for files named <name>", &cmd_find},
 	{"cat", "cat <file>\t\tDisplay the contents of a file", &cmd_cat},
+	{"uname", "uname\t\t\tShow kernel information", &cmd_uname},
+	{"disks", "disks\t\t\tDisplay disks which have been detected", NULL},
 	{"reboot", "reboot\t\t\tReboot the system", &cmd_shutdown},
 	{"shutdown", "shutdown\t\tPower off the system", &cmd_shutdown},
-	{"disks", "disks\t\t\tDisplay disks which have been detected", NULL},
 	{"exit", "exit\t\t\tReturn to the menu", NULL},
 	{NULL, NULL}
 };
@@ -797,4 +799,17 @@ static void cmd_cat(int argc, char **argv) {
 	}
 	
 	fclose(fh);
+}
+
+/* Display kernel information */
+static void cmd_uname(int argc, char **argv) {
+	if(argc != 1) {
+		printf("Usage: uname\n");
+		return;
+	}
+	
+	struct utsname undata;
+	uname(&undata);
+	
+	printf("Linux %s %s\n", undata.release, undata.version);
 }
