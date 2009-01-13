@@ -486,3 +486,74 @@ static int check_magic(int fd, off_t offset, char const *magic, size_t len) {
 	
 	return 0;
 }
+
+/* Attempt to get the UUID from a device
+ * Returns NULL if the device does not have a UUID
+*/
+char *get_uuid(char const *path) {
+	char *fstype = detect_fstype(path);
+	if(!fstype) {
+		return NULL;
+	}
+	
+	int fd = open(path, O_RDONLY);
+	if(fd == -1) {
+		debug("Error opening %s: %s\n", path, strerror(errno));
+		return NULL;
+	}
+	
+	char *uuid = NULL, data[0x478];
+	int size = read_data(fd, data, 0x478, 0);
+	
+	if(globcmp(fstype, "ext#", GLOB_HASH) && size >= 0x478) {
+		uuid = str_printf(
+			"%02X%02X%02X%02X-%02X%02X-%02X%02X-%02X%02X-%02X%02X%02X%02X%02X%02X",
+			data[0x468], data[0x469], data[0x46A], data[0x46B],
+			data[0x46C], data[0x46D], data[0x46E], data[0x46F],
+			data[0x470], data[0x471], data[0x472], data[0x473],
+			data[0x474], data[0x475], data[0x476], data[0x477]
+		);
+	}
+	
+	close(fd);
+	return uuid;
+}
+
+/* Attempt to get the label from a device
+ * Returns NULL if the device does not have a label
+*/
+char *get_label(char const *path) {
+	char *fstype = detect_fstype(path);
+	if(!fstype) {
+		return NULL;
+	}
+	
+	int fd = open(path, O_RDONLY);
+	if(fd == -1) {
+		debug("Error opening %s: %s\n", path, strerror(errno));
+		return NULL;
+	}
+	
+	char *label = NULL, data[0x488];
+	int size = read_data(fd, data, 0x488, 0);
+	
+	if(globcmp(fstype, "ext#", GLOB_HASH) && size >= 0x488) {
+		if(data[0x478]) {
+			label = str_copy(NULL, data+0x478, 16);
+		}
+	}
+	
+	if(str_eq(fstype, "vfat", -1) && size >= 0x36) {
+		int len = 0;
+		while(data[0x2B+len] != ' ' && len < 11) {
+			len++;
+		}
+		
+		if(len > 0) {
+			label = str_copy(NULL, data+0x2B, len);
+		}
+	}
+	
+	close(fd);
+	return label;
+}

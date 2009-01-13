@@ -38,5 +38,7 @@ void unmount_list(kl_mount *mounts);
 char* detect_fstype(char const *device);
 int check_device(char const *device);
 char const *mount_dev(char const *device, char const *mpoint);
+char *get_uuid(char const *path);
+char *get_label(char const *path);
 
 #endif /* !KEXEC_LOADER_MOUNT_H */

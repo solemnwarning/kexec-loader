@@ -63,6 +63,37 @@ void* reallocate(void *ptr, size_t size) {
 	return(ptr);
 }
 
+/* Read upto max bytes from fd starting at offset
+ * Returns number of bytes read
+*/
+int read_data(int fd, void *buf, int max, int offset) {
+	int ret = 0, i;
+	
+	if(lseek(fd, offset, SEEK_SET) == -1) {
+		debug("Seek error: %s\n", strerror(errno));
+		return 0;
+	}
+	
+	while(ret < max) {
+		i = read(fd, buf+ret, max-ret);
+		if(i == -1) {
+			if(errno == EINTR) {
+				continue;
+			}
+			
+			debug("Read error: %s\n", strerror(errno));
+			break;
+		}
+		if(i == 0) {
+			break;
+		}
+		
+		ret += i;
+	}
+	
+	return ret;
+}
+
 /* Fatal error encountered, abort! */
 void fatal(char const* fmt, ...) {
 	va_list argv;

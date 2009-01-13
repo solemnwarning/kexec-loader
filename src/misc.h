@@ -43,6 +43,8 @@
 void* allocate(size_t size);
 void* reallocate(void *ptr, size_t size);
 
+int read_data(int fd, void *buf, int max, int offset);
+
 void fatal(char const* fmt, ...);
 void debug(char const* fmt, ...);
 
