@@ -42,5 +42,6 @@ typedef struct kl_disk {
 
 kl_disk *get_disks(void);
 kl_disk *find_disk(char const *id);
+char const *mount_disk(kl_disk *disk);
 
 #endif /* !KL_DISK_H */

@@ -26,6 +26,7 @@
 #include <fcntl.h>
 #include <linux/kdev_t.h>
 #include <blkid/blkid.h>
+#include <sys/mount.h>
 
 #include "disk.h"
 #include "misc.h"
@@ -118,4 +119,39 @@ kl_disk *find_disk(char const *id) {
 	}
 	
 	return ret;
+}
+
+/* Attempt to mount a disk
+ * Returns NULL on success, otherwise an error message
+*/
+char const *mount_disk(kl_disk *disk) {
+	char dev[256], mpoint[256];
+	
+	if(!disk->fstype) {
+		return "Unknown filesystem format";
+	}
+	
+	snprintf(dev, 256, "/dev/%s", disk->name);
+	snprintf(mpoint, 256, "/mnt/%s", disk->name);
+	
+	mkdir(mpoint, 0700);
+	
+	if(mount(dev, mpoint, disk->fstype, MS_RDONLY, NULL)) {
+		switch(errno) {
+			case EBUSY:
+				/* The device is already mounted */
+				break;
+				
+			case EINVAL:
+				return "Invalid argument (Invalid superblock?)";
+				
+			case ENODEV:
+				return "No such device (Missing module?)";
+				
+			default:
+				return strerror(errno);
+		}
+	}
+	
+	return NULL;
 }
