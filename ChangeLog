@@ -1,0 +1,216 @@
+Version 1.6.2:
+	Fixed a bug: specifying filesystem type AND /dev/ for a non-existant
+	device no longer attempts to free an invalid address.
+	
+	Rewrote the shell input code, autocompletion will be re-implemented in a
+	later version, after some design choices are finalized.
+	
+	Updated the shell to accept arguments containing spaces without them
+	being quoted or escaped for the kernel, initrd, cmdline and append
+	commands.
+	
+	Updated detect_fstype() and check_magic() to correctly identify ext4
+	filesystems instead of identifying them as ext3.
+
+Version 1.6.1:
+	Fixed a bug: config_parse() silently ignored initrd due to a typo.
+	
+	Added reboot, halt and cat commands to shell.
+	
+	Implemented autocompletion for commands and filenames in the shell.
+	
+	Fixed a bug: pressing a key to stop searching for boot disk no longer
+	results in an infinite loop.
+	
+	Changed behaviour of kexec_config kernel option, it now forces the boot
+	device instead of just adding it to the top of the search list.
+
+Version 1.6:
+	Replaced unsafe mmap() code in detect_fstype() which crashed on small
+	partitions, such as MS-DOS extended.
+	
+	Upgraded kexec-tools to version 2.0.0
+	
+	Fixed a bug: console_getsize() returned 0x0 on serial consoles, it now
+	defaults to 80x24 if the ioctl() call returns 0x0.
+	
+	Rewrote shell input code to support decent line editing.
+	
+	Updated shell history code to not log empty lines, or repeat commands.
+	
+	Rewrote command parsing code to be more like that of a normal shell,
+	the new parser stores arguments in argv[] and sets argc.
+	
+	Added basic shell commands (cd, ls, find, etc...)
+	
+	Changed module loading behaviour: All files in /modules/ named *.ko are
+	loaded automatically, options may be set in /modules/modules.conf
+
+Version 1.5:
+	Rewrote code which finds the boot disk.
+	
+	Removed capability to reload configuration by pressing R at the main
+	menu.
+	
+	Added support for loading Linux modules and inserting them into the
+	kernel, gzip compressed modules are also supported.
+	
+	Fixed a bug: nptr->mpoint was not set to the return value of
+	str_append() in config_add_mount(), which could cause a segfault
+	depending on state of OS memory management code.
+	
+	Updated styling of status messages to make them more consistant.
+	
+	Rewrote detect_fstype() to use mmap() instead of reading MAGIC_BUF_SIZE
+	bytes of into stack memory.
+	
+	Updated mount code to create device nodes from /proc/diskstats and
+	removed hdx/sdx mknod code from mkinitramfs.sh
+
+Version 1.4.3:
+	Fixed bug caused by my stupidity and lack of testing:
+		grub_loadcfg() incorrectly checked that grub_root was set, why
+		does this seem so familiar? Oh yeah! Version 1.3.1!
+
+Version 1.4.2:
+	Replaced malloc() calls with allocate() calls for simplicity.
+	
+	Replaced most fixed-length strings with dynamic strings in order to
+	save memory.
+	
+	Replaced kl_target.modules array with a linked-list to remove the limit
+	on multiboot modules.
+	
+	Added multiboot module support for GRUB configuration files.
+
+Version 1.4.1:
+	Added support for ISO-9660 to detect_fstype().
+	
+	Added command history, scrolls through previous commands on up/down
+	arrow keys, by default the history size is 32 commands.
+	
+	Added nano-like scrolling for editing commands which are longer then
+	the screen, otherwise backspacing before column 1 deletes characters
+	from the command buffer, but not from the screen.
+	
+	Added module command and configuration directive to support loading
+	multiboot modules.
+
+Version 1.4:
+	Added cmdline configuration directive.
+	
+	Updated load_kernel() to take a kl_target as its argument and store the
+	argument strings in dynamic memory.
+	
+	Removed STACK_BUF macro and replaced it with fixed buffers of smaller
+	sizes since 2048 is overkill for any of them.
+	
+	Fixed a bug: unmount_list() now returns if mounts = NULL instead of
+	getting stuck in an infinite loop.
+	
+	Wrote shell for interactively configuring and booting targets, will be
+	improved a lot over the next versions.
+	
+	Added reset-vga directive/command which passes kexec the --reset-vga
+	argument when loading the kernel.
+	
+	Updated the kexec-tools merge patch to make die() output error messages
+	in the same style as kexec-loader.
+	
+	Implemented free_targets(), fixed a memory leak in config_load() and
+	used value2 in config_parse() to get rid of a warning.
+
+Version 1.3.1:
+	Updated makefile structure and added new targets.
+	
+	Updated run_kexec() to directly call kexec_main() in the child process
+	instead of calling itself with argv[0]="kexec" via execv().
+	
+	Fixed bug: grub_loadcfg() now checks that grub_root is set before
+	attempting to mount it, how the hell did I overlook this?!
+	
+	Fixed bug: load_menu() now correctly handles the 'default' directive
+	in menu.lst.
+
+Version 1.3:
+	Created mount_dev() function to cut down on duplicate mounting code.
+	
+	Added support for reading GRUB menu.lst and device.map files.
+
+Version 1.2:
+	Rewrote fatal() function and removed pointless calls to it.
+	
+	Fixed bug: main_menu() no longer crashes if you have zero targets.
+	
+	Fixed bug: Timeout is no longer displayed after a one second delay.
+	
+	Rewrote a lot of code used for loading configuration.
+	
+	Removed obsolete mount_add(), mount_copy(), mount_free(), target_add()
+	and target_free() functions.
+	
+	Added STACK_LIMIT and STACK_BUF macros which configure the maximum
+	stack size and the size of auto buffers.
+	
+	Wrote check_device() function for checking that devices exist before
+	attempting to mount, determine FS type, etc.
+	
+	Updated config_add_mount() to prepend /mnt/ to kl_mount.mpoint so that
+	an extra buffer isn't required in mount_list() or unmount_list().
+	
+	Updated config_mount() to retry finding the configuration disk upto 3
+	times upon failure with delay increasing with each attempt.
+	
+	Optimised some of the screen drawing code to not write pointless
+	characters to the console.
+	
+	Implemented new console output API: printm(), printM(), printd() and
+	printD() which are macro wrappers around print2().
+	
+	Improved status messages displayed while loading a target.
+	
+	Updated list_devices() to display the filesystem type of all devices
+	found in /proc/diskstats.
+	
+	Updated build system to download and patch kexec-tools then build the
+	kexec program into kexec-loader like busybox to save space.
+	
+	Removed HOST and CC variables from root Makefile and added ifdef to set
+	the CC and configure options as required if a HOST variable is passed
+	in the environment.
+	
+	Updated mount_config() to check for the kernel option kexec_config and
+	insert the supplied device at the start of the devices list.
+	
+	Updated mount_config() to detect the filesystem type using
+	detect_fstype() instead of using the hardcoded BOOTFS_TYPE macro.
+
+Version 1.1:
+	Removed directives for creating devices, all devices inodes should be
+	included with the initramfs.
+	
+	Redesigned mkinitramfs.sh to create a CPIO archive and to use fakeroot
+	if the script is not being run as root.
+	
+	Updated configuration file parser.
+	
+	Added seperate debug console and /proc/kmsg monitor.
+	
+	Rewrote code which deals with mounting/unmounting the disk containing
+	CONFIG_FILE.
+	
+	Rewrote mount_list() to be more effecient by ordering the mounts in
+	order of depth.
+	
+	Replaced unmount_tree() function with unmount_list().
+	
+	Added support for detecting ext2, ext3, XFS, ReiserFS, minix, FAT and
+	NTFS filesystem types.
+	
+	Rewrote menu code, it's slightly more sane now.
+	
+	Implemented list_devices() function, pressing L at the menu displays
+	a list of all devices listed in /proc/diskstats.
+
+Version 1.0:
+	Initial release.

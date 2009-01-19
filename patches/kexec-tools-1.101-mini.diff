@@ -1,0 +1,174 @@
+diff -ru kexec-tools-1.101.orig/kexec/kexec.c kexec-tools-1.101.mini/kexec/kexec.c
+--- kexec-tools-1.101.orig/kexec/kexec.c	2005-01-13 13:24:29.000000000 +0000
++++ kexec-tools-1.101.mini/kexec/kexec.c	2008-04-24 18:53:04.000000000 +0100
+@@ -614,41 +614,6 @@
+ 	return result;
+ }
+ 
+-/*
+- *	Start a reboot.
+- */
+-static int my_shutdown(void)
+-{
+-	char *args[8];
+-	int i = 0;
+-
+-	args[i++] = "shutdown";
+-	args[i++] = "-r";
+-	args[i++] = "now";
+-	args[i++] = NULL;
+-
+-	execv("/sbin/shutdown", args);
+-	execv("/etc/shutdown", args);
+-	execv("/bin/shutdown", args);
+-
+-	perror("shutdown");
+-	return -1;
+-}
+-
+-/*
+- *	Exec the new kernel (reboot)
+- */
+-static int my_exec(void)
+-{
+-	int result;
+-
+-	result = kexec_reboot();
+-	/* I have failed if I make it here */
+-	fprintf(stderr, "kexec failed: %s\n", 
+-		strerror(errno));
+-	return -1;
+-}
+-
+ static void version(void)
+ {
+ 	printf("kexec " VERSION " released " RELEASE_DATE "\n");
+@@ -665,16 +630,9 @@
+ 		"\n"
+ 		" -h, --help           Print this help.\n"
+ 		" -v, --version        Print the version of kexec.\n"
+-		" -f, --force          Force an immediate kexec, don't call shutdown.\n"
+-		" -x, --no-ifdown      Don't bring down network interfaces.\n"
+ 		"                      (if used, must be last option specified)\n"
+ 		" -l, --load           Load the new kernel into the current kernel.\n"
+-		" -p, --load-panic     Load the new kernel for use on panic.\n"
+-		" -u, --unload         Unload the current kexec target kernel.\n"
+-		" -e, --exec           Execute a currently loaded kernel.\n"
+ 		" -t, --type=TYPE      Specify the new kernel is of this type.\n"
+-		"     --mem-min=<addr> Specify the lowest memory addres to load code into.\n"
+-		"     --mem-max=<addr> Specify the highest memory addres to load code into.\n"
+ 		"\n"
+ 		"Supported kernel file types and options: \n"
+ 		);
+@@ -690,11 +648,6 @@
+ int main(int argc, char *argv[])
+ {
+ 	int do_load = 1;
+-	int do_exec = 0;
+-	int do_shutdown = 1;
+-	int do_sync = 1;
+-	int do_ifdown = 0;
+-	int do_unload = 0;
+ 	unsigned long kexec_flags = 0;
+ 	char *type = 0;
+ 	char *endptr;
+@@ -716,62 +669,12 @@
+ 		case OPT_VERSION:
+ 			version();
+ 			return 0;
+-		case OPT_NOIFDOWN:
+-			do_ifdown = 0;
+-			break;
+-		case OPT_FORCE:
+-			do_load = 1;
+-			do_shutdown = 0;
+-			do_sync = 1;
+-			do_ifdown = 1;
+-			do_exec = 1;
+-			break;
+ 		case OPT_LOAD:
+ 			do_load = 1;
+-			do_exec = 0;
+-			do_shutdown = 0;
+-			break;
+-		case OPT_UNLOAD:
+-			do_load = 0;
+-			do_shutdown = 0;
+-			do_sync = 0;
+-			do_unload = 1;
+-			break;
+-		case OPT_EXEC:
+-			do_load = 0;
+-			do_shutdown = 0;
+-			do_sync = 1;
+-			do_ifdown = 1;
+-			do_exec = 1;
+ 			break;
+ 		case OPT_TYPE:
+ 			type = optarg;
+ 			break;
+-		case OPT_PANIC:
+-			do_load = 1;
+-			do_exec = 0;
+-			do_shutdown = 0;
+-			do_sync = 0;
+-			kexec_flags = KEXEC_ON_CRASH;
+-			break;
+-		case OPT_MEM_MIN:
+-			mem_min = strtoul(optarg, &endptr, 0);
+-			if (*endptr) {
+-				fprintf(stderr, "Bad option value in --mem-min=%s\n",
+-					optarg);
+-				usage();
+-				return 1;
+-			}
+-			break;
+-		case OPT_MEM_MAX:
+-			mem_max = strtoul(optarg, &endptr, 0);
+-			if (*endptr) {
+-				fprintf(stderr, "Bad option value in --mem-max=%s\n",
+-					optarg);
+-				usage();
+-				return 1;
+-			}
+-			break;
+ 		default:
+ 			break;
+ 		}
+@@ -784,25 +687,9 @@
+ 
+ 	result = arch_process_options(argc, argv);
+ 
+-	if (do_unload) {
+-		result = k_unload(kexec_flags);
+-	}
+ 	if (do_load && (result == 0)) {
+ 		result = my_load(type, fileind, argc, argv, kexec_flags);
+ 	}
+-	if ((result == 0) && do_shutdown) {
+-		result = my_shutdown();
+-	}
+-	if ((result == 0) && do_sync) {
+-		sync();
+-	}
+-	if ((result == 0) && do_ifdown) {
+-		extern int ifdown(void);
+-		(void)ifdown();
+-	}
+-	if ((result == 0) && do_exec) {
+-		result = my_exec();
+-	}
+ 
+ 	fflush(stdout);
+ 	fflush(stderr);
+diff -ru kexec-tools-1.101.orig/kexec/Makefile kexec-tools-1.101.mini/kexec/Makefile
+--- kexec-tools-1.101.orig/kexec/Makefile	2004-12-21 19:36:39.000000000 +0000
++++ kexec-tools-1.101.mini/kexec/Makefile	2008-04-24 17:37:44.000000000 +0100
+@@ -10,7 +10,6 @@
+ KCFLAGS:= $(CFLAGS) -Ikexec/arch/$(ARCH)/include
+ 
+ KEXEC_C_SRCS:= kexec/kexec.c 
+-KEXEC_C_SRCS+= kexec/ifdown.c
+ KEXEC_C_SRCS+= kexec/kexec-elf.c 
+ KEXEC_C_SRCS+= kexec/kexec-elf-exec.c 
+ KEXEC_C_SRCS+= kexec/kexec-elf-rel.c 

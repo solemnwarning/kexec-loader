@@ -1,0 +1,298 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+<title>kexec-loader manual</title>
+<style type="text/css">
+<!--
+body {
+	font-family: Arial, Helvetica, sans-serif;
+}
+h1, h1 a:hover {
+	font-size: xx-large;
+	color: #0099FF;
+}
+h2, h2 a:hover {
+	color: #0066FF;
+}
+h3, h3 a:hover {
+	color: #0033CC;
+}
+a:link, a:visited {
+	text-decoration: none;
+	color: blue;
+}
+a:hover {
+	color: red;
+}
+-->
+</style>
+</head>
+
+<body>
+<h1>kexec-loader manual</h1>
+<p>Version: 1.6.2</p>
+<p>&copy; 2007-2009 Daniel Collins<br />&copy; 2008 Philip Kent</p>
+<ul>
+	<li><a href="#s1">1. Introduction</a></li>
+	<li><a href="#s2">2. Usage</a>
+	<ul>
+		<li><a href="#s2s1">2.1. Configuration File</a></li>
+		<li><a href="#s2s2">2.2. Using the Menu</a></li>
+		<li><a href="#s2s3">2.3. Built in shell</a></li>
+		<li><a href="#s2s4">2.4. Debug Console</a></li>
+		<li><a href="#s2s5">2.5. Kernel Modules</a></li>
+	</ul>
+	</li>
+	<li><a href="#s3">3. Compiling</a>
+	<ul>
+		<li><a href="#s3s1">3.1. Introduction</a></li>
+		<li><a href="#s3s2">3.2. Compiling</a></li>
+		<li><a href="#s3s3">3.3. Creating a Disk Image</a></li>
+	</ul>
+	</li>
+	<li><a href="#s4">4. Support</a>
+	<ul>
+		<li><a href="#s4s1">4.1. Website</a></li>
+		<li><a href="#s4s2">4.2. Developer</a></li>
+	</ul>
+	</li>
+</ul>
+
+<h2><a name="s1">1. Introduction</a></h2>
+<p>
+kexec-loader is a Linux based bootloader that uses kexec to start the kernel of your choice. It fits on a 1.44MB floppy, supports most block devices supported by Linux and is easy to use. kexec-loader supports reading GRUB configuration files, this allows kexec-loader to be used as a drop-in replacement for GRUB by merely setting the GRUB installation path.
+</p>
+<p>
+The kexec-loader project site has prebuilt disk images available for download, unless you have a very good reason for compiling from source, this is the best option, as the process for building disk images is complicated and requires an understanding of the Linux boot process. The prebuilt images have support for PC floppy drives, USB mass storage devices and the FAT filesystem, other devices and filesystems may be used if the appropriate module is loaded.
+</p>
+
+<h2><a name="s2">2. Usage</a></h2>
+<h3><a name="s2s1">2.1. Configuration File</a></h3>
+<p>
+The configuration for kexec-loader is stored on the boot floppy in a file named /kexec-loader.conf, it must exist, as kexec-loader locates the boot floppy by checking for its presence. The following devices are searched by default:
+</p>
+<ol style="font-family: monospace;">
+	<li>/dev/fd0</li>
+	<li>/dev/fd1</li>
+	<li>/dev/sda</li>
+	<li>/dev/sdb</li>
+	<li>/dev/scd</li>
+	<li>/dev/sdd</li>
+</ol>
+<p>
+If the kexec-loader boot floppy is not in that list, you can override the default search list by using the kexec_root kernel option, for example: <span style="font-family:monospace;">kexec_root=/dev/hda</span>.
+</p>
+
+<p>
+The file contains directives in the form <span style="font-family:monospace;">"&lt;directive&gt; [args]"</span>, directives and argument should be seperated with whitespace, empty lines and lines beginning with a hash (#) are ignored.
+</p>
+<p>The directives are as follows.</p>
+<ul>
+	<li><b>timeout &lt;integer&gt;</b><br />
+	Amount of seconds to wait till the kernel marked default is loaded. If
+	no kernel is marked as default, the first kernel in the list will be
+	loaded. If this is omitted, and a grub config file is loaded, it will
+	use the timeout from there (otherwise it will not timeout).
+	</li>
+	
+	<li><b>title &lt;text&gt;</b><br />
+	Title of the entry. This starts an item on the list, and all following
+	directives will be processed as a part of this entry until the next
+	title directive.
+	</li>
+	
+	<li><b>kernel &lt;filename&gt;</b><br />
+	Filename of the kernel in the rootfs (see below).
+	</li>
+	
+	<li><b>initrd &lt;filename&gt;</b><br />
+	As above but for the initrd.
+	</li>
+	
+	<li><b>cmdline &lt;string&gt;</b><br />
+	Set the command line which will be passed to the target kernel.
+	</li>
+	
+	<li><b>append &lt;string&gt;</b><br />
+	Set the kernel command line using --append, this appears to do exactly
+	the same thing as cmdline, but is implemented for completeness.
+	</li>
+	
+	<li><b>rootfs [fstype:]&lt;device&gt;</b><br />
+	Device to mount as / so as to find the kernel and initrd to load.
+	</li>
+	
+	<li><b>mount [fstype:]&lt;device&gt; &lt;mountpoint&gt;</b><br />
+	Device to mount at a certain mountpoint. This is not for filesystems to
+	load under the new kernel, just any other filesystems that may be needed
+	to start the new kernel running (e.g. if the initrd is stored on another
+	filesystem).
+	</li>
+	
+	<li><b>default</b><br />
+	Make this kernel the default kernel to boot  if the timeout expires.
+	</li>
+	
+	<li><b>grub_root [fstype:]&lt;device&gt;</b><br />
+	Load menu.lst and device.map from a GRUB installation, GRUB should
+	either be installed to /boot/grub/ or /grub/ on the selected device.
+	</li>
+	
+	<li><b>grub_first &lt;hdx/sdx&gt;</b><br />
+	Default is hdx. If hdx is specified, (hd0) will be hda, then all devices
+	will follow as normal, with sd devices following at the end. If it's
+	sdx, then it will reverse, (hd0) will be sda, followed by all other sd
+	devices, then hd devices following at the end. <b>If a device.map was
+	found:</b> kexec-loader will attempt to load settings from this, before
+	failing back to this directive.
+	</li>
+	
+	<li><b>reset-vga</b><br />
+	Reset the VGA adaptor before starting the kernel, may be useful if you get garbled or no output on bootup.
+	</li>
+	
+	<li><b>module &lt;filename&gt; [&lt;args&gt;]</b><br />
+	Load a multiboot module for the target kernel.
+	</li>
+</ul>
+<p>
+Where parameters are shown in &lt;angled brackets&gt;, they are required for that directive. Ones in [square brackets] are optional. For mount and rootfs, if you do specify a fstype, it should be specified as ext2:/dev/hda1 for example.
+</p>
+
+<h3><a name="s2s2">2.2. Using the Menu</a></h3>
+<p>To navigate the kexec-loader menu, use your arrow keys to select an item and press enter to boot it. A number of functions are available; press L to list the detected devices and their filesystems. Press enter if you are on the device screen or an error and you want to escape.</p>
+<p>Upon asking a kernel to boot, it may take a few seconds for it to load the kernel and switch to it. After switching, your new kernel will start and the boot process will happen as it would normally.</p>
+
+<h3><a name="s2s3">2.3. Built in shell</a></h3>
+<p>kexec-loader has a built in shell. To access it press "s" on the menu screen. This shell allows </p>
+<p>There are two further directives used to control kexec-loader, rather than set up a kernel to boot. They are:</p>
+<ul>
+	<li><b>mount [fstype:]&lt;device&gt; &lt;mount point&gt;</b><br />
+	Mount a device, if fstype is ommited, kexec-loader will attempt to autodetect the format.
+	</li>
+	<li><b>module &lt;filename&gt; [args]</b><br />
+	Load a multiboot module for the target kernel.
+	</li>
+	<li><b>kernel &lt;filename&gt;</b><br />
+	Set the kernel filename.
+	</li>
+	<li><b>initrd [filename]</b><br />
+	Set the initrd/initramfs filename.
+	</li>
+	<li><b>cmdline [string]</b><br />
+	Set the command line which will be passed to the target kernel.
+	</li>
+	<li><b>append [string]</b><br />
+	Set the command kernel line using --append, this appears to do exactly the same thing
+	as cmdline, but is implemented for completeness.
+	</li>
+	<li><b>reset-vga</b><br />
+	Enable the --reset-vga option, which fixes some graphics problems.
+	</li>
+	<li><b>boot</b><br />
+	Boot the system.
+	</li>
+	<li><b>disks</b><br />
+	Display a list of disks and partitions which have been detected by Linux.
+	</li>
+	<li><b>cd [directory]</b><br />
+	Change the current working directory, if directory is ommited, / will be used.
+	</li>
+	<li><b>ls [directory]</b><br />
+	List the contents of a directory, if directory is ommited, the current directory will be used.
+	</li>
+	<li><b>find &lt;filename&gt; [directory]</b><br />
+	Search for files matching the pattern 'filename', filename may include the wildcard characters * or ?, if
+	directory is ommited, the current directory will be searched.
+	</li>
+	<li><b>exit</b>
+	<br />Leave the shell and go back to the menu.
+	</li>
+</ul>
+<p>To scroll through the command history, use the up and down keys. A maximum of 32 commands are remembered (upon exceeding this, the oldest command will be removed from the history to make space). Commands that are longer than the screen can hold will scroll, similar to the 'nano' text editor. Please note that this shell will be improved in subsequent releases.</p>
+
+<h3><a name="s2s4">2.4. Debug Console</a></h3>
+<p>
+Once kexec-loader has started all debugging messages, as well as Linux kernel
+messages are sent to a separate debug console. By default the debug console is
+/dev/tty2, this can be changed at boot by using the Linux cmdline, for example
+kexec_debug=/dev/ttyS0 writes all debug messages and kernel messages to the
+first serial port.
+</p>
+
+<h3><a name="s2s5">2.5. Kernel Modules</a></h3>
+<p>
+Kernel modules can be loaded by kexec-loader to add support for extra devices or
+filesystems which target systems can be loaded from. To add extra modules, simply
+copy them to /modules/ on the kexec-loader disk, to specify module arguments, use
+the /modules/modules.conf file. Modules loaded this way only affect the kernel
+running kexec-loader, not those loaded by kexec-loader.
+</p>
+<p>
+If you are using an official kexec-loader disk image, kernel modules are
+available on the downloads page of the project site, named somthing like
+modules-XXX.tar.gz, make sure you download the correct modules for your kernel.
+</p>
+
+<h2><a name="s3">3. Compiling</a></h2>
+<h3><a name="s3s1">3.1. Introduction</a></h3>
+<p>
+This section explains how to build a kexec-loader disk image, you must build a kernel and toolchain which is not explained in this document. I recommend using uClibc as a toolchain as glibc is too big to fit on a floppy, you must also use Linux 2.6.13 or above, as earlier versions did not have the kexec syscalls.
+</p>
+<p>
+You will need the following to compile kexec-loader:
+</p>
+<ul>
+	<li>GNU C compiler</li>
+	<li>Linux kernel headers</li>
+	<li>GNU Make</li>
+	<li>cpio archiver</li>
+	<li>Toolchain</li>
+	<li>zlib with headers</li>
+</ul>
+
+<h3><a name="s3s2">3.2. Compiling</a></h3>
+<p>
+To compile kexec-loader, use the following commands:
+</p>
+<p style="font-family: monospace;">
+HOST=i386-linux-uclibc make<br />
+./mkinitramfs.sh initramfs.cpio
+</p>
+<p>
+The first command assumes your toolchain was built to target i386-linux-uclibc, in which case the various tools such as gcc can be invoked as i386-linux-uclibc-gcc, ensure you set this to the correct target, or the compile may fail, or end up being compiled with the wrong toolchain. You must also make sure that the toolchain bin directories are included in $PATH.
+</p>
+<p>
+The first command compiles kexec-loader, downloads, patches and compiles kexec-tools, then links them as the binaries src/kexec-loader and src/kexec-loader.static, which are dynamically and statically linked respectively. The second command creates a Linux initramfs archive as initramfs.cpio, the initramfs contains kexec-loader.static as /init, some device nodes and empty directories.
+</p>
+<h3><a name="s3s3">3.3. Creating a Disk Image</a></h3>
+<p>
+This is a fairly generic floppy building method:
+</p>
+<ol>
+	<li>Create a 1.44MB file and format using mkfs.vfat</li>
+	<li>Install and configure SYSLINUX on the floppy image</li>
+	<li>Copy a UPX compressed kernel image to the floppy image</li>
+	<li>Copy misc. files (kexec-loader.conf, README, etc)</li>
+</ol>
+<p>
+Notes:<br />
+I embed the kexec-loader initramfs inside the kernel to make it take a little less space, you can also put the initramfs on the floppy image as a seperate file if your chosen bootloader is capable of loading an initrd/initramfs for the kernel, the UPX compression step is also optional.
+</p>
+
+<h2><a name="s4">4. Support</a></h2>
+<h3><a name="s4s1">4.1. Website</a></h3>
+<p>
+For information on kexec-loader, including current development and latest
+releases, please see the project <a href="http://www.solemnwarning.net/kexec-loader/">website</a>.
+</p>
+
+<h3><a name="s4s2">4.2. Developer</a></h3>
+<p>
+The developer of kexec-loader, Daniel Collins (aka solemnwarning), can often be
+found on the Freenode IRC network. To contact solemnwarning, you can use the
+following e-mail address: <em>solemnwarning@solemnwarning.net</em>.
+</p>
+</body>
+</html>

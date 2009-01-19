@@ -1,0 +1,85 @@
+diff -ru kexec-tools-1.101.orig/kexec/kexec.c kexec-tools-1.101.merge/kexec/kexec.c
+--- kexec-tools-1.101.orig/kexec/kexec.c	2005-01-13 13:24:29.000000000 +0000
++++ kexec-tools-1.101.merge/kexec/kexec.c	2008-06-02 21:33:11.000000000 +0100
+@@ -45,7 +45,9 @@
+ {
+ 	va_list args;
+ 	va_start(args, fmt);
++	printf("%c[;31m>> ", 0x1B);
+ 	vfprintf(stderr, fmt, args);
++	printf("%c[;37m", 0x1B);
+ 	va_end(args);
+ 	fflush(stdout);
+ 	fflush(stderr);
+@@ -687,7 +689,7 @@
+ 	printf("\n");
+ }
+ 
+-int main(int argc, char *argv[])
++int kexec_main(int argc, char *argv[])
+ {
+ 	int do_load = 1;
+ 	int do_exec = 0;
+diff -ru kexec-tools-1.101.orig/kexec/Makefile kexec-tools-1.101.merge/kexec/Makefile
+--- kexec-tools-1.101.orig/kexec/Makefile	2004-12-21 19:36:39.000000000 +0000
++++ kexec-tools-1.101.merge/kexec/Makefile	2008-06-02 21:28:40.000000000 +0100
+@@ -26,7 +26,7 @@
+ KEXEC_SRCS:= $(KEXEC_C_SRCS) $(KEXEC_S_SRCS)
+ KEXEC_OBJS:= $(KEXEC_C_OBJS) $(KEXEC_S_OBJS)
+ KEXEC_DEPS:= $(KEXEC_C_DEPS) $(KEXEC_S_DEPS)
+-KEXEC:= $(SBINDIR)/kexec
++KEXEC:= $(KLBASE)/src/kexec.a
+ 
+ include $(KEXEC_DEPS)
+ 
+@@ -47,8 +47,9 @@
+ 	$(CC) $(KCFLAGS) -o $@ -c $<
+ 
+ $(KEXEC): $(KEXEC_OBJS) $(UTIL_LIB)
+-	mkdir -p $(@D)
+-	$(CC) $(KCFLAGS) -o $@ $(KEXEC_OBJS) $(UTIL_LIB) $(LIBS)
++	echo "$(LIBS)" > $(KLBASE)/src/kexec_libs
++	cp $(UTIL_LIB) $(KLBASE)/src/kexec.a
++	ar -r $(KEXEC) $(KEXEC_OBJS)
+ 
+ echo::
+ 	@echo "KEXEC_C_SRCS $(KEXEC_C_SRCS)"
+diff -ru kexec-tools-1.101.orig/Makefile kexec-tools-1.101.merge/Makefile
+--- kexec-tools-1.101.orig/Makefile	2005-02-18 12:26:09.000000000 +0000
++++ kexec-tools-1.101.merge/Makefile	2008-06-02 21:28:40.000000000 +0100
+@@ -42,12 +42,7 @@
+ PKGLIBDIR=$(LIBDIR)/$(PACKAGE)
+ PKGINCLUDEIR=$(INCLUDEDIR)/$(PACKAGE)
+ 
+-MAN_PAGES:= kexec/kexec.8
+-BINARIES_i386:=  $(SBINDIR)/kexec $(PKGLIBDIR)/kexec_test
+-BINARIES_x86_64:=$(SBINDIR)/kexec $(PKGLIBDIR)/kexec_test
+-BINARIES:=$(SBINDIR)/kexec $(SBINDIR)/kdump $(BINARIES_$(ARCH)) 
+-
+-TARGETS:=$(BINARIES) $(MAN_PAGES)
++TARGETS:=$(KLBASE)/src/kexec.a
+ 
+ all: $(TARGETS)
+ 
+@@ -75,21 +70,6 @@
+ #
+ include kexec/Makefile
+ 
+-
+-# kdump (read a crashdump from memory)
+-#
+-include kdump/Makefile
+-
+-#
+-# kexec_test (test program)
+-#
+-ifeq ($(ARCH),i386)
+-include kexec_test/Makefile
+-endif
+-ifeq ($(ARCH),x86_64)
+-include kexec_test/Makefile
+-endif
+-
+ GENERATED_SRCS:= ./configure
+ SPEC=$(OBJDIR)/$(PACKAGE)-$(VERSION).spec
+ TARBALL=$(OBJDIR)/$(PACKAGE)-$(VERSION).tar.gz
