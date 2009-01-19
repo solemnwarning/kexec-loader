@@ -15,15 +15,22 @@
 # with this program; if not, write to the Free Software Foundation, Inc.,
 # 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 
-DEPS := misc.o
+DEPS := misc.o disk.o libblkid.a libuuid.a
 OBJS := $(DEPS)
 
 KT_VER := 2.0.0
 KT_URL := http://www.kernel.org/pub/linux/kernel/people/horms/kexec-tools/kexec-tools-$(KT_VER).tar.gz
 KT_CONFIGURE :=
 
+E2FS_VER := 1.41.3
+E2FS_URL := http://surfnet.dl.sourceforge.net/sourceforge/e2fsprogs/e2fsprogs-$(E2FS_VER).tar.gz
+E2FS_CONFIGURE :=
+
+INCLUDES += -Ie2fsprogs-$(E2FS_VER)/lib/
+
 ifdef HOST
 	KT_CONFIGURE += --host=$(HOST)
+	E2FS_CONFIGURE += --host=$(HOST)
 endif
 
 all: kexec-loader
@@ -45,6 +52,9 @@ kexec-loader: $(DEPS)
 misc.o: misc.c misc.h
 	$(CC) $(CFLAGS) $(INCLUDES) -c -o misc.o misc.c
 
+disk.o: disk.c disk.h misc.h libblkid.a
+	$(CC) $(CFLAGS) $(INCLUDES) -c -o disk.o disk.c
+
 kexec.a:
 	wget -nc $(KT_URL)
 	tar -xzf kexec-tools-$(KT_VER).tar.gz
@@ -52,3 +62,13 @@ kexec.a:
 	patch -Np1 -i $(KLBASE)/patches/kexec-tools-2.0.0.diff && \
 	./configure $(KT_CONFIGURE) && \
 	make
+
+libuuid.a: libblkid.a
+libblkid.a:
+	wget -nc $(E2FS_URL)
+	tar -xzf e2fsprogs-$(E2FS_VER).tar.gz
+	cd e2fsprogs-$(E2FS_VER)/ && \
+	CFLAGS="" ./configure $(E2FS_CONFIGURE)
+	make -C e2fsprogs-$(E2FS_VER)/lib/blkid/
+	make -C e2fsprogs-$(E2FS_VER)/lib/uuid/
+	cp e2fsprogs-$(E2FS_VER)/lib/lib{blkid,uuid}.a ./

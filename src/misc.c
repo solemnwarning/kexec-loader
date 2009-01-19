@@ -245,3 +245,55 @@ int kl_strnceq(char const *s1, char const *s2, int max) {
 	
 	return i == max ? 1 : 0;
 }
+
+struct list { struct list *next; };
+
+/* Add an entry to a list */
+void list_add(void *rptr, void *node) {
+	static struct list **root = NULL;
+	static struct list *eptr = NULL;
+	
+	if(root != rptr) {
+		root = rptr;
+		eptr = *root;
+		
+		while(eptr && eptr->next) {
+			eptr = eptr->next;
+		}
+	}
+	
+	if(eptr) {
+		eptr->next = node;
+		eptr = node;
+	}else{
+		*root = eptr = node;
+	}
+}
+
+/* Copy a node and add the copy to a list */
+void list_add_copy(void *rptr, void *node, int size) {
+	void *nptr = kl_malloc(size);
+	memcpy(nptr, node, size);
+	
+	list_add(rptr, nptr);
+}
+
+/* Remove an entry from a list */
+void list_del(void *rptr, void *node) {
+	struct list **root = NULL;
+	struct list *ptr = *root;
+	
+	if(*root == node) {
+		*root = ptr->next;
+		free(node);
+	}else{
+		while(ptr && ptr->next) {
+			if(ptr->next == node) {
+				ptr->next = ptr->next->next;
+				free(node);
+				
+				break;
+			}
+		}
+	}
+}

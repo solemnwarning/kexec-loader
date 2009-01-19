@@ -1,4 +1,4 @@
-/* kexec-loader - Misc. stuff
+/* kexec-loader - Disk header
  * Copyright (C) 2007-2009 Daniel Collins <solemnwarning@solemnwarning.net>
  *
  * This program is free software; you can redistribute it and/or modify
@@ -16,22 +16,30 @@
  * 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 */
 
-#ifndef KL_MISC_H
-#define KL_MISC_H
+#ifndef KL_DISK_H
+#define KL_DISK_H
 
-void debug(char const *fmt, ...);
-void die(char const *fmt, ...);
-char *get_cmdline(char const *name);
+#define INIT_DISK(ptr) \
+	(ptr)->next = NULL; \
+	(ptr)->name[0] = '\0'; \
+	(ptr)->major = -1; \
+	(ptr)->minor = -1; \
+	(ptr)->label[0] = '\0'; \
+	(ptr)->uuid[0] = '\0'; \
+	(ptr)->fstype[0] = '\0';
 
-void *kl_malloc(size_t size);
-char *kl_strndup(char const *src, int max);
-int kl_streq(char const *s1, char const *s2);
-int kl_strneq(char const *s1, char const *s2, int max);
-int kl_strceq(char const *s1, char const *s2);
-int kl_strnceq(char const *s1, char const *s2, int max);
+typedef struct kl_disk {
+	struct kl_disk *next;
+	
+	char name[32];
+	int major;
+	int minor;
+	
+	char label[256];
+	char uuid[256];
+	char fstype[32];
+} kl_disk;
 
-void list_add(void *rptr, void *node);
-void list_add_copy(void *rptr, void *node, int size);
-void list_del(void *rptr, void *node);
+kl_disk *get_disks(void);
 
-#endif /* !KL_MISC_H */
+#endif /* !KL_DISK_H */
