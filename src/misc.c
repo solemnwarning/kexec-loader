@@ -24,6 +24,7 @@
 #include <stdarg.h>
 #include <unistd.h>
 #include <sys/klog.h>
+#include <ctype.h>
 
 #include "misc.h"
 
@@ -183,4 +184,64 @@ char *kl_strndup(char const *src, int max) {
 	strcpy(dest, src);
 	
 	return dest;
+}
+
+/* Compare two strings */
+int kl_streq(char const *s1, char const *s2) {
+	int i = 0;
+	
+	while(s1[i] == s2[i]) {
+		if(s1[i] == '\0') {
+			return 1;
+		}
+		
+		i++;
+	}
+	
+	return 0;
+}
+
+/* Compare two strings, stop after max characters */
+int kl_strneq(char const *s1, char const *s2, int max) {
+	int i = 0;
+	
+	while(s1[i] == s2[i] && i < max) {
+		if(s1[i] == '\0') {
+			return 1;
+		}
+		
+		i++;
+	}
+	
+	return i == max ? 1 : 0;
+}
+
+/* Compare two strings, ignoring case */
+int kl_strceq(char const *s1, char const *s2) {
+	int i = 0;
+	
+	while(tolower(s1[i]) == tolower(s2[i])) {
+		if(s1[i] == '\0') {
+			return 1;
+		}
+		
+		i++;
+	}
+	
+	return 0;
+}
+
+/* Compare two strings, ignoring case, stop after max characters */
+int kl_strnceq(char const *s1, char const *s2, int max) {
+	int i = 0;
+	
+	while(tolower(s1[i]) == tolower(s2[i]) && i < max) {
+		if(s1[i] == '\0') {
+			return 1;
+		}
+		
+		i++;
+	}
+	
+	return i == max ? 1 : 0;
 }

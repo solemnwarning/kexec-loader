@@ -25,5 +25,9 @@ char *get_cmdline(char const *name);
 
 void *kl_malloc(size_t size);
 char *kl_strndup(char const *src, int max);
+int kl_streq(char const *s1, char const *s2);
+int kl_strneq(char const *s1, char const *s2, int max);
+int kl_strceq(char const *s1, char const *s2);
+int kl_strnceq(char const *s1, char const *s2, int max);
 
 #endif /* !KL_MISC_H */
