@@ -21,5 +21,9 @@
 
 void debug(char const *fmt, ...);
 void die(char const *fmt, ...);
+char *get_cmdline(char const *name);
+
+void *kl_malloc(size_t size);
+char *kl_strndup(char const *src, int max);
 
 #endif /* !KL_MISC_H */

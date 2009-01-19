@@ -49,7 +49,9 @@ void debug(char const *fmt, ...) {
 	char msgbuf[256];
 	
 	if(!debug_fh) {
-		debug_fh = fopen(DEBUG_TTY, "a");
+		char *path = get_cmdline("debug_tty");
+		debug_fh = fopen(path ? path : DEBUG_TTY, "a");
+		free(path);
 		
 		if(!debug_fh) {
 			return;
@@ -117,4 +119,68 @@ void die(char const *fmt, ...) {
 	while(1) {
 		sleep(9999);
 	}
+}
+
+/* Search the kernel command line for an option */
+char *get_cmdline(char const *name) {
+	FILE *fh = fopen("/proc/cmdline", "r");
+	if(!fh) {
+		debug("Error opening /proc/cmdline: %s", strerror(errno));
+		return NULL;
+	}
+	
+	int len = strlen(name);
+	char *r = NULL, buf[1024];
+	
+	if(fgets(buf, 1024, fh)) {
+		r = buf;
+		
+		while((r = strstr(r, name))) {
+			if(r == buf || r[-1] == ' ') {
+				if(r[len] == '=') {
+					r += len+1;
+					break;
+				}else if(r[len] == ' ' || r[len] == '\0') {
+					r += len;
+					break;
+				}
+			}
+			
+			r++;
+		}
+		
+		if(r) {
+			r = kl_strndup(r, strcspn(r, " "));
+		}
+	}
+	
+	if(ferror(fh)) {
+		debug("Error reading /proc/cmdline: %s", strerror(errno));
+	}
+	
+	fclose(fh);
+	
+	return r;
+}
+
+/* Allocate memory */
+void *kl_malloc(size_t size) {
+	void *ptr = malloc(size);
+	if(!ptr) {
+		die("Out of memory! (Tried to allocate %u)", size);
+	}
+	
+	memset(ptr, 0, size);
+	return ptr;
+}
+
+/* Duplicate a string */
+char *kl_strndup(char const *src, int max) {
+	int len = 0;
+	while(src[len] && len < max) { len++; }
+	
+	char *dest = kl_malloc(len+1);
+	strcpy(dest, src);
+	
+	return dest;
 }
