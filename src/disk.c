@@ -37,6 +37,7 @@
 		free(s); \
 	}
 
+/* Return a list containing disks in /proc/diskstats */
 kl_disk *get_disks(void) {
 	FILE *fh = fopen("/proc/diskstats", "r");
 	if(!fh) {
@@ -88,4 +89,33 @@ kl_disk *get_disks(void) {
 	
 	fclose(fh);
 	return list;
+}
+
+/* Search for a disk by disk id */
+kl_disk *find_disk(char const *id) {
+	kl_disk *ptr = get_disks(), *ret = NULL;
+	int match = 0;
+	
+	while(ptr) {
+		if(!ret && kl_strnceq(id, "LABEL=", 6)) {
+			if(ptr->label[0] && kl_streq(ptr->label, id+6)) {
+				match = 1;
+			}
+		}else if(!ret && kl_strnceq(id, "UUID=", 5)) {
+			if(ptr->uuid[0] && kl_streq(ptr->uuid, id+5)) {
+				match = 1;
+			}
+		}else if(!ret && kl_streq(ptr->name, id)) {
+			match = 1;
+		}
+		
+		if(!ret && match) {
+			ret = ptr;
+			ptr = ptr->next;
+		}else{
+			list_del(&ptr, ptr);
+		}
+	}
+	
+	return ret;
 }
