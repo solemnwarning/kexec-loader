@@ -22,6 +22,7 @@
 void debug(char const *fmt, ...);
 void die(char const *fmt, ...);
 char *get_cmdline(char const *name);
+char *next_value(char *ptr);
 
 void *kl_malloc(size_t size);
 char *kl_strndup(char const *src, int max);

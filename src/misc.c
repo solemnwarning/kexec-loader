@@ -164,6 +164,20 @@ char *get_cmdline(char const *name) {
 	return r;
 }
 
+/* Return next value in a string */
+char *next_value(char *ptr) {
+	ptr += strcspn(ptr, "\t ");
+	
+	if(*ptr) {
+		ptr[0] = '\0';
+		ptr++;
+		
+		ptr += strspn(ptr, "\t ");
+	}
+	
+	return ptr;
+}
+
 /* Allocate memory */
 void *kl_malloc(size_t size) {
 	void *ptr = malloc(size);

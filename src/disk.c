@@ -155,3 +155,33 @@ char const *mount_disk(kl_disk *disk) {
 	
 	return NULL;
 }
+
+/* Unmount all filesystems mounted under /mnt
+ * Writes errors to the debug log
+*/
+void unmount_all(void) {
+	FILE *fh = fopen("/proc/mounts", "r");
+	if(!fh) {
+		debug("Error opening /proc/mounts: %s", strerror(errno));
+		return;
+	}
+	
+	char line[256], *mpoint;
+	
+	while(fgets(line, 256, fh)) {
+		mpoint = next_value(line);
+		next_value(mpoint); /* Terminate mpoint */
+		
+		if(!kl_strneq(mpoint, "/mnt/", 5)) {
+			continue;
+		}
+		
+		if(umount(mpoint)) {
+			debug("Error unmounting %s: %s", mpoint, strerror(errno));
+		}else{
+			debug("Unmounted %s", mpoint);
+		}
+	}
+	
+	fclose(fh);
+}
