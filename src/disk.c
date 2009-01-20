@@ -124,15 +124,19 @@ kl_disk *find_disk(char const *id) {
 /* Attempt to mount a disk
  * Returns NULL on success, otherwise an error message
 */
-char const *mount_disk(kl_disk *disk) {
-	char dev[256], mpoint[256];
+char const *mount_disk(kl_disk *disk, char const *mpoint) {
+	char dev[256], dir[256];
 	
 	if(!disk->fstype) {
 		return "Unknown filesystem format";
 	}
 	
 	snprintf(dev, 256, "/dev/%s", disk->name);
-	snprintf(mpoint, 256, "/mnt/%s", disk->name);
+	snprintf(dir, 256, "/mnt/%s", disk->name);
+	
+	if(!mpoint) {
+		mpoint = dir;
+	}
 	
 	mkdir(mpoint, 0700);
 	
