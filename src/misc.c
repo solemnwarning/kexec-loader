@@ -28,6 +28,7 @@
 
 #include "misc.h"
 #include "console.h"
+#include "disk.h"
 
 #define KLOG_TTY "/dev/tty2"
 #define DEBUG_TTY "/dev/tty3"
@@ -41,6 +42,10 @@ int main(int argc, char **argv) {
 	
 	redirect_klog();
 	console_init();
+	
+	if(mount_boot()) {
+		unmount_all();
+	}
 	
 	debug("The main loop has ended, sleeping to prevent kernel panic");
 	while(1) { sleep(9999); }

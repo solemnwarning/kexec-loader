@@ -27,9 +27,11 @@
 #include <linux/kdev_t.h>
 #include <blkid/blkid.h>
 #include <sys/mount.h>
+#include <poll.h>
 
 #include "disk.h"
 #include "misc.h"
+#include "console.h"
 
 #define FOOBAR(dest, name) \
 	s = blkid_get_tag_value(NULL, name, path); \
@@ -155,6 +157,8 @@ char const *mount_disk(kl_disk *disk, char const *mpoint) {
 			default:
 				return strerror(errno);
 		}
+	}else{
+		debug("Mounted %s at %s", dev, mpoint);
 	}
 	
 	return NULL;
@@ -236,4 +240,48 @@ void unmount_all(void) {
 	}
 	
 	fclose(fh);
+}
+
+/* Search for and mount the boot disk at /mnt/boot
+ * Returns 1 on success, zero on error/abort
+*/
+int mount_boot(void) {
+	char *kdevice = get_cmdline("root");
+	char *device = kdevice ? kdevice : "LABEL=kexecloader";
+	kl_disk *disk = NULL;
+	int rval = 0;
+	
+	struct pollfd pollset;
+	pollset.fd = fileno(stdin);
+	pollset.events = POLLIN;
+	
+	printm("Searching for boot disk...");
+	printm("Press any key to abort");
+	
+	while(1) {
+		if(poll(&pollset, 1, 1000)) {
+			getchar();
+			break;
+		}
+		
+		disk = find_disk(device);
+		if(!disk) {
+			continue;
+		}
+		
+		printm("Found boot disk: %s", disk->name);
+		
+		char const *errmsg = mount_disk(disk, "/mnt/boot");
+		if(errmsg) {
+			printD("Error mounting boot disk: %s", errmsg);
+			break;
+		}
+		
+		rval = 1;
+		break;
+	}
+	
+	free(disk);
+	free(kdevice);
+	return rval;
 }

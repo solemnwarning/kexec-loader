@@ -167,7 +167,7 @@ void print2(int flags, char const *fmt, ...) {
 	va_end(argv);
 	
 	if(flags & P2_DEBUG) {
-		debug("%s\n", msg);
+		debug("%s", msg);
 	}
 	
 	if(flags & P2_ALERT) {
