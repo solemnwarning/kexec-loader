@@ -160,6 +160,54 @@ char const *mount_disk(kl_disk *disk, char const *mpoint) {
 	return NULL;
 }
 
+#define RPERROR(s) \
+	if(error) { \
+		*error = s; \
+	} \
+	free(full_path); \
+	free(disk_id); \
+	free(disk); \
+	return NULL;
+
+/* Mount a disk and convert the relative path to a full path
+ * Returns the full path on success, NULL if mount fails
+*/
+char* real_path(char const *root, char const *path, char const **error) {
+	char *full_path = NULL;
+	char *disk_id = NULL;
+	kl_disk *disk = NULL;
+	
+	if(path[0] == '(') {
+		int i = strcspn(++path, ")");
+		
+		disk_id = kl_strndup(path, i);
+		path += i;
+		
+		if(path[0] == ')') {
+			path++;
+		}
+	}else{
+		disk_id = kl_strdup(root);
+	}
+	
+	disk = find_disk(disk_id);
+	if(!disk) {
+		RPERROR("Unknown device");
+	}
+	
+	full_path = kl_sprintf("/mnt/%s/%s", disk->name, path);
+	
+	char const *merror = mount_disk(disk, NULL);
+	if(merror) {
+		RPERROR(merror);
+	}
+	
+	free(disk_id);
+	free(disk);
+	
+	return full_path;
+}
+
 /* Unmount all filesystems mounted under /mnt
  * Writes errors to the debug log
 */

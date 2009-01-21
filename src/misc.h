@@ -25,7 +25,9 @@ char *get_cmdline(char const *name);
 char *next_value(char *ptr);
 
 void *kl_malloc(size_t size);
+char *kl_strdup(char const *src);
 char *kl_strndup(char const *src, int max);
+char *kl_sprintf(char const *fmt, ...);
 int kl_streq(char const *s1, char const *s2);
 int kl_strneq(char const *s1, char const *s2, int max);
 int kl_strceq(char const *s1, char const *s2);

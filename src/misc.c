@@ -190,12 +190,35 @@ void *kl_malloc(size_t size) {
 }
 
 /* Duplicate a string */
+char *kl_strdup(char const *src) {
+	char *dest = kl_malloc(strlen(src)+1);
+	strcpy(dest, src);
+	
+	return dest;
+}
+
+/* Duplicate a string */
 char *kl_strndup(char const *src, int max) {
 	int len = 0;
 	while(src[len] && len < max) { len++; }
 	
 	char *dest = kl_malloc(len+1);
-	strcpy(dest, src);
+	strlcpy(dest, src, len+1);
+	
+	return dest;
+}
+
+/* Allocate a buffer and write a printf format string to it */
+char *kl_sprintf(char const *fmt, ...) {
+	va_list argv;
+	
+	va_start(argv, fmt);
+	char *dest = kl_malloc(vsnprintf(NULL, 0, fmt, argv)+1);
+	va_end(argv);
+	
+	va_start(argv, fmt);
+	vsprintf(dest, fmt, argv);
+	va_end(argv);
 	
 	return dest;
 }
