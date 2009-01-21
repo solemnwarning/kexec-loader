@@ -59,8 +59,8 @@ extern int console_cols;
 extern int console_rows;
 
 void console_init(void);
-void console_setpos(int row, int column);
-void console_getpos(int *rptr, int *cptr);
+void console_setpos(int col, int row);
+void console_getpos(int *cptr, int *rptr);
 void console_clear(void);
 void console_fgcolour(int colour);
 void console_bgcolour(int colour);

@@ -27,6 +27,7 @@
 #include <ctype.h>
 
 #include "misc.h"
+#include "console.h"
 
 #define KLOG_TTY "/dev/tty2"
 #define DEBUG_TTY "/dev/tty3"
@@ -39,6 +40,9 @@ int main(int argc, char **argv) {
 	}
 	
 	redirect_klog();
+	console_init();
+	
+	debug("Detected console size: %dx%d", console_cols, console_rows);
 	
 	return 0;
 }

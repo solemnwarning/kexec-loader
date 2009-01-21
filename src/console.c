@@ -67,7 +67,7 @@ void console_setpos(int col, int row) {
 	}
 
 /* Fetch the cursor position */
-void console_getpos(int *rptr, int *cptr) {
+void console_getpos(int *cptr, int *rptr) {
 	char inbuf[256], c;
 	int insize = 0, row, col;
 	
