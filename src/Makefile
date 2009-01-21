@@ -15,7 +15,7 @@
 # with this program; if not, write to the Free Software Foundation, Inc.,
 # 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 
-DEPS := misc.o disk.o libblkid.a libuuid.a
+DEPS := misc.o disk.o console.o libblkid.a libuuid.a
 OBJS := $(DEPS)
 
 KT_VER := 2.0.0
@@ -54,6 +54,9 @@ misc.o: misc.c misc.h
 
 disk.o: disk.c disk.h misc.h libblkid.a
 	$(CC) $(CFLAGS) $(INCLUDES) -c -o disk.o disk.c
+
+console.o: console.c console.h
+	$(CC) $(CFLAGS) $(INCLUDES) -c -o console.o console.c
 
 kexec.a:
 	wget -nc $(KT_URL)
