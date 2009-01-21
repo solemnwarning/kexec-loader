@@ -42,7 +42,8 @@ int main(int argc, char **argv) {
 	redirect_klog();
 	console_init();
 	
-	debug("Detected console size: %dx%d", console_cols, console_rows);
+	debug("The main loop has ended, sleeping to prevent kernel panic");
+	while(1) { sleep(9999); }
 	
 	return 0;
 }

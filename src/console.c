@@ -31,16 +31,14 @@
 
 static int alert = 0;
 
-int console_cols = -1;
-int console_rows = -1;
+int console_cols = 80;
+int console_rows = 24;
 
 /* Initialize console(s) */
 void console_init(void) {
 	setvbuf(stdin, NULL, _IONBF, 0);
 	setvbuf(stdout, NULL, _IONBF, 0);
 	setvbuf(stderr, NULL, _IONBF, 0);
-	
-	console_getsize(&console_cols, &console_rows);
 	
 	struct termios attribs;
 	if(tcgetattr(fileno(stdin), &attribs) == -1) {
@@ -54,6 +52,9 @@ void console_init(void) {
 	if(tcsetattr(fileno(stdin), TCSANOW, &attribs) == -1) {
 		debug("Error setting stdin attributes: %s", strerror(errno));
 	}
+	
+	console_getsize(&console_cols, &console_rows);
+	debug("Detected console size: %dx%d", console_cols, console_rows);
 }
 
 /* Set cursor position */
