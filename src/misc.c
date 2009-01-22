@@ -376,6 +376,16 @@ void list_del(void *rptr, void *node) {
 		continue; \
 	}
 
+#define ADD_TARGET() \
+	if(target.root[0]) { \
+		list_add_copy(&targets, &target, sizeof(target)); \
+	}else{ \
+		printD("Line %d: No root device specified", topen); \
+		while(target.modules) { \
+			list_del(&target.modules, target.modules); \
+		} \
+	}
+
 /* Load kexec-loader.conf */
 static void load_conf(void) {
 	FILE *fh = fopen("/mnt/boot/kexec-loader.conf", "r");
@@ -419,12 +429,12 @@ static void load_conf(void) {
 			CHECK_HASARG();
 			
 			if(topen) {
-				list_add_copy(&targets, &target, sizeof(target));
+				ADD_TARGET();
 			}
 			
 			INIT_TARGET(&target);
 			strlcpy(target.title, val, sizeof(target.title));
-			topen = 1;
+			topen = lnum;
 			
 			continue;
 		}
@@ -494,7 +504,7 @@ static void load_conf(void) {
 	}
 	
 	if(topen) {
-		list_add_copy(&targets, &target, sizeof(target));
+		ADD_TARGET();
 	}
 	
 	fclose(fh);
