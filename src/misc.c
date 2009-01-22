@@ -33,7 +33,12 @@
 #define KLOG_TTY "/dev/tty2"
 #define DEBUG_TTY "/dev/tty3"
 
+int timeout = 0;
+char grub_path[1024] = {'\0'};
+kl_target *targets = NULL;
+
 static void redirect_klog(void);
+static void load_conf(void);
 
 int main(int argc, char **argv) {
 	if(mount("none", "/proc", "proc", 0, NULL)) {
@@ -41,9 +46,13 @@ int main(int argc, char **argv) {
 	}
 	
 	redirect_klog();
+	
 	console_init();
+	console_clear();
+	console_setpos(0,0);
 	
 	if(mount_boot()) {
+		load_conf();
 		unmount_all();
 	}
 	
@@ -199,6 +208,16 @@ void *kl_malloc(size_t size) {
 	return ptr;
 }
 
+/* Resize memory */
+void *kl_realloc(void *ptr, size_t size) {
+	ptr = realloc(ptr, size);
+	if(!ptr) {
+		die("Out of memory! (Tried to realloc %u)", size);
+	}
+	
+	return ptr;
+}
+
 /* Duplicate a string */
 char *kl_strdup(char const *src) {
 	char *dest = kl_malloc(strlen(src)+1);
@@ -343,4 +362,140 @@ void list_del(void *rptr, void *node) {
 			}
 		}
 	}
+}
+
+#define CHECK_HASARG() \
+	if(!val[0]) { \
+		printD("Line %u: '%s' requires an argument", lnum, name); \
+		continue; \
+	}
+
+#define CHECK_TOPEN() \
+	if(!topen) { \
+		printD("Line %u: '%s' must be after a 'title'", lnum, name); \
+		continue; \
+	}
+
+/* Load kexec-loader.conf */
+static void load_conf(void) {
+	FILE *fh = fopen("/mnt/boot/kexec-loader.conf", "r");
+	if(!fh) {
+		printD("Error opening kexec-loader.conf: %s", strerror(errno));
+		return;
+	}
+	
+	printd("Loading kexec-loader.conf...");
+	
+	char line[1024], *name, *val;
+	int lnum = 0, topen = 0;
+	kl_target target;
+	kl_module mod;
+	
+	while(fgets(line, 1024, fh)) {
+		line[strcspn(line, "\r\n")] = '\0';
+		lnum++;
+		
+		name = line+strspn(line, "\r\n\t ");
+		val = next_value(name);
+		
+		if(name[0] == '#' || name[0] == '\0') {
+			continue;
+		}
+		
+		if(kl_streq(name, "timeout")) {
+			CHECK_HASARG();
+			
+			timeout = atoi(val);
+			continue;
+		}
+		if(kl_streq(name, "grub-path")) {
+			CHECK_HASARG();
+			
+			strlcpy(grub_path, val, sizeof(grub_path));
+			continue;
+		}
+		
+		if(kl_streq(name, "title")) {
+			CHECK_HASARG();
+			
+			if(topen) {
+				list_add_copy(&targets, &target, sizeof(target));
+			}
+			
+			INIT_TARGET(&target);
+			strlcpy(target.title, val, sizeof(target.title));
+			topen = 1;
+			
+			continue;
+		}
+		if(kl_streq(name, "root")) {
+			CHECK_TOPEN();
+			CHECK_HASARG();
+			
+			strlcpy(target.root, val, sizeof(target.root));
+			continue;
+		}
+		if(kl_streq(name, "kernel")) {
+			CHECK_TOPEN();
+			CHECK_HASARG();
+			
+			strlcpy(target.kernel, val, sizeof(target.kernel));
+			continue;
+		}
+		if(kl_streq(name, "initrd")) {
+			CHECK_TOPEN();
+			CHECK_HASARG();
+			
+			strlcpy(target.initrd, val, sizeof(target.initrd));
+			continue;
+		}
+		if(kl_streq(name, "cmdline")) {
+			CHECK_TOPEN();
+			CHECK_HASARG();
+			
+			strlcpy(target.cmdline, val, sizeof(target.cmdline));
+			continue;
+		}
+		if(kl_streq(name, "append")) {
+			CHECK_TOPEN();
+			CHECK_HASARG();
+			
+			strlcpy(target.append, val, sizeof(target.append));
+			continue;
+		}
+		if(kl_streq(name, "default")) {
+			CHECK_TOPEN();
+			
+			target.flags |= TARGET_DEFAULT;
+			continue;
+		}
+		if(kl_streq(name, "reset-vga")) {
+			CHECK_TOPEN();
+			
+			target.flags |= TARGET_RESET;
+			continue;
+		}
+		if(kl_streq(name, "module")) {
+			CHECK_TOPEN();
+			CHECK_HASARG();
+			
+			INIT_MODULE(&mod);
+			strlcpy(mod.args, next_value(val), sizeof(mod.args));
+			strlcpy(mod.path, val, sizeof(mod.path));
+			list_add_copy(&target.modules, &mod, sizeof(mod));
+			
+			continue;
+		}
+		
+		printD("Line %d: Unknown directive '%s'", lnum, name);
+	}
+	if(ferror(fh)) {
+		printD("Error reading kexec-loader.conf: %s", strerror(errno));
+	}
+	
+	if(topen) {
+		list_add_copy(&targets, &target, sizeof(target));
+	}
+	
+	fclose(fh);
 }

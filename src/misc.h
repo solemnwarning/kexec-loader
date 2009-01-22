@@ -19,12 +19,57 @@
 #ifndef KL_MISC_H
 #define KL_MISC_H
 
+#define TARGET_DEFAULT	(int)(1<<0)
+#define TARGET_RESET	(int)(1<<1)
+
+#define INIT_MODULE(ptr) \
+	(ptr)->next = NULL; \
+	(ptr)->path[0] = '\0'; \
+	(ptr)->args[0] = '\0';
+
+typedef struct kl_module {
+	struct kl_module *next;
+	
+	char path[1024];
+	char args[1024];
+} kl_module;
+
+#define INIT_TARGET(ptr) \
+	(ptr)->next = NULL; \
+	(ptr)->title[0] = '\0'; \
+	(ptr)->flags = 0; \
+	(ptr)->root[0] = '\0'; \
+	(ptr)->kernel[0] = '\0'; \
+	(ptr)->initrd[0] = '\0'; \
+	(ptr)->cmdline[0] = '\0'; \
+	(ptr)->append[0] = '\0'; \
+	(ptr)->modules = NULL;
+
+typedef struct kl_target {
+	struct kl_target *next;
+	
+	char title[256];
+	int flags;
+	
+	char root[256];
+	char kernel[1024];
+	char initrd[1024];
+	char cmdline[1024];
+	char append[1024];
+	kl_module *modules;
+} kl_target;
+
+extern int timeout;
+extern char grub_path[];
+extern kl_target *targets;
+
 void debug(char const *fmt, ...);
 void die(char const *fmt, ...);
 char *get_cmdline(char const *name);
 char *next_value(char *ptr);
 
 void *kl_malloc(size_t size);
+void *kl_realloc(void *ptr, size_t size);
 char *kl_strdup(char const *src);
 char *kl_strndup(char const *src, int max);
 char *kl_sprintf(char const *fmt, ...);
