@@ -26,15 +26,18 @@
 #include "misc.h"
 
 static void draw_static(void);
-static void draw_menu(kl_target *selected);
+static void draw_menu(kl_target *start, int selected);
 
 void menu_main(void) {
 	struct pollfd inpoll;
 	inpoll.fd = fileno(stdin);
 	inpoll.events = POLLIN;
 	
+	kl_target *start = targets;
 	kl_target *target = targets;
 	kl_target *tptr = target;
+	
+	int row = 6;
 	
 	while(tptr) {
 		if(tptr->flags & TARGET_DEFAULT) {
@@ -46,7 +49,7 @@ void menu_main(void) {
 	}
 	
 	draw_static();
-	draw_menu(target);
+	draw_menu(start, row);
 	
 	if(timeout) {
 		console_setpos(1, 3);
@@ -82,6 +85,44 @@ void menu_main(void) {
 		" ENTER to select a target, D to display disks or C to open the"
 		" console."
 	);
+	
+	while(1) {
+		int c = getchar();
+		
+		if(c == 0x1B && getchar() == '[') {
+			c = getchar();
+			
+			/* 0x41 = Up arrow
+			 * 0x42 = Down arrow
+			*/
+			
+			if(c == 0x41 && row > 6) {
+				target = list_prev(targets, target);
+				tptr = list_prev(targets, start);
+				
+				if(row == 7 && tptr) {
+					start = tptr;
+				}else{
+					row--;
+				}
+				
+				draw_menu(start, row);
+			}
+			if(c == 0x42 && target->next) {
+				target = target->next;
+				
+				if(row+3 == console_rows && target->next) {
+					start = start->next;
+				}else{
+					row++;
+				}
+				
+				draw_menu(start, row);
+			}
+			
+			continue;
+		}
+	}
 }
 
 /* Draw static parts of the menu screen */
@@ -131,42 +172,25 @@ static void draw_static(void) {
 }
 
 /* Draw the menu entries */
-static void draw_menu(kl_target *selected) {
-	kl_target *start = targets;
-	kl_target *tptr = targets;
+static void draw_menu(kl_target *start, int selected) {
+	int erow = console_rows-2, row = 6;
 	
-	int erow = console_rows-2;
-	int crow = 6;
-	
-	while(tptr != selected) {
-		if(selected->next && crow+1 == erow) {
-			start = start->next;
-		}else{
-			crow++;
-		}
-		
-		tptr = tptr->next;
-	}
-	
-	tptr = start;
-	crow = 6;
-	
-	while(tptr && crow <= erow) {
-		console_setpos(console_cols-2, crow);
+	while(start && row <= erow) {
+		console_setpos(console_cols-2, row);
 		console_erase(ERASE_SOL);
 		
-		console_setpos(0, crow);
+		console_setpos(0, row);
 		fputs("| ", stdout);
 		
-		if(tptr == selected) {
+		if(row == selected) {
 			console_attrib(CONS_INVERT);
-			fputs(tptr->title, stdout);
+			fputs(start->title, stdout);
 			console_attrib(0);
 		}else{
-			fputs(tptr->title, stdout);
+			fputs(start->title, stdout);
 		}
 		
-		tptr = tptr->next;
-		crow++;
+		start = start->next;
+		row++;
 	}
 }

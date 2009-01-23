@@ -367,6 +367,23 @@ void list_del(void *rptr, void *node) {
 	}
 }
 
+/* Return the previous node in the list
+ * Returns NULL if there is no parent (e.g, node == root)
+*/
+void *list_prev(void *root, void *node) {
+	struct list *ptr = root;
+	
+	while(ptr) {
+		if(ptr->next == node) {
+			return ptr;
+		}
+		
+		ptr = ptr->next;
+	}
+	
+	return NULL;
+}
+
 #define CHECK_HASARG() \
 	if(!val[0]) { \
 		printD("Line %u: '%s' requires an argument", lnum, name); \
