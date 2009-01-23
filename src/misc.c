@@ -29,6 +29,7 @@
 #include "misc.h"
 #include "console.h"
 #include "disk.h"
+#include "menu.h"
 
 #define KLOG_TTY "/dev/tty2"
 #define DEBUG_TTY "/dev/tty3"
@@ -55,6 +56,8 @@ int main(int argc, char **argv) {
 		load_conf();
 		unmount_all();
 	}
+	
+	menu_main();
 	
 	debug("The main loop has ended, sleeping to prevent kernel panic");
 	while(1) { sleep(9999); }
@@ -131,7 +134,7 @@ void die(char const *fmt, ...) {
 	vsnprintf(msgbuf, 256, fmt, argv);
 	va_end(argv);
 	
-	debug("FATAL: %s\n", msgbuf);
+	debug("FATAL: %s", msgbuf);
 	
 	printf("\nFATAL: %s", msgbuf);
 	fflush(stdout);
