@@ -26,13 +26,27 @@
 #include "misc.h"
 
 static void draw_static(void);
+static void draw_menu(kl_target *selected);
 
 void menu_main(void) {
 	struct pollfd inpoll;
 	inpoll.fd = fileno(stdin);
 	inpoll.events = POLLIN;
 	
+	kl_target *target = targets;
+	kl_target *tptr = target;
+	
+	while(tptr) {
+		if(tptr->flags & TARGET_DEFAULT) {
+			target = tptr;
+			break;
+		}
+		
+		tptr = tptr->next;
+	}
+	
 	draw_static();
+	draw_menu(target);
 	
 	if(timeout) {
 		console_setpos(1, 3);
@@ -113,5 +127,46 @@ static void draw_static(void) {
 	console_setpos(0, console_rows-1);
 	for(i = 0; i < console_cols; i++) {
 		putchar(i == 0 || i == console_cols-1 ? '+' : '-');
+	}
+}
+
+/* Draw the menu entries */
+static void draw_menu(kl_target *selected) {
+	kl_target *start = targets;
+	kl_target *tptr = targets;
+	
+	int erow = console_rows-2;
+	int crow = 6;
+	
+	while(tptr != selected) {
+		if(selected->next && crow+1 == erow) {
+			start = start->next;
+		}else{
+			crow++;
+		}
+		
+		tptr = tptr->next;
+	}
+	
+	tptr = start;
+	crow = 6;
+	
+	while(tptr && crow <= erow) {
+		console_setpos(console_cols-2, crow);
+		console_erase(ERASE_SOL);
+		
+		console_setpos(0, crow);
+		fputs("| ", stdout);
+		
+		if(tptr == selected) {
+			console_attrib(CONS_INVERT);
+			fputs(tptr->title, stdout);
+			console_attrib(0);
+		}else{
+			fputs(tptr->title, stdout);
+		}
+		
+		tptr = tptr->next;
+		crow++;
 	}
 }
