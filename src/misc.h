@@ -24,13 +24,13 @@
 
 #define INIT_MODULE(ptr) \
 	(ptr)->next = NULL; \
-	(ptr)->path[0] = '\0'; \
+	(ptr)->name[0] = '\0'; \
 	(ptr)->args[0] = '\0';
 
 typedef struct kl_module {
 	struct kl_module *next;
 	
-	char path[1024];
+	char name[1024];
 	char args[1024];
 } kl_module;
 
@@ -62,6 +62,7 @@ typedef struct kl_target {
 extern int timeout;
 extern char grub_path[];
 extern kl_target *targets;
+extern kl_module *kmods;
 
 void debug(char const *fmt, ...);
 void die(char const *fmt, ...);
@@ -82,5 +83,7 @@ void list_add(void *rptr, void *node);
 void list_add_copy(void *rptr, void *node, int size);
 void list_del(void *rptr, void *node);
 void *list_prev(void *root, void *node);
+
+void modprobe_all(void);
 
 #endif /* !KL_MISC_H */

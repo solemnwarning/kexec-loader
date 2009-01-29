@@ -37,6 +37,7 @@
 int timeout = 0;
 char grub_path[1024] = {'\0'};
 kl_target *targets = NULL;
+kl_module *kmods = NULL;
 
 static void redirect_klog(void);
 static void load_conf(void);
@@ -54,6 +55,8 @@ int main(int argc, char **argv) {
 	
 	if(mount_boot()) {
 		load_conf();
+		modprobe_all();
+		
 		unmount_all();
 	}
 	
@@ -511,8 +514,19 @@ static void load_conf(void) {
 			
 			INIT_MODULE(&mod);
 			strlcpy(mod.args, next_value(val), sizeof(mod.args));
-			strlcpy(mod.path, val, sizeof(mod.path));
+			strlcpy(mod.name, val, sizeof(mod.name));
 			list_add_copy(&target.modules, &mod, sizeof(mod));
+			
+			continue;
+		}
+		if(kl_streq(name, "kmod")) {
+			CHECK_TOPEN();
+			CHECK_HASARG();
+			
+			INIT_MODULE(&mod);
+			strlcpy(mod.args, next_value(val), sizeof(mod.args));
+			strlcpy(mod.name, val, sizeof(mod.name));
+			list_add_copy(&kmods, &mod, sizeof(mod));
 			
 			continue;
 		}

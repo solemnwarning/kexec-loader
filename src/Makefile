@@ -15,7 +15,7 @@
 # with this program; if not, write to the Free Software Foundation, Inc.,
 # 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 
-DEPS := misc.o disk.o console.o menu.o libblkid.a libuuid.a
+DEPS := misc.o disk.o console.o menu.o modprobe.o libblkid.a libuuid.a
 OBJS := $(DEPS)
 
 KT_VER := 2.0.0
@@ -46,8 +46,8 @@ distclean: clean
 	rm -f kexec-tools-$(KT_VER).tar.gz
 
 kexec-loader: $(DEPS)
-	$(CC) $(CFLAGS) $(LIBS) -o kexec-loader $(OBJS)
-	$(CC) $(CFLAGS) $(LIBS) -static -o kexec-loader.static $(OBJS)
+	$(CC) $(CFLAGS) -o kexec-loader $(OBJS) $(LIBS)
+	$(CC) $(CFLAGS) -static -o kexec-loader.static $(OBJS) $(LIBS)
 
 misc.o: misc.c misc.h
 	$(CC) $(CFLAGS) $(INCLUDES) -c -o misc.o misc.c
@@ -60,6 +60,9 @@ console.o: console.c console.h
 
 menu.o: menu.c menu.h
 	$(CC) $(CFLAGS) $(INCLUDES) -c -o menu.o menu.c
+
+modprobe.o: modprobe.c
+	$(CC) $(CFLAGS) $(INCLUDES) -c -o modprobe.o modprobe.c
 
 kexec.a:
 	wget -nc $(KT_URL)
