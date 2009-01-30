@@ -212,6 +212,29 @@ char* real_path(char const *root, char const *path, char const **error) {
 	return full_path;
 }
 
+/* Format a vpath for display to the user
+ * Returns a string on the heap
+*/
+char *get_vpath(char const *root, char const *path) {
+	char const *disk = root;
+	int disklen = strlen(root);
+	
+	if(*path == '(') {
+		disklen = strcspn(path, ")");
+		if(path[disklen]) { disklen++; }
+		
+		disk = path;
+		path += disklen;
+	}
+	
+	char *vpath = kl_malloc(strlen(path)+disklen+1);
+	
+	strncpy(vpath, disk, disklen);
+	strcat(vpath, path);
+	
+	return vpath;
+}
+
 /* Unmount all filesystems mounted under /mnt
  * Writes errors to the debug log
 */

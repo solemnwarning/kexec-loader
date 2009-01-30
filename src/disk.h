@@ -44,6 +44,7 @@ kl_disk *get_disks(void);
 kl_disk *find_disk(char const *id);
 char const *mount_disk(kl_disk *disk, char const *mpoint);
 char* real_path(char const *root, char const *path, char const **error);
+char *get_vpath(char const *root, char const *path);
 void unmount_all(void);
 int mount_boot(void);
 
