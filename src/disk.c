@@ -164,64 +164,71 @@ char const *mount_disk(kl_disk *disk, char const *mpoint) {
 	return NULL;
 }
 
-#define RPERROR(s) \
-	if(error) { \
-		*error = s; \
-	} \
-	free(full_path); \
-	free(disk_id); \
-	free(disk); \
-	return NULL;
-
-/* Mount a disk and convert the relative path to a full path
- * Returns the full path on success, NULL if mount fails
+/* Check the syntax of a vpath
+ * Returns 1 if valid, zero otherwise
 */
-char* real_path(char const *root, char const *path, char const **error) {
-	char *full_path = NULL;
-	char *disk_id = NULL;
-	kl_disk *disk = NULL;
-	
-	if(path[0] == '(') {
-		int i = strcspn(++path, ")");
-		
-		disk_id = kl_strndup(path, i);
-		path += i;
-		
-		if(path[0] == ')') {
-			path++;
+int check_vpath(char const *vpath) {
+	if(*vpath == '(') {
+		if(vpath[1] == ')' || !(vpath = strchr(vpath, ')'))) {
+			return 0;
 		}
+		
+		vpath++;
+	}
+	
+	if(*vpath == '\0') {
+		return 0;
+	}
+	
+	return 1;
+}
+
+/* Mount the disk a vpath refers to and return the real path in a string
+ * allocated on the heap, returns NULL if mount fails.
+ *
+ * You MUST pass a valid path, check with check_vpath()
+*/
+char *get_rpath(char const *root, char const *path, char const **error) {
+	char *diskid = NULL, *rpath = NULL;
+	
+	if(*path == '(') {
+		diskid = kl_strndup(path, strcspn(path+1, ")"));
+		path += strcspn(path, ")")+1;
 	}else{
-		disk_id = kl_strdup(root);
+		diskid = kl_strdup(root);
 	}
 	
-	disk = find_disk(disk_id);
+	kl_disk *disk = find_disk(diskid);
 	if(!disk) {
-		RPERROR("Unknown device");
+		*error = "Unknown device";
+		goto END;
 	}
 	
-	full_path = kl_sprintf("/mnt/%s/%s", disk->name, path);
-	
-	char const *merror = mount_disk(disk, NULL);
-	if(merror) {
-		RPERROR(merror);
+	*error = mount_disk(disk, NULL);
+	if(*error) {
+		goto END;
 	}
 	
-	free(disk_id);
+	rpath = kl_sprintf("/mnt/%s/%s", disk->name, path);
+	
+	END:
+	free(diskid);
 	free(disk);
 	
-	return full_path;
+	return rpath;
 }
 
 /* Format a vpath for display to the user
  * Returns a string on the heap
+ *
+ * You MUST pass a valid path, check with check_vpath()
 */
 char *get_vpath(char const *root, char const *path) {
 	char const *disk = root;
 	int disklen = strlen(root);
 	
 	if(*path == '(') {
-		disklen = strcspn(path, ")");
-		if(path[disklen]) { disklen++; }
+		disklen = strcspn(path, ")")+1;
 		
 		disk = path;
 		path += disklen;
