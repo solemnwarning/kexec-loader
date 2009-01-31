@@ -408,14 +408,29 @@ void *list_prev(void *root, void *node) {
 		continue; \
 	}
 
+#define CHECK_VPATH() \
+	if(!check_vpath(val)) { \
+		printD("Line %d: Invalid path specified", lnum); \
+		continue; \
+	}
+
+#define TARGET_FAIL() \
+	topen = 0; \
+	while(target.modules) { \
+		list_del(&target.modules, target.modules); \
+	}
+
 #define ADD_TARGET() \
-	if(target.root[0]) { \
-		list_add_copy(&targets, &target, sizeof(target)); \
-	}else{ \
+	if(!target.root[0]) { \
 		printD("Line %d: No root device specified", topen); \
-		while(target.modules) { \
-			list_del(&target.modules, target.modules); \
-		} \
+		TARGET_FAIL(); \
+	} \
+	if(!target.kernel[0]) { \
+		printD("Line %d: No kernel specified", topen); \
+		TARGET_FAIL(); \
+	} \
+	if(topen) { \
+		list_add_copy(&targets, &target, sizeof(target)); \
 	}
 
 /* Load kexec-loader.conf */
@@ -452,6 +467,7 @@ static void load_conf(void) {
 		}
 		if(kl_streq(name, "grub-path")) {
 			CHECK_HASARG();
+			CHECK_VPATH();
 			
 			strlcpy(grub_path, val, sizeof(grub_path));
 			continue;
@@ -480,6 +496,7 @@ static void load_conf(void) {
 		if(kl_streq(name, "kernel")) {
 			CHECK_TOPEN();
 			CHECK_HASARG();
+			CHECK_VPATH();
 			
 			strlcpy(target.kernel, val, sizeof(target.kernel));
 			continue;
@@ -487,6 +504,7 @@ static void load_conf(void) {
 		if(kl_streq(name, "initrd")) {
 			CHECK_TOPEN();
 			CHECK_HASARG();
+			CHECK_VPATH();
 			
 			strlcpy(target.initrd, val, sizeof(target.initrd));
 			continue;
@@ -520,6 +538,7 @@ static void load_conf(void) {
 		if(kl_streq(name, "module")) {
 			CHECK_TOPEN();
 			CHECK_HASARG();
+			CHECK_VPATH();
 			
 			INIT_MODULE(&mod);
 			strlcpy(mod.args, next_value(val), sizeof(mod.args));
