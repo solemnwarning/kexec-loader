@@ -128,7 +128,11 @@ static void redirect_klog(void) {
 	exit(0);
 }
 
-/* Log error and idle (Exiting will cause panic in older kernels) */
+/* Log error and idle (Exiting will cause panic in older kernels)
+ *
+ * HACK: Behaviour changes if PID is not 1, this is because kexec-tools also has
+ * a die() function and they conflict at link time.
+*/
 void die(char const *fmt, ...) {
 	va_list argv;
 	char msgbuf[256];
@@ -137,13 +141,18 @@ void die(char const *fmt, ...) {
 	vsnprintf(msgbuf, 256, fmt, argv);
 	va_end(argv);
 	
-	debug("FATAL: %s", msgbuf);
-	
-	printf("\nFATAL: %s", msgbuf);
-	fflush(stdout);
-	
-	while(1) {
-		sleep(9999);
+	if(getpid() == 1) {
+		debug("FATAL: %s", msgbuf);
+		printf("\nFATAL: %s", msgbuf);
+		
+		while(1) {
+			sleep(9999);
+		}
+	}else{
+		msgbuf[strcspn(msgbuf, "\n")] = '\0';
+		printd("%s", msgbuf);
+		
+		exit(1);
 	}
 }
 

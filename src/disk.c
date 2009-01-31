@@ -242,6 +242,21 @@ char *get_vpath(char const *root, char const *path) {
 	return vpath;
 }
 
+/* Return the device in a vpath, fall back to root if vpath does not contain a
+ * device, the return value is a string allocatedon the heap
+*/
+char *get_diskid(char const *root, char const *vpath) {
+	char const *disk = root;
+	int disklen = strlen(root);
+	
+	if(*vpath == '(') {
+		disk = vpath+1;
+		disklen = strcspn(disk, ")");
+	}
+	
+	return kl_strndup(disk, disklen);
+}
+
 /* Unmount all filesystems mounted under /mnt
  * Writes errors to the debug log
 */
