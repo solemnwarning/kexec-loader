@@ -59,7 +59,7 @@ void menu_main(void) {
 			console_setpos(1, 2);
 			console_erase(ERASE_LINE);
 			printf(
-				"Booting '%s' in %d %s...", "AAAA", timeout,
+				"Booting '%s' in %d %s...", target->title, timeout,
 				timeout > 1 ? "seconds" : "second"
 			);
 			
@@ -69,22 +69,25 @@ void menu_main(void) {
 			}
 			
 			if(--timeout == 0) {
-				/* TODO */
+				console_clear();
+				console_setpos(0,0);
+				boot_target(target);
+				
+				draw_static();
+				draw_menu(start, row);
 				break;
 			}
 		}
 	}
 	
-	console_setpos(0, 3);
+	FOOBAR:
+	console_setpos(1, 2);
 	console_erase(ERASE_LINE);
-	console_setpos(0, 2);
-	console_erase(ERASE_LINE);
+	puts("Scroll through the list using the up/down arrow keys and press ENTER to select");
 	
-	puts(
-		"Scroll through the list using the up/down arrow keys and press"
-		" ENTER to select a target, D to display disks or C to open the"
-		" console."
-	);
+	console_setpos(1, 3);
+	console_erase(ERASE_LINE);
+	puts("a target, D to display disks or C to open the console.");
 	
 	while(1) {
 		int c = getchar();
@@ -121,6 +124,15 @@ void menu_main(void) {
 			}
 			
 			continue;
+		}
+		if(c == '\n') {
+			console_clear();
+			console_setpos(0,0);
+			boot_target(target);
+			
+			draw_static();
+			draw_menu(start, row);
+			goto FOOBAR;
 		}
 	}
 }

@@ -85,5 +85,6 @@ void list_del(void *rptr, void *node);
 void *list_prev(void *root, void *node);
 
 void modprobe_all(void);
+void boot_target(kl_target *target);
 
 #endif /* !KL_MISC_H */
