@@ -30,6 +30,7 @@
 #include "console.h"
 #include "disk.h"
 #include "menu.h"
+#include "grub.h"
 
 #define KLOG_TTY "/dev/tty2"
 #define DEBUG_TTY "/dev/tty3"
@@ -56,6 +57,7 @@ int main(int argc, char **argv) {
 	if(mount_boot()) {
 		load_conf();
 		modprobe_all();
+		grub_load();
 		
 		unmount_all();
 	}
@@ -396,43 +398,6 @@ void *list_prev(void *root, void *node) {
 	return NULL;
 }
 
-#define CHECK_HASARG() \
-	if(!val[0]) { \
-		printD("Line %u: '%s' requires an argument", lnum, name); \
-		continue; \
-	}
-
-#define CHECK_TOPEN() \
-	if(!topen) { \
-		printD("Line %u: '%s' must be after a 'title'", lnum, name); \
-		continue; \
-	}
-
-#define CHECK_VPATH() \
-	if(!check_vpath(val)) { \
-		printD("Line %d: Invalid path specified", lnum); \
-		continue; \
-	}
-
-#define TARGET_FAIL() \
-	topen = 0; \
-	while(target.modules) { \
-		list_del(&target.modules, target.modules); \
-	}
-
-#define ADD_TARGET() \
-	if(!target.root[0]) { \
-		printD("Line %d: No root device specified", topen); \
-		TARGET_FAIL(); \
-	} \
-	if(!target.kernel[0]) { \
-		printD("Line %d: No kernel specified", topen); \
-		TARGET_FAIL(); \
-	} \
-	if(topen) { \
-		list_add_copy(&targets, &target, sizeof(target)); \
-	}
-
 /* Load kexec-loader.conf */
 static void load_conf(void) {
 	FILE *fh = fopen("/mnt/boot/kexec-loader.conf", "r");
@@ -468,6 +433,11 @@ static void load_conf(void) {
 		if(kl_streq(name, "grub-path")) {
 			CHECK_HASARG();
 			CHECK_VPATH();
+			
+			if(*val != '(') {
+				printD("Line %d: No device specified", lnum);
+				continue;
+			}
 			
 			strlcpy(grub_path, val, sizeof(grub_path));
 			continue;

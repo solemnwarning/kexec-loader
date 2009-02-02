@@ -59,6 +59,51 @@ typedef struct kl_target {
 	kl_module *modules;
 } kl_target;
 
+#define CHECK_HASARG() \
+	if(!val[0]) { \
+		printD("Line %u: '%s' requires an argument", lnum, name); \
+		continue; \
+	}
+
+#define CHECK_TOPEN() \
+	if(!topen) { \
+		printD("Line %u: '%s' must be after a 'title'", lnum, name); \
+		continue; \
+	}
+
+#define CHECK_VPATH() \
+	if(!check_vpath(val)) { \
+		printD("Line %d: Invalid path specified", lnum); \
+		continue; \
+	}
+
+#define CHECK_GDEV() \
+	if(*val != '(' || val[strlen(val)-1] == ')') { \
+		printD("Line %d: Invalid device syntax", lnum); \
+		continue; \
+	} \
+	val++; \
+	val[strlen(val)-1] = '\0';
+
+#define TARGET_FAIL() \
+	topen = 0; \
+	while(target.modules) { \
+		list_del(&target.modules, target.modules); \
+	}
+
+#define ADD_TARGET() \
+	if(!target.root[0]) { \
+		printD("Line %d: No root device specified", topen); \
+		TARGET_FAIL(); \
+	} \
+	if(!target.kernel[0]) { \
+		printD("Line %d: No kernel specified", topen); \
+		TARGET_FAIL(); \
+	} \
+	if(topen) { \
+		list_add_copy(&targets, &target, sizeof(target)); \
+	}
+
 extern int timeout;
 extern char grub_path[];
 extern kl_target *targets;
