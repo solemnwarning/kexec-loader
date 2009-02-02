@@ -192,7 +192,7 @@ char *get_rpath(char const *root, char const *path, char const **error) {
 	char *diskid = NULL, *rpath = NULL;
 	
 	if(*path == '(') {
-		diskid = kl_strndup(path, strcspn(path+1, ")"));
+		diskid = kl_strndup(path+1, strcspn(path+1, ")"));
 		path += strcspn(path, ")")+1;
 	}else{
 		diskid = kl_strdup(root);

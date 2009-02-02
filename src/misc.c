@@ -363,7 +363,7 @@ void list_add_copy(void *rptr, void *node, int size) {
 
 /* Remove an entry from a list */
 void list_del(void *rptr, void *node) {
-	struct list **root = NULL;
+	struct list **root = rptr;
 	struct list *ptr = *root;
 	
 	if(*root == node) {
