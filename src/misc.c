@@ -333,23 +333,17 @@ struct list { struct list *next; };
 
 /* Add an entry to a list */
 void list_add(void *rptr, void *node) {
-	static struct list **root = NULL;
-	static struct list *eptr = NULL;
+	struct list **root = rptr;
+	struct list *ptr = *root;
 	
-	if(root != rptr) {
-		root = rptr;
-		eptr = *root;
-		
-		while(eptr && eptr->next) {
-			eptr = eptr->next;
-		}
+	while(ptr && ptr->next) {
+		ptr = ptr->next;
 	}
 	
-	if(eptr) {
-		eptr->next = node;
-		eptr = node;
+	if(ptr) {
+		ptr->next = node;
 	}else{
-		*root = eptr = node;
+		*root = node;
 	}
 }
 

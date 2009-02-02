@@ -32,6 +32,7 @@
 #include "disk.h"
 #include "misc.h"
 #include "console.h"
+#include "grub.h"
 
 #define FOOBAR(dest, name) \
 	s = blkid_get_tag_value(NULL, name, path); \
@@ -98,6 +99,10 @@ kl_disk *get_disks(void) {
 kl_disk *find_disk(char const *id) {
 	kl_disk *ptr = get_disks(), *ret = NULL;
 	int match = 0;
+	
+	if(kl_strneq(id, "/dev/", 5)) {
+		id += 5;
+	}
 	
 	while(ptr) {
 		if(!ret && kl_strnceq(id, "LABEL=", 6)) {
@@ -199,6 +204,15 @@ char *get_rpath(char const *root, char const *path, char const **error) {
 	}
 	
 	kl_disk *disk = find_disk(diskid);
+	if(!disk) {
+		char *gdisk = lookup_gdev(diskid);
+		if(gdisk) {
+			free(diskid);
+			diskid = gdisk;
+			
+			disk = find_disk(diskid);
+		}
+	}
 	if(!disk) {
 		*error = "Unknown device";
 		goto END;

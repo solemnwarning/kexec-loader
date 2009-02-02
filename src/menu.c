@@ -41,7 +41,16 @@ void menu_main(void) {
 	
 	while(tptr) {
 		if(tptr->flags & TARGET_DEFAULT) {
-			target = tptr;
+			while(target != tptr) {
+				target = target->next;
+				
+				if(row+3 == console_rows && target->next) {
+					start = start->next;
+				}else{
+					row++;
+				}
+			}
+			
 			break;
 		}
 		
