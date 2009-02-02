@@ -68,6 +68,8 @@ typedef struct kl_target {
 #define CHECK_TOPEN() \
 	if(!topen) { \
 		printD("%s:%u: '%s' must be after a 'title'", fname, lnum, name); \
+	} \
+	if(topen <= 0) { \
 		continue; \
 	}
 
@@ -92,15 +94,15 @@ typedef struct kl_target {
 	}
 
 #define ADD_TARGET() \
-	if(!target.root[0]) { \
+	if(topen > 0 && !target.root[0]) { \
 		printD("%s:%d: No root device specified", fname, topen); \
 		TARGET_FAIL(); \
 	} \
-	if(!target.kernel[0]) { \
+	if(topen > 0 && !target.kernel[0]) { \
 		printD("%s:%d: No kernel specified", fname, topen); \
 		TARGET_FAIL(); \
 	} \
-	if(topen) { \
+	if(topen > 0) { \
 		list_add_copy(&targets, &target, sizeof(target)); \
 	}
 

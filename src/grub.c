@@ -272,6 +272,9 @@ static void load_menu(char const *root) {
 			
 			continue;
 		}
+		if(kl_streq(name, "chainload")) {
+			topen = -1;
+		}
 	}
 	if(ferror(fh)) {
 		printD("Error reading menu.lst: %s", strerror(errno));
