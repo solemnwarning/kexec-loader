@@ -61,25 +61,25 @@ typedef struct kl_target {
 
 #define CHECK_HASARG() \
 	if(!val[0]) { \
-		printD("Line %u: '%s' requires an argument", lnum, name); \
+		printD("%s:%u: '%s' requires an argument", fname, lnum, name); \
 		continue; \
 	}
 
 #define CHECK_TOPEN() \
 	if(!topen) { \
-		printD("Line %u: '%s' must be after a 'title'", lnum, name); \
+		printD("%s:%u: '%s' must be after a 'title'", fname, lnum, name); \
 		continue; \
 	}
 
 #define CHECK_VPATH() \
 	if(!check_vpath(val)) { \
-		printD("Line %d: Invalid path specified", lnum); \
+		printD("%s:%d: Invalid path specified", fname, lnum); \
 		continue; \
 	}
 
 #define CHECK_GDEV() \
-	if(*val != '(' || val[strlen(val)-1] == ')') { \
-		printD("Line %d: Invalid device syntax", lnum); \
+	if(*val != '(' || val[strlen(val)-1] != ')') { \
+		printD("%s:%d: Invalid device syntax", fname, lnum); \
 		continue; \
 	} \
 	val++; \
@@ -93,11 +93,11 @@ typedef struct kl_target {
 
 #define ADD_TARGET() \
 	if(!target.root[0]) { \
-		printD("Line %d: No root device specified", topen); \
+		printD("%s:%d: No root device specified", fname, topen); \
 		TARGET_FAIL(); \
 	} \
 	if(!target.kernel[0]) { \
-		printD("Line %d: No kernel specified", topen); \
+		printD("%s:%d: No kernel specified", fname, topen); \
 		TARGET_FAIL(); \
 	} \
 	if(topen) { \

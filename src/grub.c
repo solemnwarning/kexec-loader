@@ -179,12 +179,12 @@ static void load_devmap(char const *root) {
 
 /* Load GRUB menu.lst */
 static void load_menu(char const *root) {
-	char filename[1024];
-	snprintf(filename, 1024, "%s/device.map", root);
+	char filename[1024], *fname = "menu.lst";
+	snprintf(filename, 1024, "%s/menu.lst", root);
 	
 	FILE *fh = fopen(filename, "r");
 	if(!fh) {
-		printD("Error opening device.map: %s", strerror(errno));
+		printD("Error opening menu.lst: %s", strerror(errno));
 		return;
 	}
 	
@@ -274,7 +274,7 @@ static void load_menu(char const *root) {
 		}
 	}
 	if(ferror(fh)) {
-		printD("Error reading device.map: %s", strerror(errno));
+		printD("Error reading menu.lst: %s", strerror(errno));
 	}
 	
 	if(topen) {

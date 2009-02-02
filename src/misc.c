@@ -412,6 +412,7 @@ static void load_conf(void) {
 	int lnum = 0, topen = 0;
 	kl_target target;
 	kl_module mod;
+	char *fname = "kexec-loader.conf";
 	
 	while(fgets(line, 1024, fh)) {
 		line[strcspn(line, "\r\n")] = '\0';
