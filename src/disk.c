@@ -28,11 +28,46 @@
 #include <blkid/blkid.h>
 #include <sys/mount.h>
 #include <poll.h>
+#include <stdint.h>
 
 #include "disk.h"
 #include "misc.h"
 #include "console.h"
 #include "grub.h"
+
+/* Get the size of a block device and format it as text
+ * Copies "???" to dest on error
+*/
+static void get_dev_size(char *dest, int size, char const *path) {
+	strcpy(dest, "???");
+	
+	int fd = open(path, O_RDONLY);
+	if(fd == -1) {
+		debug("Error opening %s: %s", path, strerror(errno));
+		return;
+	}
+	
+	uint64_t devsize;
+	if(ioctl(fd, BLKGETSIZE64, &devsize) == -1) {
+		debug("BLKGETSIZE64 on %s failed: %s", path, strerror(errno));
+		goto END;
+	}
+	
+	if(devsize > 1000000000000LLU) {
+		snprintf(dest, size, "%.2fTB", (double)devsize / 1000000000000LLU);
+	}else if(devsize > 1000000000) {
+		snprintf(dest, size, "%.2fGB", (double)devsize / 1000000000);
+	}else if(devsize > 1000000) {
+		snprintf(dest, size, "%.2fMB", (double)devsize / 1000000);
+	}else if(devsize > 1000) {
+		snprintf(dest, size, "%.2fkB", (double)devsize / 1000);
+	}else{
+		snprintf(dest, size, "%llu", devsize);
+	}
+	
+	END:
+	close(fd);
+}
 
 #define FOOBAR(dest, name) \
 	s = blkid_get_tag_value(NULL, name, path); \
@@ -83,6 +118,8 @@ kl_disk *get_disks(void) {
 		FOOBAR(disk.label, "LABEL");
 		FOOBAR(disk.uuid, "UUID");
 		FOOBAR(disk.fstype, "TYPE");
+		
+		get_dev_size(disk.size, sizeof(disk.size), path);
 		
 		list_add_copy(&list, &disk, sizeof(disk));
 	}

@@ -26,7 +26,8 @@
 	(ptr)->minor = -1; \
 	(ptr)->label[0] = '\0'; \
 	(ptr)->uuid[0] = '\0'; \
-	(ptr)->fstype[0] = '\0';
+	(ptr)->fstype[0] = '\0'; \
+	(ptr)->size[0] = '\0';
 
 typedef struct kl_disk {
 	struct kl_disk *next;
@@ -38,6 +39,7 @@ typedef struct kl_disk {
 	char label[256];
 	char uuid[256];
 	char fstype[32];
+	char size[32];
 } kl_disk;
 
 kl_disk *get_disks(void);
