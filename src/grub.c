@@ -56,7 +56,7 @@ kl_gdev *grub_devmap = NULL;
 /* Parse a GRUB device name
  * Returns 1 on success, zero on syntax error
 */
-static int parse_gdev(kl_gdev *dest, char const *src) {
+int parse_gdev(kl_gdev *dest, char const *src) {
 	if((*src != 'f' && *src != 'h') || src[1] != 'd') {
 		return 0;
 	}

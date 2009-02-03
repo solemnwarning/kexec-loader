@@ -402,11 +402,12 @@ static void load_conf(void) {
 	
 	printd("Loading kexec-loader.conf...");
 	
-	char line[1024], *name, *val;
+	char line[1024], *name, *val, *val2;
 	int lnum = 0, topen = 0;
 	kl_target target;
 	kl_module mod;
 	char *fname = "kexec-loader.conf";
+	kl_gdev gdev;
 	
 	while(fgets(line, 1024, fh)) {
 		line[strcspn(line, "\r\n")] = '\0';
@@ -430,12 +431,24 @@ static void load_conf(void) {
 			CHECK_VPATH();
 			
 			if(*val != '(') {
-				printD("Line %d: No device specified", lnum);
+				printD("kexec-loader.conf:%d: No device specified", lnum);
 				continue;
 			}
 			
 			strlcpy(grub_path, val, sizeof(grub_path));
 			continue;
+		}
+		if(kl_streq(name, "grub-map")) {
+			val2 = next_value(val);
+			CHECK_HASARG_MULTI(val2, 2);
+			
+			if(!parse_gdev(&gdev, val)) {
+				printD("kexec-loader.conf:%d: Invalid GRUB device '%s'", lnum, val);
+				continue;
+			}
+			
+			strlcpy(gdev.device, val2, sizeof(gdev.device));
+			list_add_copy(&grub_devmap, &gdev, sizeof(gdev));
 		}
 		
 		if(kl_streq(name, "title")) {
@@ -524,7 +537,7 @@ static void load_conf(void) {
 			continue;
 		}
 		
-		printD("Line %d: Unknown directive '%s'", lnum, name);
+		printD("kexec-loader.conf:%d: Unknown directive '%s'", lnum, name);
 	}
 	if(ferror(fh)) {
 		printD("Error reading kexec-loader.conf: %s", strerror(errno));

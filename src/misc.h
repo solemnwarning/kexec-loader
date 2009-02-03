@@ -65,6 +65,12 @@ typedef struct kl_target {
 		continue; \
 	}
 
+#define CHECK_HASARG_MULTI(s,n) \
+	if(!s) { \
+		printD("%s:%u: '%s' requires %d arguments", fname, lnum, name, (int)n); \
+		continue; \
+	}
+
 #define CHECK_TOPEN() \
 	if(!topen) { \
 		printD("%s:%u: '%s' must be after a 'title'", fname, lnum, name); \
