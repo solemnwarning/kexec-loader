@@ -35,6 +35,13 @@
 #include "console.h"
 #include "grub.h"
 
+struct mounted_fs {
+	struct mounted_fs *next;
+	char mpoint[256];
+};
+
+static struct mounted_fs *mounts = NULL;
+
 /* Get the size of a block device and format it as text
  * Copies "???" to dest on error
 */
@@ -170,6 +177,7 @@ kl_disk *find_disk(char const *id) {
 */
 char const *mount_disk(kl_disk *disk, char const *mpoint) {
 	char dev[256], dir[256];
+	struct mounted_fs x, *ptr = mounts;
 	
 	if(!disk->fstype) {
 		return "Unknown filesystem format";
@@ -180,6 +188,15 @@ char const *mount_disk(kl_disk *disk, char const *mpoint) {
 	
 	if(!mpoint) {
 		mpoint = dir;
+	}
+	
+	while(ptr) {
+		if(kl_streq(mpoint, ptr->mpoint)) {
+			debug("%s is already mounted", mpoint);
+			return NULL;
+		}
+		
+		ptr = ptr->next;
 	}
 	
 	mkdir(mpoint, 0700);
@@ -201,6 +218,10 @@ char const *mount_disk(kl_disk *disk, char const *mpoint) {
 		}
 	}else{
 		debug("Mounted %s at %s", dev, mpoint);
+		
+		x.next = NULL;
+		strlcpy(x.mpoint, mpoint, sizeof(x.mpoint));
+		list_add_copy(&mounts, &x, sizeof(x));
 	}
 	
 	return NULL;
@@ -308,34 +329,23 @@ char *get_diskid(char const *root, char const *vpath) {
 	return kl_strndup(disk, disklen);
 }
 
-/* Unmount all filesystems mounted under /mnt
- * Writes errors to the debug log
-*/
+/* Unmount all filesystems */
 void unmount_all(void) {
-	FILE *fh = fopen("/proc/mounts", "r");
-	if(!fh) {
-		debug("Error opening /proc/mounts: %s", strerror(errno));
-		return;
-	}
+	struct mounted_fs *ptr = mounts, *dptr;
 	
-	char line[256], *mpoint;
-	
-	while(fgets(line, 256, fh)) {
-		mpoint = next_value(line);
-		next_value(mpoint); /* Terminate mpoint */
-		
-		if(!kl_strneq(mpoint, "/mnt/", 5)) {
-			continue;
-		}
-		
-		if(umount(mpoint)) {
-			debug("Error unmounting %s: %s", mpoint, strerror(errno));
+	while(ptr) {
+		if(umount(ptr->mpoint)) {
+			debug("Error unmounting %s: %s", ptr->mpoint, strerror(errno));
+			ptr = ptr->next;
 		}else{
-			debug("Unmounted %s", mpoint);
+			debug("Unmounted %s", ptr->mpoint);
+			
+			dptr = ptr;
+			ptr = ptr->next;
+			
+			list_del(&mounts, dptr);
 		}
 	}
-	
-	fclose(fh);
 }
 
 /* Search for and mount the boot disk at /mnt/boot
