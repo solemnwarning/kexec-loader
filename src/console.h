@@ -55,6 +55,7 @@
 #define printm(...) print2(0, __VA_ARGS__);
 #define printM(...) print2(P2_ALERT, __VA_ARGS__);
 
+extern int alert;
 extern int console_cols;
 extern int console_rows;
 

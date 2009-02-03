@@ -29,7 +29,7 @@
 #include "misc.h"
 #include "console.h"
 
-static int alert = 0;
+int alert = 0;
 
 int console_cols = 80;
 int console_rows = 24;

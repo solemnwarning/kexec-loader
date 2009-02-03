@@ -21,6 +21,7 @@
 #include <string.h>
 #include <sys/utsname.h>
 #include <poll.h>
+#include <ctype.h>
 
 #include "console.h"
 #include "misc.h"
@@ -57,6 +58,7 @@ void menu_main(void) {
 		tptr = tptr->next;
 	}
 	
+	FOOBAR:
 	draw_static();
 	draw_menu(start, row);
 	
@@ -74,22 +76,21 @@ void menu_main(void) {
 			
 			if(poll(&inpoll, 1, 1000)) {
 				getchar();
+				timeout = 0;
+				
 				break;
 			}
 			
 			if(--timeout == 0) {
-				console_clear();
-				console_setpos(0,0);
+				console_setpos(0,2);
+				console_erase(ERASE_DOWN);
 				boot_target(target);
 				
-				draw_static();
-				draw_menu(start, row);
-				break;
+				goto FOOBAR;
 			}
 		}
 	}
 	
-	FOOBAR:
 	console_setpos(1, 2);
 	console_erase(ERASE_LINE);
 	puts("Scroll through the list using the up/down arrow keys and press ENTER to select");
@@ -135,12 +136,19 @@ void menu_main(void) {
 			continue;
 		}
 		if(c == '\n') {
-			console_clear();
-			console_setpos(0,0);
+			console_setpos(0,2);
+			console_erase(ERASE_DOWN);
 			boot_target(target);
 			
-			draw_static();
-			draw_menu(start, row);
+			goto FOOBAR;
+		}
+		if(toupper(c) == 'D') {
+			console_setpos(0,2);
+			console_erase(ERASE_DOWN);
+			
+			alert = 1;
+			list_disks();
+			
 			goto FOOBAR;
 		}
 	}

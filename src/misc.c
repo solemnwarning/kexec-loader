@@ -214,6 +214,36 @@ char *next_value(char *ptr) {
 	return ptr;
 }
 
+#define LD_PDIV() \
+	printf("+----------+----------+------------+-"); \
+	for(i = 0; i < lw; i++) { \
+		putchar('-'); \
+	} \
+	puts("-+");
+
+/* Display a list of disks */
+void list_disks(void) {
+	int lw, i;
+	console_getsize(&lw, NULL);
+	lw -= 39;
+	
+	LD_PDIV();
+	printf("|   Device |     Size |     Format | %*.*s |\n", lw, lw, "Label");
+	LD_PDIV();
+	
+	kl_disk *ptr = get_disks();
+	while(ptr) {
+		printf("| %8.8s ", ptr->name);
+		printf("| %8.8s ", ptr->size);
+		printf("| %10.10s ", ptr->fstype[0] ? ptr->fstype : "UNKNOWN");
+		printf("| %*.*s |\n", lw, lw, ptr->label[0] ? ptr->label : "NO LABEL");
+		
+		list_del(&ptr, ptr);
+	}
+	
+	LD_PDIV();
+}
+
 /* Allocate memory */
 void *kl_malloc(size_t size) {
 	void *ptr = malloc(size);
