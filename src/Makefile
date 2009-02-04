@@ -15,7 +15,7 @@
 # with this program; if not, write to the Free Software Foundation, Inc.,
 # 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 
-DEPS := misc.o disk.o console.o menu.o modprobe.o boot.o grub.o kexec.a libblkid.a libuuid.a
+DEPS := misc.o disk.o console.o menu.o modprobe.o boot.o grub.o shell.o globcmp.o kexec.a libblkid.a libuuid.a
 OBJS := $(DEPS)
 
 KT_VER := 2.0.0
@@ -69,6 +69,12 @@ boot.o: boot.c
 
 grub.o: grub.c grub.h
 	$(CC) $(CFLAGS) $(INCLUDES) -c -o grub.o grub.c
+
+shell.o: shell.c
+	$(CC) $(CFLAGS) $(INCLUDES) -c -o shell.o shell.c
+
+globcmp.o: globcmp.c
+	$(CC) $(CFLAGS) $(INCLUDES) -c -o globcmp.o globcmp.c
 
 kexec.a:
 	wget -nc $(KT_URL)

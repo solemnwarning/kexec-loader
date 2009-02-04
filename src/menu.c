@@ -151,6 +151,12 @@ void menu_main(void) {
 			
 			goto FOOBAR;
 		}
+		if(toupper(c) == 'C') {
+			console_setpos(0,0);
+			console_erase(ERASE_ALL);
+			shell_main();
+			goto FOOBAR;
+		}
 	}
 }
 

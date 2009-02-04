@@ -239,10 +239,6 @@ int check_vpath(char const *vpath) {
 		vpath++;
 	}
 	
-	if(*vpath == '\0') {
-		return 0;
-	}
-	
 	return 1;
 }
 

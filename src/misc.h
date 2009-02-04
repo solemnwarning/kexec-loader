@@ -140,5 +140,6 @@ void *list_prev(void *root, void *node);
 
 void modprobe_all(void);
 void boot_target(kl_target *target);
+void shell_main(void);
 
 #endif /* !KL_MISC_H */
