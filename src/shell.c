@@ -69,6 +69,7 @@ static struct shell_command commands[] = {
 	{"cmdline", "cmdline <text>\t\tSet the kernel command line", NULL},
 	{"append", "append <text>\t\tLike cmdline, but less portable", NULL},
 	{"reset-vga", "reset-vga\t\tToggle the kexec --reset-vga switch", NULL},
+	{"boot", "boot\t\t\tBoot the system", NULL},
 	{"ls", "ls <path>\t\tList the contents of a directory", &cmd_ls},
 	{"find", "find <name> <path>\tSearch for files named <name>", &cmd_find},
 	{"cat", "cat <file>\t\tDisplay the contents of a file", &cmd_cat},
@@ -136,11 +137,6 @@ void shell_main(void) {
 			continue;
 		}
 		
-		if(kl_streq(cmd, "disks")) {
-			list_disks();
-			continue;
-		}
-		
 		TEXT_COMMAND("root", target.root);
 		PATH_COMMAND("kernel", target.kernel);
 		PATH_COMMAND("initrd", target.initrd);
@@ -149,6 +145,25 @@ void shell_main(void) {
 		
 		if(kl_streq(cmd, "reset-vga")) {
 			target.flags |= TARGET_RESET;
+			continue;
+		}
+		
+		if(kl_streq(cmd, "boot")) {
+			if(!target.root[0]) {
+				printf("Root device not set\n");
+				continue;
+			}
+			if(!target.kernel[0]) {
+				printf("Kernel not set\n");
+				continue;
+			}
+			
+			boot_target(&target);
+			continue;
+		}
+		
+		if(kl_streq(cmd, "disks")) {
+			list_disks();
 			continue;
 		}
 		
