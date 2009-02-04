@@ -122,6 +122,7 @@ void die(char const *fmt, ...);
 char *get_cmdline(char const *name);
 char *next_value(char *ptr);
 void list_disks(void);
+void call_reboot(int cmd);
 
 void *kl_malloc(size_t size);
 void *kl_realloc(void *ptr, size_t size);

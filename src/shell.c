@@ -481,17 +481,9 @@ static void find_files(char *path, char const *name) {
 /* Shutdown or reboot */
 static void cmd_shutdown(char *cmd, char *args) {
 	if(kl_streq(cmd, "reboot")) {
-		syscall(
-			__NR_reboot,
-			LINUX_REBOOT_MAGIC1, LINUX_REBOOT_MAGIC2,
-			LINUX_REBOOT_CMD_RESTART, NULL
-		);
+		call_reboot(LINUX_REBOOT_CMD_RESTART);
 	}else{
-		syscall(
-			__NR_reboot,
-			LINUX_REBOOT_MAGIC1, LINUX_REBOOT_MAGIC2,
-			LINUX_REBOOT_CMD_POWER_OFF, NULL
-		);
+		call_reboot(LINUX_REBOOT_CMD_POWER_OFF);
 	}
 	
 	puts(strerror(errno));

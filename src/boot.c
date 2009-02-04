@@ -125,14 +125,7 @@ void boot_target(kl_target *target) {
 	
 	printd("Booting system...");
 	
-	unmount_all();
-	sync();
-	
-	syscall(
-		__NR_reboot,
-		LINUX_REBOOT_MAGIC1, LINUX_REBOOT_MAGIC2,
-		LINUX_REBOOT_CMD_KEXEC, NULL
-	);
+	call_reboot(LINUX_REBOOT_CMD_KEXEC);
 	
 	printD("Reboot failed: %s", strerror(errno));
 	

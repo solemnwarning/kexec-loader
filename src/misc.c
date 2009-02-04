@@ -25,6 +25,8 @@
 #include <unistd.h>
 #include <sys/klog.h>
 #include <ctype.h>
+#include <sys/syscall.h>
+#include <linux/reboot.h>
 
 #include "misc.h"
 #include "console.h"
@@ -62,10 +64,13 @@ int main(int argc, char **argv) {
 		unmount_all();
 	}
 	
-	menu_main();
-	
-	debug("The main loop has ended, sleeping to prevent kernel panic");
-	while(1) { sleep(9999); }
+	while(1) {
+		if(targets) {
+			menu_main();
+		}else{
+			shell_main();
+		}
+	}
 	
 	return 0;
 }
@@ -242,6 +247,20 @@ void list_disks(void) {
 	}
 	
 	LD_PDIV();
+}
+
+/* Prepare the system for reboot and call reboot
+ * Returns on error
+*/
+void call_reboot(int cmd) {
+	unmount_all();
+	sync();
+	
+	syscall(
+		__NR_reboot,
+		LINUX_REBOOT_MAGIC1, LINUX_REBOOT_MAGIC2,
+		cmd, NULL
+	);
 }
 
 /* Allocate memory */
