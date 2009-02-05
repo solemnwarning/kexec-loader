@@ -441,6 +441,18 @@ void *list_prev(void *root, void *node) {
 	return NULL;
 }
 
+/* Free all nodes in a list */
+void list_nuke(void *root) {
+	struct list *ptr = root, *x;
+	
+	while(ptr) {
+		x = ptr;
+		ptr = ptr->next;
+		
+		free(x);
+	}
+}
+
 /* Load kexec-loader.conf */
 static void load_conf(void) {
 	FILE *fh = fopen("/mnt/boot/kexec-loader.conf", "r");

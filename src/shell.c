@@ -53,6 +53,7 @@ static void set_cursor(int offset);
 static char *sh_get_rpath(char const *path);
 static char *sh_vpath(char const *path);
 
+static void cmd_module(char *cmd, char *args);
 static void cmd_ls(char *cmd, char *args);
 static void cmd_find(char *cmd, char *args);
 static void find_files(char *path, char const *name);
@@ -68,8 +69,9 @@ static struct shell_command commands[] = {
 	{"initrd", "initrd <file>\t\tSelect an initrd", NULL},
 	{"cmdline", "cmdline <text>\t\tSet the kernel command line", NULL},
 	{"append", "append <text>\t\tLike cmdline, but less portable", NULL},
-	{"reset-vga", "reset-vga\t\tToggle the kexec --reset-vga switch", NULL},
 	{"boot", "boot\t\t\tBoot the system", NULL},
+	{"module", "module <file> [<args>]\tLoad a multiboot module", &cmd_module},
+	{"reset-vga", "reset-vga\t\tEnable the kexec --reset-vga switch", NULL},
 	{"ls", "ls <path>\t\tList the contents of a directory", &cmd_ls},
 	{"find", "find <name> <path>\tSearch for files named <name>", &cmd_find},
 	{"cat", "cat <file>\t\tDisplay the contents of a file", &cmd_cat},
@@ -178,6 +180,7 @@ void shell_main(void) {
 	}
 	
 	free(cmd);
+	list_nuke(target.modules);
 	
 	for(i = 0; i < HISTORY_SIZE; i++) {
 		free(history[i]);
@@ -386,6 +389,22 @@ static char *sh_vpath(char const *path) {
 	strlcat(buf, path, sizeof(buf));
 	
 	return buf;
+}
+
+/* Add a multiboot module to the target */
+static void cmd_module(char *cmd, char *args) {
+	if(*args == '\0') {
+		printf("Usage: module <file> [<args>]\n");
+		return;
+	}
+	
+	kl_module mod;
+	INIT_MODULE(&mod);
+	
+	strlcpy(mod.args, next_value(args), sizeof(mod.args));
+	strlcpy(mod.name, args, sizeof(mod.args));
+	
+	list_add_copy(&(target.modules), &mod, sizeof(mod));
 }
 
 /* List directory contents */

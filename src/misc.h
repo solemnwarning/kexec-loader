@@ -138,6 +138,7 @@ void list_add(void *rptr, void *node);
 void list_add_copy(void *rptr, void *node, int size);
 void list_del(void *rptr, void *node);
 void *list_prev(void *root, void *node);
+void list_nuke(void *root);
 
 void modprobe_all(void);
 void boot_target(kl_target *target);
