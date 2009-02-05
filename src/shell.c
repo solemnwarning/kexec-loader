@@ -122,6 +122,10 @@ void shell_main(void) {
 		cmd = read_cmd(history);
 		args = next_value(cmd);
 		
+		if(*cmd == '\0') {
+			continue;
+		}
+		
 		debug("cmd = '%s'", cmd);
 		debug("args = '%s'", args);
 		
@@ -294,10 +298,9 @@ static char *read_cmd(char **history) {
 		}
 		
 		history[0] = kl_strdup(cmdbuf);
-		return kl_strdup(cstart);
 	}
 	
-	return NULL;
+	return kl_strdup(cstart);
 }
 
 /* Erase len bytes at offset from the display */
