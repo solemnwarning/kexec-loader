@@ -209,9 +209,11 @@ static char *read_cmd(char **history) {
 			
 			if(offset > 0) {
 				memmove(cmdbuf+offset-1, cmdbuf+offset, cmdlen-offset+1);
+				offset--;
+				
+				erase_input(offset, cmdlen-offset);
 				cmdlen--;
 				
-				erase_input(--offset, 1);
 				replace_input(cmdbuf, offset);
 				set_cursor(offset);
 			}
@@ -245,6 +247,21 @@ static char *read_cmd(char **history) {
 				
 				getchar();
 				set_cursor(offset = cmdlen);
+			}
+			if(c == 0x33) {
+				/* Del */
+				
+				getchar();
+				
+				if(offset < cmdlen) {
+					memmove(cmdbuf+offset, cmdbuf+offset+1, cmdlen-offset+1);
+					
+					erase_input(offset, cmdlen-offset);
+					cmdlen--;
+					
+					replace_input(cmdbuf, offset);
+					set_cursor(offset);
+				}
 			}
 			
 			if(c == 0x41 && hnum+1 < HISTORY_SIZE && history[hnum+1]) {
