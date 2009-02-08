@@ -19,6 +19,8 @@
 #ifndef KL_MISC_H
 #define KL_MISC_H
 
+#include "disk.h"
+
 #define TARGET_DEFAULT	(int)(1<<0)
 #define TARGET_RESET	(int)(1<<1)
 
@@ -112,6 +114,7 @@ typedef struct kl_target {
 		list_add_copy(&targets, &target, sizeof(target)); \
 	}
 
+extern kl_disk *boot_disk;
 extern int timeout;
 extern char grub_path[];
 extern kl_target *targets;

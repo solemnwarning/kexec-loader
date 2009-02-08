@@ -227,6 +227,69 @@ char const *mount_disk(kl_disk *disk, char const *mpoint) {
 	return NULL;
 }
 
+/* Search for a device and mount it once it's found
+ * Returns the kl_disk structure on success, or NULL on error/abort
+*/
+kl_disk *mount_retry(char const *device, char const *name) {
+	kl_disk *disk = NULL;
+	int rval = 0;
+	
+	struct pollfd pollset;
+	pollset.fd = fileno(stdin);
+	pollset.events = POLLIN;
+	
+	printd("Searching for %s...", name);
+	printm("Press any key to abort");
+	
+	while(1) {
+		if(poll(&pollset, 1, 1000)) {
+			getchar();
+			break;
+		}
+		
+		disk = find_disk(device);
+		if(!disk) {
+			continue;
+		}
+		
+		printd("Found %s: %s", name, disk->name);
+		
+		char const *errmsg = mount_disk(disk, NULL);
+		if(errmsg) {
+			printD("Error mounting %s: %s", disk->name, errmsg);
+			break;
+		}
+		
+		rval = 1;
+		break;
+	}
+	
+	if(!rval) {
+		free(disk);
+	}
+	
+	return disk;
+}
+
+/* Unmount all filesystems */
+void unmount_all(void) {
+	struct mounted_fs *ptr = mounts, *dptr;
+	
+	while(ptr) {
+		if(umount(ptr->mpoint)) {
+			debug("Error unmounting %s: %s", ptr->mpoint, strerror(errno));
+			ptr = ptr->next;
+		}else{
+			debug("Unmounted %s", ptr->mpoint);
+			
+			dptr = ptr;
+			ptr = ptr->next;
+			
+			list_del(&mounts, dptr);
+		}
+	}
+}
+
 /* Check the syntax of a vpath
  * Returns 1 if valid, zero otherwise
 */
@@ -286,30 +349,6 @@ char *get_rpath(char const *root, char const *path, char const **error) {
 	return rpath;
 }
 
-/* Format a vpath for display to the user
- * Returns a string on the heap
- *
- * You MUST pass a valid path, check with check_vpath()
-*/
-char *get_vpath(char const *root, char const *path) {
-	char const *disk = root;
-	int disklen = strlen(root);
-	
-	if(*path == '(') {
-		disklen = strcspn(path, ")")+1;
-		
-		disk = path;
-		path += disklen;
-	}
-	
-	char *vpath = kl_malloc(strlen(path)+disklen+1);
-	
-	strncpy(vpath, disk, disklen);
-	strcat(vpath, path);
-	
-	return vpath;
-}
-
 /* Return the device in a vpath, fall back to root if vpath does not contain a
  * device, the return value is a string allocatedon the heap
 */
@@ -323,67 +362,4 @@ char *get_diskid(char const *root, char const *vpath) {
 	}
 	
 	return kl_strndup(disk, disklen);
-}
-
-/* Unmount all filesystems */
-void unmount_all(void) {
-	struct mounted_fs *ptr = mounts, *dptr;
-	
-	while(ptr) {
-		if(umount(ptr->mpoint)) {
-			debug("Error unmounting %s: %s", ptr->mpoint, strerror(errno));
-			ptr = ptr->next;
-		}else{
-			debug("Unmounted %s", ptr->mpoint);
-			
-			dptr = ptr;
-			ptr = ptr->next;
-			
-			list_del(&mounts, dptr);
-		}
-	}
-}
-
-/* Search for and mount the boot disk at /mnt/boot
- * Returns 1 on success, zero on error/abort
-*/
-int mount_boot(void) {
-	char *kdevice = get_cmdline("root");
-	char *device = kdevice ? kdevice : "LABEL=kexecloader";
-	kl_disk *disk = NULL;
-	int rval = 0;
-	
-	struct pollfd pollset;
-	pollset.fd = fileno(stdin);
-	pollset.events = POLLIN;
-	
-	printm("Searching for boot disk...");
-	printm("Press any key to abort");
-	
-	while(1) {
-		if(poll(&pollset, 1, 1000)) {
-			getchar();
-			break;
-		}
-		
-		disk = find_disk(device);
-		if(!disk) {
-			continue;
-		}
-		
-		printm("Found boot disk: %s", disk->name);
-		
-		char const *errmsg = mount_disk(disk, "/mnt/boot");
-		if(errmsg) {
-			printD("Error mounting boot disk: %s", errmsg);
-			break;
-		}
-		
-		rval = 1;
-		break;
-	}
-	
-	free(disk);
-	free(kdevice);
-	return rval;
 }

@@ -176,7 +176,7 @@ static int modprobe(char const *name) {
 		optptr = optptr->next;
 	}
 	
-	snprintf(path, 1024, "/mnt/boot/modules/%s.ko", name);
+	snprintf(path, 1024, "/mnt/%s/modules/%s.ko", boot_disk->name, name);
 	
 	gzFile fh = gzopen(path, "rb");
 	if(!fh) {
@@ -261,7 +261,10 @@ static const char *moderror(int err) {
 
 /* Load all modules */
 void modprobe_all(void) {
-	DIR *dir = opendir("/mnt/boot/modules/");
+	char filename[1024];
+	snprintf(filename, 1024, "/mnt/%s/modules/", boot_disk->name);
+	
+	DIR *dir = opendir(filename);
 	if(!dir) {
 		printD("Error opening /modules/: %s", strerror(errno));
 		return;

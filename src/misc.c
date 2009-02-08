@@ -37,6 +37,7 @@
 #define KLOG_TTY "/dev/tty2"
 #define DEBUG_TTY "/dev/tty3"
 
+kl_disk *boot_disk = NULL;
 int timeout = 0;
 char grub_path[1024] = {'\0'};
 kl_target *targets = NULL;
@@ -56,12 +57,15 @@ int main(int argc, char **argv) {
 	console_clear();
 	console_setpos(0,0);
 	
-	if(mount_boot()) {
+	char *kdevice = get_cmdline("root");
+	char *device = kdevice ? kdevice : "LABEL=kexecloader";
+	boot_disk = mount_retry(device, "boot disk");
+	free(kdevice);
+	
+	if(boot_disk) {
 		load_conf();
 		modprobe_all();
 		grub_load();
-		
-		unmount_all();
 	}
 	
 	while(1) {
@@ -455,7 +459,10 @@ void list_nuke(void *root) {
 
 /* Load kexec-loader.conf */
 static void load_conf(void) {
-	FILE *fh = fopen("/mnt/boot/kexec-loader.conf", "r");
+	char filename[1024];
+	snprintf(filename, 1024, "/mnt/%s/kexec-loader.conf", boot_disk->name);
+	
+	FILE *fh = fopen(filename, "r");
 	if(!fh) {
 		printD("Error opening kexec-loader.conf: %s", strerror(errno));
 		return;
