@@ -363,3 +363,14 @@ char *get_diskid(char const *root, char const *vpath) {
 	
 	return kl_strndup(disk, disklen);
 }
+
+/* Return the path component of a vpath
+ * The returned address points to the vpath string and should not be free()'d
+*/
+char *get_path(char const *vpath) {
+	if(*vpath == '(') {
+		return strchr(vpath, ')')+1;
+	}
+	
+	return vpath;
+}

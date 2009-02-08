@@ -50,5 +50,6 @@ void unmount_all(void);
 int check_vpath(char const *vpath);
 char *get_rpath(char const *root, char const *path, char const **error);
 char *get_diskid(char const *root, char const *vpath);
+char *get_path(char const *vpath);
 
 #endif /* !KL_DISK_H */

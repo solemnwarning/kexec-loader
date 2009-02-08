@@ -293,16 +293,18 @@ void grub_load(void) {
 		return;
 	}
 	
-	char const *errmsg;
-	char *root = get_rpath("", grub_path, &errmsg);
-	if(!root) {
-		printD("Error mounting GRUB device: %s", errmsg);
-		return;
+	char *device = get_diskid("", grub_path);
+	kl_disk *disk = mount_retry(device, "GRUB disk");
+	
+	if(disk) {
+		char root[256];
+		snprintf(root, 256, "/mnt/%s/%s", disk->name, get_path(grub_path));
+		
+		load_devmap(root);
+		load_menu(root);
 	}
 	
-	load_devmap(root);
-	load_menu(root);
-	
-	free(root);
+	free(disk);
+	free(device);
 	return;
 }
