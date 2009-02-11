@@ -36,14 +36,16 @@ endif
 all: kexec-loader
 
 clean:
-	rm -f *.o kexec-loader kexec-loader.static
-	rm -f kexec.a kexec_libs
+	rm -f kexec-loader kexec-loader.static
+	rm -f *.o kexec.a lib{blkid,uuid}.a
 	
 	rm -rf kexec-tools-$(KT_VER)/
 	rm -f kexec-tools-$(KT_VER).spec
+	rm -rf e2fsprogs-$(E2FS_VER)/
 
 distclean: clean
 	rm -f kexec-tools-$(KT_VER).tar.gz
+	rm -f e2fsprogs-$(E2FS_VER).tar.gz
 
 kexec-loader: $(DEPS)
 	$(CC) $(CFLAGS) -o kexec-loader $(OBJS) $(LIBS)
