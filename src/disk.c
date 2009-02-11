@@ -142,7 +142,14 @@ kl_disk *get_disks(void) {
 /* Search for a disk by disk id */
 kl_disk *find_disk(char const *id) {
 	kl_disk *ptr = get_disks(), *ret = NULL;
-	int match = 0;
+	int match = 0, i;
+	char *fstype = NULL;
+	
+	if(strchr(id, ':')) {
+		i = strcspn(id, ":");
+		fstype = kl_strndup(id, i);
+		id += i+1;
+	}
 	
 	if(kl_strneq(id, "/dev/", 5)) {
 		id += 5;
@@ -169,6 +176,11 @@ kl_disk *find_disk(char const *id) {
 		}
 	}
 	
+	if(ret && fstype) {
+		strlcpy(ret->fstype, fstype, sizeof(ret->fstype));
+	}
+	
+	free(fstype);
 	return ret;
 }
 
@@ -372,5 +384,5 @@ char *get_path(char const *vpath) {
 		return strchr(vpath, ')')+1;
 	}
 	
-	return vpath;
+	return (char*)vpath;
 }
