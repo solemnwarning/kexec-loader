@@ -1,247 +1,619 @@
 /* kexec-loader - Misc. functions
  * Copyright (C) 2007-2009 Daniel Collins <solemnwarning@solemnwarning.net>
- * All rights reserved.
  *
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions are met:
+ * This program is free software; you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation; either version 2 of the License, or
+ * (at your option) any later version.
  *
- *	* Redistributions of source code must retain the above copyright
- *	  notice, this list of conditions and the following disclaimer.
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
  *
- *	* Redistributions in binary form must reproduce the above copyright
- *	  notice, this list of conditions and the following disclaimer in the
- *	  documentation and/or other materials provided with the distribution.
- *
- *	* Neither the name of the software author nor the names of any
- *	  contributors may be used to endorse or promote products derived from
- *	  this software without specific prior written permission.
- *
- * THIS SOFTWARE IS PROVIDED BY THE SOFTWARE AUTHOR ``AS IS'' AND ANY EXPRESS
- * OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES
- * OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN
- * NO EVENT SHALL THE SOFTWARE AUTHOR BE LIABLE FOR ANY DIRECT, INDIRECT,
- * INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
- * LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA,
- * OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
- * LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
- * NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE,
- * EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ * You should have received a copy of the GNU General Public License along
+ * with this program; if not, write to the Free Software Foundation, Inc.,
+ * 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 */
 
 #include <stdlib.h>
-#include <errno.h>
-#include <string.h>
 #include <stdio.h>
+#include <sys/mount.h>
+#include <string.h>
+#include <errno.h>
 #include <stdarg.h>
 #include <unistd.h>
+#include <sys/klog.h>
 #include <ctype.h>
+#include <sys/syscall.h>
+#include <linux/reboot.h>
 
 #include "misc.h"
-#include "config.h"
-#include "../config.h"
 #include "console.h"
-#include "mystring.h"
+#include "disk.h"
+#include "menu.h"
+#include "grub.h"
 
-/* Error checking malloc() wrapper, also zeros memory */
-void* allocate(size_t size) {
-	void* ptr = malloc(size);
-	if(ptr == NULL) {
-		fatal("Can't allocate memory (%uB)", size);
+#define KLOG_TTY "/dev/tty2"
+#define DEBUG_TTY "/dev/tty3"
+
+kl_disk *boot_disk = NULL;
+int timeout = 0;
+char grub_path[1024] = {'\0'};
+kl_target *targets = NULL;
+kl_module *kmods = NULL;
+
+static void redirect_klog(void);
+static void load_conf(void);
+
+int main(int argc, char **argv) {
+	if(mount("none", "/proc", "proc", 0, NULL)) {
+		die("Error mounting /proc: %s", strerror(errno));
 	}
 	
-	memset(ptr, 0, size);
-	return(ptr);
-}
-
-/* Error checking realloc() wrapper */
-void* reallocate(void *ptr, size_t size) {
-	ptr = realloc(ptr, size);
-	if(ptr == NULL) {
-		fatal("Can't (re)allocate memory (%uB)", size);
+	redirect_klog();
+	
+	console_init();
+	console_clear();
+	console_setpos(0,0);
+	
+	char *kdevice = get_cmdline("root");
+	char *device = kdevice ? kdevice : "LABEL=kexecloader";
+	boot_disk = mount_retry(device, "boot disk");
+	free(kdevice);
+	
+	if(boot_disk) {
+		load_conf();
+		modprobe_all();
+		grub_load();
 	}
-	
-	return(ptr);
-}
-
-/* Read upto max bytes from fd starting at offset
- * Returns number of bytes read
-*/
-int read_data(int fd, void *buf, int max, int offset) {
-	int ret = 0, i;
-	
-	if(lseek(fd, offset, SEEK_SET) == -1) {
-		debug("Seek error: %s\n", strerror(errno));
-		return 0;
-	}
-	
-	while(ret < max) {
-		i = read(fd, buf+ret, max-ret);
-		if(i == -1) {
-			if(errno == EINTR) {
-				continue;
-			}
-			
-			debug("Read error: %s\n", strerror(errno));
-			break;
-		}
-		if(i == 0) {
-			break;
-		}
-		
-		ret += i;
-	}
-	
-	return ret;
-}
-
-/* Fatal error encountered, abort! */
-void fatal(char const* fmt, ...) {
-	va_list argv;
-	va_start(argv, fmt);
-	
-	char buf[256];
-	vsnprintf(buf, 256, fmt, argv);
-	
-	console_setpos(1, 1);
-	printf("%c[2J", 0x1B);
-	printf("FATAL: %s\n", buf);
-	
-	debug("FATAL: %s\n", buf);
-	va_end(argv);
 	
 	while(1) {
-		sleep(9999);
+		if(targets) {
+			menu_main();
+		}else{
+			shell_main();
+		}
 	}
+	
+	return 0;
 }
 
-/* Write a message to the debug console */
-void debug(char const* fmt, ...) {
+/* Print a message to the debug log/tty */
+void debug(char const *fmt, ...) {
 	static FILE *debug_fh = NULL;
+	va_list argv;
+	char msgbuf[256];
 	
 	if(!debug_fh) {
-		char *filename = get_cmdline("kexec_debug");
-		if(!filename) {
-			filename = str_copy(NULL, "/dev/tty2", -1);
-		}
+		char *path = get_cmdline("debug_tty");
+		debug_fh = fopen(path ? path : DEBUG_TTY, "a");
+		free(path);
 		
-		if((debug_fh = fopen(filename, "a")) == NULL) {
-			free(filename);
+		if(!debug_fh) {
 			return;
 		}
-		
-		free(filename);
 	}
 	
-	va_list argv;
 	va_start(argv, fmt);
-	
-	vfprintf(debug_fh, fmt, argv);
-	fflush(debug_fh);
-	
+	vsnprintf(msgbuf, 256, fmt, argv);
 	va_end(argv);
+	
+	fprintf(debug_fh, "%s\n", msgbuf);
+	fflush(debug_fh);
 }
 
-/* Search for an option that was passed to Linux via /proc/cmdline
- * Returns the =value if found, or NULL on error/not found
+/* Disable kernel messages to the console and spawn a process that writes all
+ * kernel messages to KLOG_TTY
 */
+static void redirect_klog(void) {
+	debug("Disabling printk() to console...");
+	klogctl(6, NULL, 0);
+	
+	FILE *klog_fh = fopen(KLOG_TTY, "a");
+	if(!klog_fh) {
+		debug("Error opening " KLOG_TTY ": %s", strerror(errno));
+		return;
+	}
+	
+	FILE *kmsg_fh = fopen("/proc/kmsg", "r");
+	if(!kmsg_fh) {
+		debug("Error opening /proc/kmsg: %s", strerror(errno));
+		return;
+	}
+	
+	if(fork()) {
+		return;
+	}
+	
+	char buf[256];
+	while(fgets(buf, 256, kmsg_fh)) {
+		fputs(buf, klog_fh);
+	}
+	
+	if(ferror(kmsg_fh)) {
+		debug("Error reading /proc/kmsg: %s", strerror(errno));
+	}
+	
+	debug("The /proc/kmsg read loop has exited!");
+	exit(0);
+}
+
+/* Log error and idle (Exiting will cause panic in older kernels)
+ *
+ * HACK: Behaviour changes if PID is not 1, this is because kexec-tools also has
+ * a die() function and they conflict at link time.
+*/
+void die(char const *fmt, ...) {
+	va_list argv;
+	char msgbuf[256];
+	
+	va_start(argv, fmt);
+	vsnprintf(msgbuf, 256, fmt, argv);
+	va_end(argv);
+	
+	if(getpid() == 1) {
+		debug("FATAL: %s", msgbuf);
+		printf("\nFATAL: %s", msgbuf);
+		
+		while(1) {
+			sleep(9999);
+		}
+	}else{
+		msgbuf[strcspn(msgbuf, "\n")] = '\0';
+		printd("%s", msgbuf);
+		
+		exit(1);
+	}
+}
+
+/* Search the kernel command line for an option */
 char *get_cmdline(char const *name) {
-	FILE *fh;
-	char *tok, *val;
-	char cmdline[1024];
-	size_t len;
-	
-	if(!(fh = fopen("/proc/cmdline", "r"))) {
+	FILE *fh = fopen("/proc/cmdline", "r");
+	if(!fh) {
+		debug("Error opening /proc/cmdline: %s", strerror(errno));
 		return NULL;
 	}
 	
-	if(!fgets(cmdline, 1024, fh)) {
-		return NULL;
+	int len = strlen(name);
+	char *r = NULL, buf[1024];
+	
+	if(fgets(buf, 1024, fh)) {
+		r = buf;
+		
+		while((r = strstr(r, name))) {
+			if(r == buf || r[-1] == ' ') {
+				if(r[len] == '=') {
+					r += len+1;
+					break;
+				}else if(r[len] == ' ' || r[len] == '\0') {
+					r += len;
+					break;
+				}
+			}
+			
+			r++;
+		}
+		
+		if(r) {
+			r = kl_strndup(r, strcspn(r, " "));
+		}
 	}
-	cmdline[strcspn(cmdline, "\n")] = '\0';
+	
+	if(ferror(fh)) {
+		debug("Error reading /proc/cmdline: %s", strerror(errno));
+	}
 	
 	fclose(fh);
 	
-	tok = strtok(cmdline, " ");
-	while(tok) {
-		if(strchr(tok, '=')) {
-			len = (size_t)(strchr(tok, '=') - tok);
-		}else{
-			len = strlen(tok);
-		}
+	return r;
+}
+
+/* Return next value in a string */
+char *next_value(char *ptr) {
+	ptr += strcspn(ptr, "\t ");
+	
+	if(*ptr) {
+		ptr[0] = '\0';
+		ptr++;
 		
-		if(strncmp(tok, name, len) == 0) {
-			break;
-		}
-		
-		tok = strtok(NULL, " ");
+		ptr += strspn(ptr, "\t ");
 	}
 	
-	if(tok) {
-		if((val = strchr(tok, '='))) {
-			return str_copy(NULL, val+1, -1);
+	return ptr;
+}
+
+#define LD_PDIV() \
+	printf("+----------+----------+------------+-"); \
+	for(i = 0; i < lw; i++) { \
+		putchar('-'); \
+	} \
+	puts("-+");
+
+/* Display a list of disks */
+void list_disks(void) {
+	int lw, i;
+	console_getsize(&lw, NULL);
+	lw -= 39;
+	
+	LD_PDIV();
+	printf("|   Device |     Size |     Format | %*.*s |\n", lw, lw, "Label");
+	LD_PDIV();
+	
+	kl_disk *ptr = get_disks();
+	while(ptr) {
+		printf("| %8.8s ", ptr->name);
+		printf("| %8.8s ", ptr->size);
+		printf("| %10.10s ", ptr->fstype[0] ? ptr->fstype : "UNKNOWN");
+		printf("| %*.*s |\n", lw, lw, ptr->label[0] ? ptr->label : "NO LABEL");
+		
+		list_del(&ptr, ptr);
+	}
+	
+	LD_PDIV();
+}
+
+/* Prepare the system for reboot and call reboot
+ * Returns on error
+*/
+void call_reboot(int cmd) {
+	unmount_all();
+	sync();
+	
+	syscall(
+		__NR_reboot,
+		LINUX_REBOOT_MAGIC1, LINUX_REBOOT_MAGIC2,
+		cmd, NULL
+	);
+}
+
+/* Allocate memory */
+void *kl_malloc(size_t size) {
+	void *ptr = malloc(size);
+	if(!ptr) {
+		die("Out of memory! (Tried to allocate %u)", size);
+	}
+	
+	memset(ptr, 0, size);
+	return ptr;
+}
+
+/* Resize memory */
+void *kl_realloc(void *ptr, size_t size) {
+	ptr = realloc(ptr, size);
+	if(!ptr) {
+		die("Out of memory! (Tried to realloc %u)", size);
+	}
+	
+	return ptr;
+}
+
+/* Duplicate a string */
+char *kl_strdup(char const *src) {
+	char *dest = kl_malloc(strlen(src)+1);
+	strcpy(dest, src);
+	
+	return dest;
+}
+
+/* Duplicate a string */
+char *kl_strndup(char const *src, int max) {
+	int len = 0;
+	while(src[len] && len < max) { len++; }
+	
+	char *dest = kl_malloc(len+1);
+	strlcpy(dest, src, len+1);
+	
+	return dest;
+}
+
+/* Allocate a buffer and write a printf format string to it */
+char *kl_sprintf(char const *fmt, ...) {
+	va_list argv;
+	
+	va_start(argv, fmt);
+	char *dest = kl_malloc(vsnprintf(NULL, 0, fmt, argv)+1);
+	va_end(argv);
+	
+	va_start(argv, fmt);
+	vsprintf(dest, fmt, argv);
+	va_end(argv);
+	
+	return dest;
+}
+
+/* Compare two strings */
+int kl_streq(char const *s1, char const *s2) {
+	int i = 0;
+	
+	while(s1[i] == s2[i]) {
+		if(s1[i] == '\0') {
+			return 1;
 		}
 		
-		return str_copy(NULL, "", -1);
+		i++;
+	}
+	
+	return 0;
+}
+
+/* Compare two strings, stop after max characters */
+int kl_strneq(char const *s1, char const *s2, int max) {
+	int i = 0;
+	
+	while(s1[i] == s2[i] && i < max) {
+		if(s1[i] == '\0') {
+			return 1;
+		}
+		
+		i++;
+	}
+	
+	return i == max ? 1 : 0;
+}
+
+/* Compare two strings, ignoring case */
+int kl_strceq(char const *s1, char const *s2) {
+	int i = 0;
+	
+	while(tolower(s1[i]) == tolower(s2[i])) {
+		if(s1[i] == '\0') {
+			return 1;
+		}
+		
+		i++;
+	}
+	
+	return 0;
+}
+
+/* Compare two strings, ignoring case, stop after max characters */
+int kl_strnceq(char const *s1, char const *s2, int max) {
+	int i = 0;
+	
+	while(tolower(s1[i]) == tolower(s2[i]) && i < max) {
+		if(s1[i] == '\0') {
+			return 1;
+		}
+		
+		i++;
+	}
+	
+	return i == max ? 1 : 0;
+}
+
+struct list { struct list *next; };
+
+/* Add an entry to a list */
+void list_add(void *rptr, void *node) {
+	struct list **root = rptr;
+	struct list *ptr = *root;
+	
+	while(ptr && ptr->next) {
+		ptr = ptr->next;
+	}
+	
+	if(ptr) {
+		ptr->next = node;
+	}else{
+		*root = node;
+	}
+}
+
+/* Copy a node and add the copy to a list */
+void list_add_copy(void *rptr, void *node, int size) {
+	void *nptr = kl_malloc(size);
+	memcpy(nptr, node, size);
+	
+	list_add(rptr, nptr);
+}
+
+/* Remove an entry from a list */
+void list_del(void *rptr, void *node) {
+	struct list **root = rptr;
+	struct list *ptr = *root;
+	
+	if(*root == node) {
+		*root = ptr->next;
+		free(node);
+	}else{
+		while(ptr && ptr->next) {
+			if(ptr->next == node) {
+				ptr->next = ptr->next->next;
+				free(node);
+				
+				break;
+			}
+		}
+	}
+}
+
+/* Return the previous node in the list
+ * Returns NULL if there is no parent (e.g, node == root)
+*/
+void *list_prev(void *root, void *node) {
+	struct list *ptr = root;
+	
+	while(ptr) {
+		if(ptr->next == node) {
+			return ptr;
+		}
+		
+		ptr = ptr->next;
 	}
 	
 	return NULL;
 }
 
-/* Fork a process to write Linux kernel messages to the debug console */
-void kmsg_monitor(void) {
-	if(fork() <= 0) {
+/* Free all nodes in a list */
+void list_nuke(void *root) {
+	struct list *ptr = root, *x;
+	
+	while(ptr) {
+		x = ptr;
+		ptr = ptr->next;
+		
+		free(x);
+	}
+}
+
+/* Load kexec-loader.conf */
+static void load_conf(void) {
+	char filename[1024];
+	snprintf(filename, 1024, "/mnt/%s/kexec-loader.conf", boot_disk->name);
+	
+	FILE *fh = fopen(filename, "r");
+	if(!fh) {
+		printD("Error opening kexec-loader.conf: %s", strerror(errno));
 		return;
 	}
 	
-	FILE *kmsg = fopen("/proc/kmsg", "r");
-	if(!kmsg) {
-		debug("Can't open /proc/kmsg: %s\n", strerror(errno));
-		debug("Linux kernel messages will not be available\n");
+	printd("Loading kexec-loader.conf...");
+	
+	char line[1024], *name, *val, *val2;
+	int lnum = 0, topen = 0;
+	kl_target target;
+	kl_module mod;
+	char *fname = "kexec-loader.conf";
+	kl_gdev gdev;
+	
+	while(fgets(line, 1024, fh)) {
+		line[strcspn(line, "\r\n")] = '\0';
+		lnum++;
 		
-		exit(1);
-	}
-	
-	char msgbuf[4096];
-	while(fgets(msgbuf, 4096, kmsg)) {
-		debug("%s", msgbuf);
-	}
-	
-	exit(0);
-}
-
-/* Free a list of kl_target structures */
-void free_targets(kl_target *targets) {
-	kl_target *dptr;
-	
-	while(targets) {
-		dptr = targets;
-		targets = targets->next;
+		name = line+strspn(line, "\r\n\t ");
+		val = next_value(name);
 		
-		free_mounts(dptr->mounts);
-		free(dptr);
-	}
-}
-
-/* Free a list of kl_mount structures */
-void free_mounts(kl_mount *mounts) {
-	kl_mount *dptr;
-	
-	while(mounts) {
-		dptr = mounts;
-		mounts = mounts->next;
+		if(name[0] == '#' || name[0] == '\0') {
+			continue;
+		}
 		
-		free(dptr);
-	}
-}
-
-void free_modules(kl_module *modules) {
-	kl_module *dptr;
-	
-	while(modules) {
-		dptr = modules;
-		modules = modules->next;
+		if(kl_streq(name, "timeout")) {
+			CHECK_HASARG();
+			
+			timeout = atoi(val);
+			continue;
+		}
+		if(kl_streq(name, "grub-path")) {
+			CHECK_HASARG();
+			CHECK_VPATH();
+			
+			if(*val != '(') {
+				printD("kexec-loader.conf:%d: No device specified", lnum);
+				continue;
+			}
+			
+			strlcpy(grub_path, val, sizeof(grub_path));
+			continue;
+		}
+		if(kl_streq(name, "grub-map")) {
+			val2 = next_value(val);
+			CHECK_HASARG_MULTI(val2, 2);
+			
+			if(!parse_gdev(&gdev, val)) {
+				printD("kexec-loader.conf:%d: Invalid GRUB device '%s'", lnum, val);
+				continue;
+			}
+			
+			strlcpy(gdev.device, val2, sizeof(gdev.device));
+			list_add_copy(&grub_devmap, &gdev, sizeof(gdev));
+		}
 		
-		free(dptr->module);
-		free(dptr);
+		if(kl_streq(name, "title")) {
+			CHECK_HASARG();
+			
+			if(topen) {
+				ADD_TARGET();
+			}
+			
+			INIT_TARGET(&target);
+			strlcpy(target.title, val, sizeof(target.title));
+			topen = lnum;
+			
+			continue;
+		}
+		if(kl_streq(name, "root")) {
+			CHECK_TOPEN();
+			CHECK_HASARG();
+			
+			strlcpy(target.root, val, sizeof(target.root));
+			continue;
+		}
+		if(kl_streq(name, "kernel")) {
+			CHECK_TOPEN();
+			CHECK_HASARG();
+			CHECK_VPATH();
+			
+			strlcpy(target.kernel, val, sizeof(target.kernel));
+			continue;
+		}
+		if(kl_streq(name, "initrd")) {
+			CHECK_TOPEN();
+			CHECK_HASARG();
+			CHECK_VPATH();
+			
+			strlcpy(target.initrd, val, sizeof(target.initrd));
+			continue;
+		}
+		if(kl_streq(name, "cmdline")) {
+			CHECK_TOPEN();
+			CHECK_HASARG();
+			
+			strlcpy(target.cmdline, val, sizeof(target.cmdline));
+			continue;
+		}
+		if(kl_streq(name, "append")) {
+			CHECK_TOPEN();
+			CHECK_HASARG();
+			
+			strlcpy(target.append, val, sizeof(target.append));
+			continue;
+		}
+		if(kl_streq(name, "default")) {
+			CHECK_TOPEN();
+			
+			target.flags |= TARGET_DEFAULT;
+			continue;
+		}
+		if(kl_streq(name, "reset-vga")) {
+			CHECK_TOPEN();
+			
+			target.flags |= TARGET_RESET;
+			continue;
+		}
+		if(kl_streq(name, "module")) {
+			CHECK_TOPEN();
+			CHECK_HASARG();
+			CHECK_VPATH();
+			
+			INIT_MODULE(&mod);
+			strlcpy(mod.args, next_value(val), sizeof(mod.args));
+			strlcpy(mod.name, val, sizeof(mod.name));
+			list_add_copy(&target.modules, &mod, sizeof(mod));
+			
+			continue;
+		}
+		if(kl_streq(name, "kmod")) {
+			CHECK_TOPEN();
+			CHECK_HASARG();
+			
+			INIT_MODULE(&mod);
+			strlcpy(mod.args, next_value(val), sizeof(mod.args));
+			strlcpy(mod.name, val, sizeof(mod.name));
+			list_add_copy(&kmods, &mod, sizeof(mod));
+			
+			continue;
+		}
+		
+		printD("kexec-loader.conf:%d: Unknown directive '%s'", lnum, name);
 	}
+	if(ferror(fh)) {
+		printD("Error reading kexec-loader.conf: %s", strerror(errno));
+	}
+	
+	if(topen) {
+		ADD_TARGET();
+	}
+	
+	fclose(fh);
 }

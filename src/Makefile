@@ -1,88 +1,82 @@
 # kexec-loader - Source makefile
 # Copyright (C) 2007-2009 Daniel Collins <solemnwarning@solemnwarning.net>
-# All rights reserved.
 #
-# Redistribution and use in source and binary forms, with or without
-# modification, are permitted provided that the following conditions are met:
+# This program is free software; you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation; either version 2 of the License, or
+# (at your option) any later version.
 #
-#	* Redistributions of source code must retain the above copyright
-#	  notice, this list of conditions and the following disclaimer.
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
 #
-#	* Redistributions in binary form must reproduce the above copyright
-#	  notice, this list of conditions and the following disclaimer in the
-#	  documentation and/or other materials provided with the distribution.
-#
-#	* Neither the name of the software author nor the names of any
-#	  contributors may be used to endorse or promote products derived from
-#	  this software without specific prior written permission.
-#
-# THIS SOFTWARE IS PROVIDED BY THE SOFTWARE AUTHOR ``AS IS'' AND ANY EXPRESS
-# OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES
-# OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN
-# NO EVENT SHALL THE SOFTWARE AUTHOR BE LIABLE FOR ANY DIRECT, INDIRECT,
-# INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
-# LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA,
-# OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
-# LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
-# NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE,
-# EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+# You should have received a copy of the GNU General Public License along
+# with this program; if not, write to the Free Software Foundation, Inc.,
+# 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 
-DEPS := main.o mount.o config.o console.o misc.o kexec.o grub.o shell.o mystring.o modprobe.o kexec.a
-OBJS := $(DEPS) `cat kexec_libs`
+DEPS := misc.o disk.o console.o menu.o modprobe.o boot.o grub.o shell.o globcmp.o kexec.a libblkid.a libuuid.a
+OBJS := $(DEPS)
 
 KT_VER := 2.0.0
 KT_URL := http://www.kernel.org/pub/linux/kernel/people/horms/kexec-tools/kexec-tools-$(KT_VER).tar.gz
 KT_CONFIGURE :=
 
+E2FS_VER := 1.41.3
+E2FS_URL := http://surfnet.dl.sourceforge.net/sourceforge/e2fsprogs/e2fsprogs-$(E2FS_VER).tar.gz
+E2FS_CONFIGURE :=
+
+INCLUDES += -Ie2fsprogs-$(E2FS_VER)/lib/
+
 ifdef HOST
 	KT_CONFIGURE += --host=$(HOST)
+	E2FS_CONFIGURE += --host=$(HOST)
 endif
 
 all: kexec-loader
 
 clean:
-	rm -f *.o kexec-loader kexec-loader.static
-	rm -f kexec.a kexec_libs
+	rm -f kexec-loader kexec-loader.static
+	rm -f *.o kexec.a lib{blkid,uuid}.a
 	
 	rm -rf kexec-tools-$(KT_VER)/
 	rm -f kexec-tools-$(KT_VER).spec
+	rm -rf e2fsprogs-$(E2FS_VER)/
 
 distclean: clean
 	rm -f kexec-tools-$(KT_VER).tar.gz
+	rm -f e2fsprogs-$(E2FS_VER).tar.gz
 
 kexec-loader: $(DEPS)
-	$(CC) $(CFLAGS) $(LIBS) -o kexec-loader $(OBJS)
-	$(CC) $(CFLAGS) $(LIBS) -static -o kexec-loader.static $(OBJS)
-
-main.o: main.c
-	$(CC) $(CFLAGS) $(INCLUDES) -c -o main.o main.c
-
-mount.o: mount.c mount.h misc.o
-	$(CC) $(CFLAGS) $(INCLUDES) -c -o mount.o mount.c
-
-config.o: config.c config.h misc.o
-	$(CC) $(CFLAGS) $(INCLUDES) -c -o config.o config.c
-
-console.o: console.c console.h misc.o
-	$(CC) $(CFLAGS) $(INCLUDES) -c -o console.o console.c
+	$(CC) $(CFLAGS) -o kexec-loader $(OBJS) $(LIBS)
+	$(CC) $(CFLAGS) -static -o kexec-loader.static $(OBJS) $(LIBS)
 
 misc.o: misc.c misc.h
 	$(CC) $(CFLAGS) $(INCLUDES) -c -o misc.o misc.c
 
-kexec.o: kexec.c kexec.h misc.o
-	$(CC) $(CFLAGS) $(INCLUDES) -c -o kexec.o kexec.c
+disk.o: disk.c disk.h misc.h libblkid.a
+	$(CC) $(CFLAGS) $(INCLUDES) -c -o disk.o disk.c
+
+console.o: console.c console.h
+	$(CC) $(CFLAGS) $(INCLUDES) -c -o console.o console.c
+
+menu.o: menu.c menu.h
+	$(CC) $(CFLAGS) $(INCLUDES) -c -o menu.o menu.c
+
+modprobe.o: modprobe.c
+	$(CC) $(CFLAGS) $(INCLUDES) -c -o modprobe.o modprobe.c
+
+boot.o: boot.c
+	$(CC) $(CFLAGS) $(INCLUDES) -c -o boot.o boot.c
 
 grub.o: grub.c grub.h
 	$(CC) $(CFLAGS) $(INCLUDES) -c -o grub.o grub.c
 
-shell.o: shell.c shell.h
+shell.o: shell.c
 	$(CC) $(CFLAGS) $(INCLUDES) -c -o shell.o shell.c
 
-mystring.o: mystring.c mystring.h
-	$(CC) $(CFLAGS) $(INCLUDES) -c -o mystring.o mystring.c
-
-modprobe.o: modprobe.c modprobe.h
-	$(CC) $(CFLAGS) $(INCLUDES) -c -o modprobe.o modprobe.c
+globcmp.o: globcmp.c
+	$(CC) $(CFLAGS) $(INCLUDES) -c -o globcmp.o globcmp.c
 
 kexec.a:
 	wget -nc $(KT_URL)
@@ -91,3 +85,13 @@ kexec.a:
 	patch -Np1 -i $(KLBASE)/patches/kexec-tools-2.0.0.diff && \
 	./configure $(KT_CONFIGURE) && \
 	make
+
+libuuid.a: libblkid.a
+libblkid.a:
+	wget -nc $(E2FS_URL)
+	tar -xzf e2fsprogs-$(E2FS_VER).tar.gz
+	cd e2fsprogs-$(E2FS_VER)/ && \
+	CFLAGS="" ./configure $(E2FS_CONFIGURE)
+	make -C e2fsprogs-$(E2FS_VER)/lib/blkid/
+	make -C e2fsprogs-$(E2FS_VER)/lib/uuid/
+	cp e2fsprogs-$(E2FS_VER)/lib/lib{blkid,uuid}.a ./

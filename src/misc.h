@@ -1,58 +1,150 @@
-/* kexec-loader - Misc. functions header
+/* kexec-loader - Misc. stuff
  * Copyright (C) 2007-2009 Daniel Collins <solemnwarning@solemnwarning.net>
- * All rights reserved.
  *
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions are met:
+ * This program is free software; you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation; either version 2 of the License, or
+ * (at your option) any later version.
  *
- *	* Redistributions of source code must retain the above copyright
- *	  notice, this list of conditions and the following disclaimer.
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
  *
- *	* Redistributions in binary form must reproduce the above copyright
- *	  notice, this list of conditions and the following disclaimer in the
- *	  documentation and/or other materials provided with the distribution.
- *
- *	* Neither the name of the software author nor the names of any
- *	  contributors may be used to endorse or promote products derived from
- *	  this software without specific prior written permission.
- *
- * THIS SOFTWARE IS PROVIDED BY THE SOFTWARE AUTHOR ``AS IS'' AND ANY EXPRESS
- * OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES
- * OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN
- * NO EVENT SHALL THE SOFTWARE AUTHOR BE LIABLE FOR ANY DIRECT, INDIRECT,
- * INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
- * LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA,
- * OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
- * LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
- * NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE,
- * EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ * You should have received a copy of the GNU General Public License along
+ * with this program; if not, write to the Free Software Foundation, Inc.,
+ * 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 */
 
-#ifndef KEXEC_LOADER_MISC_H
-#define KEXEC_LOADER_MISC_H
-#include "config.h"
-#include "../config.h"
+#ifndef KL_MISC_H
+#define KL_MISC_H
 
-/* String comparison flags */
-#define STR_NOCASE	1	/* Do case-insensitive comparision */
-#define STR_MAXLEN	2	/* Don't compare more then ... bytes */
-#define STR_WILDCARDS	4	/* Parse wildcard characters * and ? */
-#define STR_WILDCARD1	8	/* Parse wildcard characters * and ? in str1 */
-#define STR_WILDCARD2	16	/* Parse wildcard characters * and ? in str2 */
+#include "disk.h"
 
-void* allocate(size_t size);
-void* reallocate(void *ptr, size_t size);
+#define TARGET_DEFAULT	(int)(1<<0)
+#define TARGET_RESET	(int)(1<<1)
 
-int read_data(int fd, void *buf, int max, int offset);
+#define INIT_MODULE(ptr) \
+	(ptr)->next = NULL; \
+	(ptr)->name[0] = '\0'; \
+	(ptr)->args[0] = '\0';
 
-void fatal(char const* fmt, ...);
-void debug(char const* fmt, ...);
+typedef struct kl_module {
+	struct kl_module *next;
+	
+	char name[1024];
+	char args[1024];
+} kl_module;
 
+#define INIT_TARGET(ptr) \
+	(ptr)->next = NULL; \
+	(ptr)->title[0] = '\0'; \
+	(ptr)->flags = 0; \
+	(ptr)->root[0] = '\0'; \
+	(ptr)->kernel[0] = '\0'; \
+	(ptr)->initrd[0] = '\0'; \
+	(ptr)->cmdline[0] = '\0'; \
+	(ptr)->append[0] = '\0'; \
+	(ptr)->modules = NULL;
+
+typedef struct kl_target {
+	struct kl_target *next;
+	
+	char title[256];
+	int flags;
+	
+	char root[256];
+	char kernel[1024];
+	char initrd[1024];
+	char cmdline[1024];
+	char append[1024];
+	kl_module *modules;
+} kl_target;
+
+#define CHECK_HASARG() \
+	if(!val[0]) { \
+		printD("%s:%u: '%s' requires an argument", fname, lnum, name); \
+		continue; \
+	}
+
+#define CHECK_HASARG_MULTI(s,n) \
+	if(!s) { \
+		printD("%s:%u: '%s' requires %d arguments", fname, lnum, name, (int)n); \
+		continue; \
+	}
+
+#define CHECK_TOPEN() \
+	if(!topen) { \
+		printD("%s:%u: '%s' must be after a 'title'", fname, lnum, name); \
+	} \
+	if(topen <= 0) { \
+		continue; \
+	}
+
+#define CHECK_VPATH() \
+	if(!check_vpath(val)) { \
+		printD("%s:%d: Invalid path specified", fname, lnum); \
+		continue; \
+	}
+
+#define CHECK_GDEV() \
+	if(*val != '(' || val[strlen(val)-1] != ')') { \
+		printD("%s:%d: Invalid device syntax", fname, lnum); \
+		continue; \
+	} \
+	val++; \
+	val[strlen(val)-1] = '\0';
+
+#define TARGET_FAIL() \
+	topen = 0; \
+	while(target.modules) { \
+		list_del(&target.modules, target.modules); \
+	}
+
+#define ADD_TARGET() \
+	if(topen > 0 && !target.root[0]) { \
+		printD("%s:%d: No root device specified", fname, topen); \
+		TARGET_FAIL(); \
+	} \
+	if(topen > 0 && !target.kernel[0]) { \
+		printD("%s:%d: No kernel specified", fname, topen); \
+		TARGET_FAIL(); \
+	} \
+	if(topen > 0) { \
+		list_add_copy(&targets, &target, sizeof(target)); \
+	}
+
+extern kl_disk *boot_disk;
+extern int timeout;
+extern char grub_path[];
+extern kl_target *targets;
+extern kl_module *kmods;
+
+void debug(char const *fmt, ...);
+void die(char const *fmt, ...);
 char *get_cmdline(char const *name);
-void kmsg_monitor(void);
+char *next_value(char *ptr);
+void list_disks(void);
+void call_reboot(int cmd);
 
-void free_targets(kl_target *targets);
-void free_mounts(kl_mount *mounts);
-void free_modules(kl_module *modules);
+void *kl_malloc(size_t size);
+void *kl_realloc(void *ptr, size_t size);
+char *kl_strdup(char const *src);
+char *kl_strndup(char const *src, int max);
+char *kl_sprintf(char const *fmt, ...);
+int kl_streq(char const *s1, char const *s2);
+int kl_strneq(char const *s1, char const *s2, int max);
+int kl_strceq(char const *s1, char const *s2);
+int kl_strnceq(char const *s1, char const *s2, int max);
 
-#endif /* !KEXEC_LOADER_MISC_H */
+void list_add(void *rptr, void *node);
+void list_add_copy(void *rptr, void *node, int size);
+void list_del(void *rptr, void *node);
+void *list_prev(void *root, void *node);
+void list_nuke(void *root);
+
+void modprobe_all(void);
+void boot_target(kl_target *target);
+void shell_main(void);
+
+#endif /* !KL_MISC_H */

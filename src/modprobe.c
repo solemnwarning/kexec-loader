@@ -1,31 +1,19 @@
-/* kexec-loader - Module loading functions
+/* kexec-loader - Load kernel modules
  * Copyright (C) 2007-2009 Daniel Collins <solemnwarning@solemnwarning.net>
- * All rights reserved.
  *
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions are met:
+ * This program is free software; you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation; either version 2 of the License, or
+ * (at your option) any later version.
  *
- *	* Redistributions of source code must retain the above copyright
- *	  notice, this list of conditions and the following disclaimer.
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
  *
- *	* Redistributions in binary form must reproduce the above copyright
- *	  notice, this list of conditions and the following disclaimer in the
- *	  documentation and/or other materials provided with the distribution.
- *
- *	* Neither the name of the software author nor the names of any
- *	  contributors may be used to endorse or promote products derived from
- *	  this software without specific prior written permission.
- *
- * THIS SOFTWARE IS PROVIDED BY THE SOFTWARE AUTHOR ``AS IS'' AND ANY EXPRESS
- * OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES
- * OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN
- * NO EVENT SHALL THE SOFTWARE AUTHOR BE LIABLE FOR ANY DIRECT, INDIRECT,
- * INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
- * LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA,
- * OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
- * LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
- * NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE,
- * EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ * You should have received a copy of the GNU General Public License along
+ * with this program; if not, write to the Free Software Foundation, Inc.,
+ * 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 */
 
 #include <stdlib.h>
@@ -38,42 +26,31 @@
 #include <sys/syscall.h>
 #include <sys/types.h>
 #include <dirent.h>
+#include <endian.h>
 
-#include "modprobe.h"
-#include "mystring.h"
 #include "console.h"
 #include "misc.h"
-#include "config.h"
 
-#define elf2host(dest, src, size) \
-	elf2host_(dest, src, size, elf[EI_DATA])
+#if __BYTE_ORDER == __LITTLE_ENDIAN
+#define ELF_ORDER ELFDATA2LSB
+#else
+#define ELF_ORDER ELFDATA2MSB
+#endif
 
-static kl_module *mod_options = NULL;
-static kl_module *k_modules = NULL;
+#define elf2host(dest, src) elf2host_(&(dest), src, sizeof(dest), elf[EI_DATA])
 
 static char *elf_getsection(char const *elf, char const *name, size_t *size);
 static char *elf32_getsection(char const *elf, char const *name, size_t *size);
 static char *elf64_getsection(char const *elf, char const *name, size_t *size);
-static void elf2host_(void *dest, void const *src, size_t size, char eidata);
-static char *next_arg(char *arg);
-static int modprobe(char const *name, int lvl);
+static void elf2host_(void *dest, void const *src, int size, char eidata);
+static int modprobe(char const *name);
 static const char *moderror(int err);
-static void module_add(kl_module **list, char const *module, char const *args);
-static kl_module *module_search(kl_module *list, char const *module);
 
 /* Load a section from an ELF binary
  * Calls elf32_getsection() or elf64_getsection() depending on ELF format
 */
 static char *elf_getsection(char const *elf, char const *name, size_t *size) {
-	union {
-		uint16_t i;
-		char c[2];
-	} etest;
-	
-	etest.i = 1;
-	
-	
-	if(elf[0] != 0x7F || !str_eq(elf+1, "ELF", 3)) {
+	if(*elf != 0x7F && !kl_strneq(elf+1, "ELF", 3)) {
 		return NULL;
 	}
 	
@@ -87,6 +64,8 @@ static char *elf_getsection(char const *elf, char const *name, size_t *size) {
 	return NULL;
 }
 
+#define ELF_SHDR(i) ((void*)elf+e_shoff+(i*e_shentsize))
+
 /* Get a section from an ELF32 binary
  * Returns NULL if the section was not found
 */
@@ -96,24 +75,28 @@ static char *elf32_getsection(char const *elf, char const *name, size_t *size) {
 	Elf32_Half e_shnum, shnum;
 	Elf32_Half e_shstrndx;
 	
-	elf2host(&e_shoff, elf+32, sizeof(Elf32_Off));
-	elf2host(&e_shentsize, elf+46, sizeof(Elf32_Half));
-	elf2host(&e_shnum, elf+48, sizeof(Elf32_Half));
-	elf2host(&e_shstrndx, elf+50, sizeof(Elf32_Half));
+	Elf32_Ehdr *header = (Elf32_Ehdr*)elf;
+	
+	elf2host(e_shoff, &header->e_shoff);
+	elf2host(e_shentsize, &header->e_shentsize);
+	elf2host(e_shnum, &header->e_shnum);
+	elf2host(e_shstrndx, &header->e_shstrndx);
 	
 	Elf32_Word sh_name;
 	Elf32_Off sh_offset;
 	Elf32_Word sh_size;
 	
-	elf2host(&sh_offset, elf+e_shoff+(e_shentsize*e_shstrndx)+16, sizeof(Elf32_Off));
+	Elf32_Shdr *shdr = ELF_SHDR(e_shstrndx);
+	elf2host(sh_offset, &shdr->sh_offset);
 	char *sh_strings = (char*)elf+sh_offset;
 	
 	for(shnum = 0; shnum < e_shnum; shnum++) {
-		elf2host(&sh_name, elf+e_shoff+(e_shentsize*shnum), sizeof(Elf32_Word));
-		elf2host(&sh_offset, elf+e_shoff+(e_shentsize*shnum)+16, sizeof(Elf32_Off));
-		elf2host(&sh_size, elf+e_shoff+(e_shentsize*shnum)+20, sizeof(Elf32_Word));
+		shdr = ELF_SHDR(shnum);
+		elf2host(sh_name, &shdr->sh_name);
+		elf2host(sh_offset, &shdr->sh_offset);
+		elf2host(sh_size, &shdr->sh_size);
 		
-		if(str_eq(name, sh_strings+sh_name, -1)) {
+		if(kl_streq(name, sh_strings+sh_name)) {
 			*size = sh_size;
 			return (char*)elf+sh_offset;
 		}
@@ -131,24 +114,28 @@ static char *elf64_getsection(char const *elf, char const *name, size_t *size) {
 	Elf64_Half e_shnum, shnum;
 	Elf64_Half e_shstrndx;
 	
-	elf2host(&e_shoff, elf+40, sizeof(Elf64_Off));
-	elf2host(&e_shentsize, elf+58, sizeof(Elf64_Half));
-	elf2host(&e_shnum, elf+60, sizeof(Elf64_Half));
-	elf2host(&e_shstrndx, elf+62, sizeof(Elf64_Half));
+	Elf64_Ehdr *header = (Elf64_Ehdr*)elf;
+	
+	elf2host(e_shoff, &header->e_shoff);
+	elf2host(e_shentsize, &header->e_shentsize);
+	elf2host(e_shnum, &header->e_shnum);
+	elf2host(e_shstrndx, &header->e_shstrndx);
 	
 	Elf64_Word sh_name;
 	Elf64_Off sh_offset;
-	Elf64_Xword sh_size;
+	Elf64_Word sh_size;
 	
-	elf2host(&sh_offset, elf+e_shoff+(e_shentsize*e_shstrndx)+24, sizeof(Elf64_Off));
+	Elf64_Shdr *shdr = ELF_SHDR(e_shstrndx);
+	elf2host(sh_offset, &shdr->sh_offset);
 	char *sh_strings = (char*)elf+sh_offset;
 	
 	for(shnum = 0; shnum < e_shnum; shnum++) {
-		elf2host(&sh_name, elf+e_shoff+(e_shentsize*shnum), sizeof(Elf64_Word));
-		elf2host(&sh_offset, elf+e_shoff+(e_shentsize*shnum)+24, sizeof(Elf64_Off));
-		elf2host(&sh_size, elf+e_shoff+(e_shentsize*shnum)+32, sizeof(Elf64_Xword));
+		shdr = ELF_SHDR(shnum);
+		elf2host(sh_name, &shdr->sh_name);
+		elf2host(sh_offset, &shdr->sh_offset);
+		elf2host(sh_size, &shdr->sh_size);
 		
-		if(str_eq(name, sh_strings+sh_name, -1)) {
+		if(kl_streq(name, sh_strings+sh_name)) {
 			*size = sh_size;
 			return (char*)elf+sh_offset;
 		}
@@ -157,19 +144,12 @@ static char *elf64_getsection(char const *elf, char const *name, size_t *size) {
 	return NULL;
 }
 
-/* Convert a value in the ELF binary from the ELF endian to the host endian. */
-static void elf2host_(void *dest, void const *src, size_t size, char eidata) {
-	char host_endian = ELFDATANONE;
-	int16_t test = 1;
-	
-	if(((char*)&test)[0] == 1) {
-		host_endian = ELFDATA2LSB;
-	}else{
-		host_endian = ELFDATA2MSB;
-	}
-	
-	if(host_endian != eidata) {
-		size_t n;
+/* Convert a value in the ELF binary from the ELF endian to the host endian.
+ * dest and src must not overlap
+*/
+static void elf2host_(void *dest, void const *src, int size, char eidata) {
+	if(eidata != ELF_ORDER) {
+		int n;
 		
 		for(n = 0; n < size; n++) {
 			((char*)dest)[n] = ((char*)src)[size-n-1];
@@ -179,97 +159,36 @@ static void elf2host_(void *dest, void const *src, size_t size, char eidata) {
 	}
 }
 
-/* Load modules.conf */
-void load_modconf(void) {
-	char line[1024], *name, *module, *args;
-	int lnum = 0;
-	
-	FILE *fh = fopen("/boot/modules/modules.conf", "r");
-	if(!fh) {
-		printD(RED, 2, "Can't open /modules/modules.conf: %s", strerror(errno));
-		return;
-	}
-	
-	while(fgets(line, 1024, fh)) {
-		line[strcspn(line, "\r\n")] = '\0';
-		lnum++;
-		
-		name = line+strspn(line, "\r\n\t ");
-		module = next_arg(name);
-		args = next_arg(module);
-		
-		if(name[0] == '#' || name[0] == '\0') {
-			continue;
-		}
-		
-		if(str_eq(name, "options", -1)) {
-			if(module[0] == '\0') {
-				printD(RED, 2, "modules.conf:%u: Usage: options <module> <args>", lnum);
-				continue;
-			}
-			
-			module_add(&mod_options, module, args);
-			continue;
-		}
-		
-		printD(RED, 2, "modules.conf:%u: Unknown directive '%s'", lnum, name);
-	}
-	
-	if(ferror(fh)) {
-		printD(RED, 2, "Can't read /modules/modules.conf: %s", strerror(errno));
-	}
-	
-	fclose(fh);
-}
-
-/* Next argument */
-static char *next_arg(char *arg) {
-	arg += strcspn(arg, "\t ");
-	
-	if(arg[0] != '\0') {
-		arg[0] = '\0';
-		arg++;
-		
-		arg += strspn(arg, "\t ");
-	}
-	
-	return arg;
-}
-
 /* Load a module */
-static int modprobe(char const *name, int lvl) {
-	char *filename = str_printf("/boot/modules/%s.ko", name);
-	gzFile fh = NULL;
+static int modprobe(char const *name) {
+	char path[1024], dep[256];
 	char *buf = NULL, *args = "";
-	size_t bsize = 64000, rbytes = 0;
+	int bsize = 64000, rbytes = 0;
 	int retval = 0, fret;
-	kl_module *optptr;
 	
-	if(module_search(k_modules, name)) {
-		goto CLEANUP;
+	kl_module *optptr = kmods;
+	while(optptr) {
+		if(kl_streq(name, optptr->name)) {
+			args = optptr->args;
+			break;
+		}
+		
+		optptr = optptr->next;
 	}
 	
-	optptr = module_search(mod_options, name);
-	if(optptr) {
-		args = optptr->args;
-	}
+	snprintf(path, 1024, "/mnt/%s/modules/%s.ko", boot_disk->name, name);
 	
-	if(args[0] == '\0') {
-		printd(GREEN, lvl++, "Loading module %s...", name);
-	}else{
-		printd(GREEN, lvl++, "Loading module %s (%s)...", name, args);
-	}
-	
-	if(!(fh = gzopen(filename, "rb"))) {
-		printD(RED, lvl, "Failed to open %s.ko: %s", name, strerror(errno));
-		goto CLEANUP;
+	gzFile fh = gzopen(path, "rb");
+	if(!fh) {
+		printD("Error opening %s: %s", path+9, strerror(errno));
+		return 0;
 	}
 	
 	while(!gzeof(fh)) {
-		buf = reallocate(buf, bsize);
+		buf = kl_realloc(buf, bsize);
 		
 		if((fret = gzread(fh, buf+rbytes, 64000)) == -1) {
-			printD(RED, lvl, "Failed to read %s.ko: %s", name, gzerror(fh, &fret));
+			printD("Error reading %s: %s", path+9, gzerror(fh, &fret));
 			goto CLEANUP;
 		}
 		
@@ -277,52 +196,50 @@ static int modprobe(char const *name, int lvl) {
 		bsize += fret;
 	}
 	
-	size_t secsize, n = 0;
-	char *sec = elf_getsection(buf, ".modinfo", &secsize);
+	size_t size = 0;
+	char *sec = elf_getsection(buf, ".modinfo", &size);
+	char *end = sec+size;
 	
-	while(sec && n < secsize) {
-		if(!str_eq(sec, "depends=", 8)) {
-			n += (strlen(sec)+1);
-			sec += (strlen(sec)+1);
+	while(sec && sec < end) {
+		if(!kl_strneq(sec, "depends=", 8)) {
+			sec += strlen(sec)+1;
 			continue;
 		}
 		
 		sec += 8;
-		while(sec[0] != '\0') {
-			char *dep = str_copy(NULL, sec, strcspn(sec, ","));
+		while(*sec) {
+			strlcpy(dep, sec, strcspn(sec, ",")+1);
 			
-			if(!module_search(k_modules, dep) && !modprobe(dep, lvl)) {
-				free(dep);
+			if(!modprobe(dep)) {
+				printD("Module '%s' not loaded, requires '%s'", name, dep);
 				goto CLEANUP;
 			}
 			
-			free(dep);
-			sec += (strcspn(sec, ",")+1);
+			sec += strcspn(sec, ",");
+			if(*sec) {
+				sec++;
+			}
 		}
 		
 		break;
 	}
 	
-	if(syscall(SYS_init_module, buf, rbytes, args) != 0) {
+	if(syscall(SYS_init_module, buf, rbytes, args)) {
 		if(errno == EEXIST) {
+			retval = 1;
 			goto CLEANUP;
 		}
 		
-		printD(RED, lvl, "Failed to load module '%s': %s", name, moderror(errno));
-		goto CLEANUP;
+		printD("Error loading '%s': %s", name, moderror(errno));
+	}else{
+		printd("Loaded module '%s'", name);
+		retval = 1;
 	}
-	
-	module_add(&k_modules, name, args);
-	
-	retval = 1;
 	
 	CLEANUP:
-	if(fh && (fret = gzclose(fh)) != Z_OK) {
-		debug("Failed to close '%s': %s\n", filename, gzerror(fh, &fret));
-	}
-	
-	free(filename);
+	gzclose(fh);
 	free(buf);
+	
 	return retval;
 }
 
@@ -342,44 +259,24 @@ static const char *moderror(int err) {
 	}
 }
 
-/* Add a node to a kl_module list */
-static void module_add(kl_module **list, char const *module, char const *args) {
-	kl_module *nptr = allocate(sizeof(kl_module));
-	INIT_MODULE(nptr);
-	
-	nptr->module = str_copy(NULL, module, -1);
-	nptr->args = str_copy(NULL, args, -1);
-	
-	nptr->next = *list;
-	*list = nptr;
-}
-
-/* Search a kl_module list */
-static kl_module *module_search(kl_module *list, char const *module) {
-	while(list) {
-		if(str_eq(list->module, module, -1)) {
-			break;
-		}
-		
-		list = list->next;
-	}
-	
-	return list;
-}
-
 /* Load all modules */
 void modprobe_all(void) {
-	DIR *dir = opendir("/boot/modules/");
+	char filename[1024];
+	snprintf(filename, 1024, "/mnt/%s/modules/", boot_disk->name);
+	
+	DIR *dir = opendir(filename);
 	if(!dir) {
-		printD(RED, 2, "Can't open /modules/: %s", strerror(errno));
+		printD("Error opening /modules/: %s", strerror(errno));
 		return;
 	}
 	
-	struct dirent *child;
-	while((child = readdir(dir))) {
-		if(globcmp(child->d_name, "*.ko", GLOB_IGNCASE | GLOB_STAR)) {
-			strstr(child->d_name, ".ko")[0] = '\0';
-			modprobe(child->d_name, 2);
+	struct dirent *node;
+	while((node = readdir(dir))) {
+		int i = strlen(node->d_name)-3;
+		
+		if(kl_streq(node->d_name+i, ".ko")) {
+			node->d_name[i] = '\0';
+			modprobe(node->d_name);
 		}
 	}
 	

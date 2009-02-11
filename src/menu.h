@@ -1,4 +1,4 @@
-/* kexec-loader - GRUB compatibility header
+/* kexec-loader - Menu header
  * Copyright (C) 2007-2009 Daniel Collins <solemnwarning@solemnwarning.net>
  *
  * This program is free software; you can redistribute it and/or modify
@@ -16,32 +16,9 @@
  * 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 */
 
-#ifndef KL_GRUB_H
-#define KL_GRUB_H
+#ifndef KL_MENU_H
+#define KL_MENU_H
 
-#define INIT_GDEV(ptr) \
-	(ptr)->next = NULL; \
-	(ptr)->type[0] = '\0'; \
-	(ptr)->p1[0] = '\0'; \
-	(ptr)->p2[0] = '\0'; \
-	(ptr)->p3[0] = '\0'; \
-	(ptr)->device[0] = '\0';
+void menu_main(void);
 
-typedef struct kl_gdev {
-	struct kl_gdev *next;
-	
-	char type[16];
-	char p1[16];
-	char p2[16];
-	char p3[16];
-	
-	char device[16];
-} kl_gdev;
-
-extern kl_gdev *grub_devmap;
-
-int parse_gdev(kl_gdev *dest, char const *src);
-char *lookup_gdev(char const *dev);
-void grub_load(void);
-
-#endif /* !KL_GRUB_H */
+#endif /* !KL_MENU_H */
