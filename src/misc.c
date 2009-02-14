@@ -27,6 +27,7 @@
 #include <ctype.h>
 #include <sys/syscall.h>
 #include <linux/reboot.h>
+#include <signal.h>
 
 #include "misc.h"
 #include "console.h"
@@ -45,6 +46,7 @@ kl_module *kmods = NULL;
 
 static void redirect_klog(void);
 static void load_conf(void);
+static void sighandler(int sig);
 
 int main(int argc, char **argv) {
 	if(mount("none", "/proc", "proc", 0, NULL)) {
@@ -56,6 +58,14 @@ int main(int argc, char **argv) {
 	console_init();
 	console_clear();
 	console_setpos(0,0);
+	
+	signal(SIGINT, &sighandler);
+	
+	syscall(
+		__NR_reboot,
+		LINUX_REBOOT_MAGIC1, LINUX_REBOOT_MAGIC2,
+		LINUX_REBOOT_CMD_CAD_OFF, NULL
+	);
 	
 	char *kdevice = get_cmdline("root");
 	char *device = kdevice ? kdevice : "LABEL=kexecloader";
@@ -616,4 +626,19 @@ static void load_conf(void) {
 	}
 	
 	fclose(fh);
+}
+
+/* Handle signals */
+static void sighandler(int sig) {
+	signal(sig, SIG_IGN);
+	
+	if(sig == SIGINT) {
+		debug("Caught SIGINT, rebooting");
+		call_reboot(LINUX_REBOOT_CMD_RESTART);
+		
+		/* This point is only reached if reboot() failed */
+		debug("Reboot failed: %s", strerror(errno));
+	}
+	
+	signal(sig, &sighandler);
 }

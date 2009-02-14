@@ -57,7 +57,6 @@ static void cmd_module(char *cmd, char *args);
 static void cmd_ls(char *cmd, char *args);
 static void cmd_find(char *cmd, char *args);
 static void find_files(char *path, char const *name);
-static void cmd_shutdown(char *cmd, char *args);
 static void cmd_cat(char *cmd, char *args);
 
 static kl_target target;
@@ -76,8 +75,6 @@ static struct shell_command commands[] = {
 	{"find", "find <name> <path>\tSearch for files named <name>", &cmd_find},
 	{"cat", "cat <file>\t\tDisplay the contents of a file", &cmd_cat},
 	{"disks", "disks\t\t\tDisplay disks which have been detected", NULL},
-	{"reboot", "reboot\t\t\tReboot the system", &cmd_shutdown},
-	{"shutdown", "shutdown\t\tPower off the system", &cmd_shutdown},
 	{"exit", "exit\t\t\tReturn to the menu", NULL},
 	{NULL, NULL}
 };
@@ -530,17 +527,6 @@ static void find_files(char *path, char const *name) {
 	
 	closedir(dir);
 	free(npath);
-}
-
-/* Shutdown or reboot */
-static void cmd_shutdown(char *cmd, char *args) {
-	if(kl_streq(cmd, "reboot")) {
-		call_reboot(LINUX_REBOOT_CMD_RESTART);
-	}else{
-		call_reboot(LINUX_REBOOT_CMD_POWER_OFF);
-	}
-	
-	puts(strerror(errno));
 }
 
 /* Display the contents of a file */
