@@ -31,20 +31,20 @@ a:hover {
 
 <body>
 <h1>kexec-loader manual</h1>
-<p>Version: 1.6.2</p>
-<p>&copy; 2007-2009 Daniel Collins<br />&copy; 2008 Philip Kent</p>
+<p>Version: 2.0.0</p>
+<p>&copy; 2007-2009 Daniel Collins<br />&copy; 2008-2009 Philip Kent</p>
 <ul>
 	<li><a href="#s1">1. Introduction</a></li>
 	<li><a href="#s2">2. Usage</a>
 	<ul>
 		<li><a href="#s2s1">2.1. Device/Path syntax</a></li>
-		<li><a href="#s2s2">2.2. Configuration File</a></li>
-		<li><a href="#s2s3">2.3. Built in shell</a></li>
-		<li><a href="#s2s4">2.4. Debug Console</a></li>
-		<li><a href="#s2s5">2.5. Kernel Modules</a></li>
+		<li><a href="#s2s2">2.2. Kernel modules</a></li>
+		<li><a href="#s2s3">2.3. Configuration File</a></li>
+		<li><a href="#s2s4">2.4. Shell</a></li>
+		<li><a href="#s2s5">2.5. Debug Console</a></li>
 	</ul>
 	</li>
-	<li><a href="#s3">3. Compiling</a>
+	<li><a href="#s3">3. Building kexec-loader</a>
 	<ul>
 		<li><a href="#s3s1">3.1. Introduction</a></li>
 		<li><a href="#s3s2">3.2. Compiling</a></li>
@@ -78,7 +78,16 @@ If a device name contains a colon it is assumed you are manually specifying the 
 <p>
 You may specify a device in a path as well as a file, for example '(hda1)/boot/vmlinuz' will point to the /boot/vmlinuz file on hda1, instead of /boot/vmlinuz on the root device.
 </p>
-<h3><a name="s2s2">2.2. Configuration File</a></h3>
+
+<h3><a name="s2s2">2.2. Kernel modules</a></h3>
+<p>
+You can load kernel modules which allow kexec-loader to support more devices/filesystems/etc, to load a kernel module simply copy it to the 'modules' directory on the boot floppy. If you are using an official disk image you can download the modules package appropriate for your kernel from the project site. Your kernel version is displayed at the top of the menu and when you start the shell.
+</p>
+<p>
+These are not to be confused with multiboot modules, which are modules loaded by the bootloader and passed to a multiboot kernel, they are commonly used for the same purpose as Linux kernel modules, read your OS documentation for more information.
+</p>
+
+<h3><a name="s2s3">2.3. Configuration File</a></h3>
 <p>
 The kexec-loader configuration is stored in a text file named kexec-loader.conf on the boot floppy, it may be in UNIX or DOS format. There must be one directive per line with arguments seperated by spaces or tabs, lines beginning with a hash (#) are ignored. You may additionally load the configuration from a GRUB install, which allows kexec-loader to be a drop-in GRUB replacement.
 </p>
@@ -100,13 +109,16 @@ The kexec-loader configuration is stored in a text file named kexec-loader.conf 
 	<li><b>kmod &lt;module&gt; &lt;args&gt;</b><br />
 	Set options to be passed to a kernel module if it is loaded.
 	</li>
-	
+</ul>
+
+<p>The following directives are per-target:</p>
+<ul>
 	<li><b>title &lt;text&gt;</b><br />
-	Marks the beginning of a target and sets the title, this must be the first target directive.
+	Set the target title, all targets must begin with a title directive.
 	</li>
 	
 	<li><b>root &lt;device&gt;</b><br />
-	The root device for this target, you must specify a root device, even if all paths specify their own device.
+	Set the root device, you must specify a root device, even if all paths specify their own device.
 	</li>
 	
 	<li><b>kernel &lt;path&gt;</b><br />
@@ -114,7 +126,7 @@ The kexec-loader configuration is stored in a text file named kexec-loader.conf 
 	</li>
 	
 	<li><b>initrd &lt;path&gt;</b><br />
-	Path to the initrd, optional.
+	Path to an initrd/initramfs.
 	</li>
 	
 	<li><b>cmdline &lt;text&gt;</b><br />
@@ -126,6 +138,10 @@ The kexec-loader configuration is stored in a text file named kexec-loader.conf 
 	the same thing as cmdline, but is implemented for completeness.
 	</li>
 	
+	<li><b>module &lt;path&gt; [args]</b><br />
+	Load and pass a multiboot module to the target kernel.
+	</li>
+	
 	<li><b>default</b><br />
 	Mark this target as the default.
 	</li>
@@ -133,87 +149,87 @@ The kexec-loader configuration is stored in a text file named kexec-loader.conf 
 	<li><b>reset-vga</b><br />
 	Reset the VGA adaptor before starting the kernel, may be useful if you get garbled or no output on bootup.
 	</li>
-	
-	<li><b>module &lt;path&gt; [args]</b><br />
-	Load a multiboot module for the target kernel.
-	</li>
 </ul>
 <p>
 Where parameters are shown in &lt;angled brackets&gt;, they are required for that directive. Ones in [square brackets] are optional.
 </p>
 
-<h3><a name="s2s3">2.3. Built in shell</a></h3>
-<p>kexec-loader has a built in shell. To access it press "s" on the menu screen. This shell allows </p>
-<p>There are two further directives used to control kexec-loader, rather than set up a kernel to boot. They are:</p>
+<h3><a name="s2s4">2.4. Shell</a></h3>
+<p>
+kexec-loader has a shell which can be used for configuring a target at boot time and performing some other actions. To access it press C on the menu screen, it is also displayed if there are no pre-configured targets available.
+</p>
 <ul>
-	<li><b>mount [fstype:]&lt;device&gt; &lt;mount point&gt;</b><br />
-	Mount a device, if fstype is ommited, kexec-loader will attempt to autodetect the format.
+	<li><b>root &lt;device&gt;</b><br />
+	Set the root device, you must specify a root device, even if all paths specify their own device.
 	</li>
-	<li><b>module &lt;filename&gt; [args]</b><br />
-	Load a multiboot module for the target kernel.
+	
+	<li><b>kernel &lt;path&gt;</b><br />
+	Path to the kernel, you must specify a kernel.
 	</li>
-	<li><b>kernel &lt;filename&gt;</b><br />
-	Set the kernel filename.
+	
+	<li><b>initrd &lt;path&gt;</b><br />
+	Path to an initrd/initramfs.
 	</li>
-	<li><b>initrd [filename]</b><br />
-	Set the initrd/initramfs filename.
-	</li>
-	<li><b>cmdline [string]</b><br />
+	
+	<li><b>cmdline &lt;text&gt;</b><br />
 	Set the command line which will be passed to the target kernel.
 	</li>
-	<li><b>append [string]</b><br />
-	Set the command kernel line using --append, this appears to do exactly the same thing
-	as cmdline, but is implemented for completeness.
+	
+	<li><b>append &lt;text&gt;</b><br />
+	Set the kernel command line using --append, this appears to do exactly
+	the same thing as cmdline, but is implemented for completeness.
 	</li>
+	
+	<li><b>module &lt;path&gt; [args]</b><br />
+	Load and pass a multiboot module to the target kernel.
+	</li>
+	
 	<li><b>reset-vga</b><br />
-	Enable the --reset-vga option, which fixes some graphics problems.
+	Reset the VGA adaptor before starting the kernel, may be useful if you get garbled or no output on bootup.
 	</li>
+	
 	<li><b>boot</b><br />
-	Boot the system.
+	Boot the system using settings entered in the shell.
 	</li>
+	
 	<li><b>disks</b><br />
 	Display a list of disks and partitions which have been detected by Linux.
 	</li>
-	<li><b>cd [directory]</b><br />
-	Change the current working directory, if directory is ommited, / will be used.
+	
+	<li><b>ls &lt;directory&gt;</b><br />
+	List the contents of a directory.
 	</li>
-	<li><b>ls [directory]</b><br />
-	List the contents of a directory, if directory is ommited, the current directory will be used.
+	
+	<li><b>find &lt;filename&gt; &lt;directory&gt;</b><br />
+	Search a directory for files matching the pattern 'filename', filename may include the wildcard characters * or ?.
 	</li>
-	<li><b>find &lt;filename&gt; [directory]</b><br />
-	Search for files matching the pattern 'filename', filename may include the wildcard characters * or ?, if
-	directory is ommited, the current directory will be searched.
+	
+	<li><b>cat &lt;filename&gt;</b><br />
+	Print the contents of 'filename' to screen.
 	</li>
+	
+	<li><b>reboot</b><br />
+	Reboot the computer.
+	</li>
+	
+	<li><b>shutdown</b><br />
+	Halt the computer, and turn it off if possible.
+	</li>
+	
 	<li><b>exit</b>
 	<br />Leave the shell and go back to the menu.
 	</li>
 </ul>
-<p>To scroll through the command history, use the up and down keys. A maximum of 32 commands are remembered (upon exceeding this, the oldest command will be removed from the history to make space). Commands that are longer than the screen can hold will scroll, similar to the 'nano' text editor. Please note that this shell will be improved in subsequent releases.</p>
-
-<h3><a name="s2s4">2.4. Debug Console</a></h3>
 <p>
-Once kexec-loader has started all debugging messages, as well as Linux kernel
-messages are sent to a separate debug console. By default the debug console is
-/dev/tty2, this can be changed at boot by using the Linux cmdline, for example
-kexec_debug=/dev/ttyS0 writes all debug messages and kernel messages to the
-first serial port.
+To scroll through the command history, use the up and down keys. A maximum of 32 commands are remembered (upon exceeding this, the oldest command will be removed from the history to make space).
 </p>
 
-<h3><a name="s2s5">2.5. Kernel Modules</a></h3>
+<h3><a name="s2s5">2.5. Debug Console</a></h3>
 <p>
-Kernel modules can be loaded by kexec-loader to add support for extra devices or
-filesystems which target systems can be loaded from. To add extra modules, simply
-copy them to /modules/ on the kexec-loader disk, to specify module arguments, use
-the /modules/modules.conf file. Modules loaded this way only affect the kernel
-running kexec-loader, not those loaded by kexec-loader.
-</p>
-<p>
-If you are using an official kexec-loader disk image, kernel modules are
-available on the downloads page of the project site, named somthing like
-modules-XXX.tar.gz, make sure you download the correct modules for your kernel.
+Once kexec-loader has started, debugging messages are sent to a separate console. By default the debug console is tty3, this can be changed by setting debug_tty on the kernel command line. Kernel messages are sent to tty2.
 </p>
 
-<h2><a name="s3">3. Compiling</a></h2>
+<h2><a name="s3">3. Building kexec-loader</a></h2>
 <h3><a name="s3s1">3.1. Introduction</a></h3>
 <p>
 This section explains how to build a kexec-loader disk image, you must build a kernel and toolchain which is not explained in this document. I recommend using uClibc as a toolchain as glibc is too big to fit on a floppy, you must also use Linux 2.6.13 or above, as earlier versions did not have the kexec syscalls.
@@ -255,8 +271,7 @@ This is a fairly generic floppy building method:
 	<li>Copy misc. files (kexec-loader.conf, README, etc)</li>
 </ol>
 <p>
-Notes:<br />
-I embed the kexec-loader initramfs inside the kernel to make it take a little less space, you can also put the initramfs on the floppy image as a seperate file if your chosen bootloader is capable of loading an initrd/initramfs for the kernel, the UPX compression step is also optional.
+Please note that the kexec-loader initramfs is included in the kernel for space reasons, however, this is not required should your chosen bootloader (to load kexec-loader) can support loading it. In addition the UPX compression step is optional.
 </p>
 
 <h2><a name="s4">4. Support</a></h2>
