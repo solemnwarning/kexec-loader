@@ -37,8 +37,8 @@ a:hover {
 	<li><a href="#s1">1. Introduction</a></li>
 	<li><a href="#s2">2. Usage</a>
 	<ul>
-		<li><a href="#s2s1">2.1. Configuration File</a></li>
-		<li><a href="#s2s2">2.2. Using the Menu</a></li>
+		<li><a href="#s2s1">2.1. Device/Path syntax</a></li>
+		<li><a href="#s2s2">2.2. Configuration File</a></li>
 		<li><a href="#s2s3">2.3. Built in shell</a></li>
 		<li><a href="#s2s4">2.4. Debug Console</a></li>
 		<li><a href="#s2s5">2.5. Kernel Modules</a></li>
@@ -68,101 +68,79 @@ The kexec-loader project site has prebuilt disk images available for download, u
 </p>
 
 <h2><a name="s2">2. Usage</a></h2>
-<h3><a name="s2s1">2.1. Configuration File</a></h3>
+<h3><a name="s2s1">2.1. Device/Path syntax</a></h3>
 <p>
-The configuration for kexec-loader is stored on the boot floppy in a file named /kexec-loader.conf, it must exist, as kexec-loader locates the boot floppy by checking for its presence. The following devices are searched by default:
+There are three ways of specifying devices, you can specify the device name which may change without warning, this is only recommended on systems that have a single drive, for example a single USB drive being booted by kexec-loader on an internal floppy drive. You may also use 'LABEL=foobar' and 'UUID=xxxx' to specify the volume label and UUID, respectively.
 </p>
-<ol style="font-family: monospace;">
-	<li>/dev/fd0</li>
-	<li>/dev/fd1</li>
-	<li>/dev/sda</li>
-	<li>/dev/sdb</li>
-	<li>/dev/scd</li>
-	<li>/dev/sdd</li>
-</ol>
 <p>
-If the kexec-loader boot floppy is not in that list, you can override the default search list by using the kexec_root kernel option, for example: <span style="font-family:monospace;">kexec_root=/dev/hda</span>.
+If a device name contains a colon it is assumed you are manually specifying the filesystem type, for example 'ext3:hda1' will overrule filesystem detection and attempt to mount the filesystem as ext3, this may be used if the detection is not working correctly.
+</p>
+<p>
+You may specify a device in a path as well as a file, for example '(hda1)/boot/vmlinuz' will point to the /boot/vmlinuz file on hda1, instead of /boot/vmlinuz on the root device.
+</p>
+<h3><a name="s2s2">2.2. Configuration File</a></h3>
+<p>
+The kexec-loader configuration is stored in a text file named kexec-loader.conf on the boot floppy, it may be in UNIX or DOS format. There must be one directive per line with arguments seperated by spaces or tabs, lines beginning with a hash (#) are ignored. You may additionally load the configuration from a GRUB install, which allows kexec-loader to be a drop-in GRUB replacement.
 </p>
 
-<p>
-The file contains directives in the form <span style="font-family:monospace;">"&lt;directive&gt; [args]"</span>, directives and argument should be seperated with whitespace, empty lines and lines beginning with a hash (#) are ignored.
-</p>
-<p>The directives are as follows.</p>
+<p>The following directives are supported:</p>
 <ul>
 	<li><b>timeout &lt;integer&gt;</b><br />
-	Amount of seconds to wait till the kernel marked default is loaded. If
-	no kernel is marked as default, the first kernel in the list will be
-	loaded. If this is omitted, and a grub config file is loaded, it will
-	use the timeout from there (otherwise it will not timeout).
+	Number of seconds to wait before booting the default target, the first target will be booted if none are marked as default.
+	</li>
+	
+	<li><b>grub-path &lt;path&gt;</b><br />
+	Load device.map and menu.lst from a GRUB installation at this directory. You must specify a device.
+	</li>
+	
+	<li><b>grub-map &lt;GRUB device&gt; &lt;device&gt;</b><br />
+	Map a GRUB device, hd0 => sda will map the disk hd0 to sda whereas hd0,a => sda5 will map BSD partition a on hd0 to sda5, kexec-loader does not support BSD disklabels so you will need to map any BSD partitions you intend to boot. Mappings in kexec-loader.conf will overrule those in device.map.
+	</li>
+	
+	<li><b>kmod &lt;module&gt; &lt;args&gt;</b><br />
+	Set options to be passed to a kernel module if it is loaded.
 	</li>
 	
 	<li><b>title &lt;text&gt;</b><br />
-	Title of the entry. This starts an item on the list, and all following
-	directives will be processed as a part of this entry until the next
-	title directive.
+	Marks the beginning of a target and sets the title, this must be the first target directive.
 	</li>
 	
-	<li><b>kernel &lt;filename&gt;</b><br />
-	Filename of the kernel in the rootfs (see below).
+	<li><b>root &lt;device&gt;</b><br />
+	The root device for this target, you must specify a root device, even if all paths specify their own device.
 	</li>
 	
-	<li><b>initrd &lt;filename&gt;</b><br />
-	As above but for the initrd.
+	<li><b>kernel &lt;path&gt;</b><br />
+	Path to the kernel, all targets must specify a kernel.
 	</li>
 	
-	<li><b>cmdline &lt;string&gt;</b><br />
+	<li><b>initrd &lt;path&gt;</b><br />
+	Path to the initrd, optional.
+	</li>
+	
+	<li><b>cmdline &lt;text&gt;</b><br />
 	Set the command line which will be passed to the target kernel.
 	</li>
 	
-	<li><b>append &lt;string&gt;</b><br />
+	<li><b>append &lt;text&gt;</b><br />
 	Set the kernel command line using --append, this appears to do exactly
 	the same thing as cmdline, but is implemented for completeness.
 	</li>
 	
-	<li><b>rootfs [fstype:]&lt;device&gt;</b><br />
-	Device to mount as / so as to find the kernel and initrd to load.
-	</li>
-	
-	<li><b>mount [fstype:]&lt;device&gt; &lt;mountpoint&gt;</b><br />
-	Device to mount at a certain mountpoint. This is not for filesystems to
-	load under the new kernel, just any other filesystems that may be needed
-	to start the new kernel running (e.g. if the initrd is stored on another
-	filesystem).
-	</li>
-	
 	<li><b>default</b><br />
-	Make this kernel the default kernel to boot  if the timeout expires.
-	</li>
-	
-	<li><b>grub_root [fstype:]&lt;device&gt;</b><br />
-	Load menu.lst and device.map from a GRUB installation, GRUB should
-	either be installed to /boot/grub/ or /grub/ on the selected device.
-	</li>
-	
-	<li><b>grub_first &lt;hdx/sdx&gt;</b><br />
-	Default is hdx. If hdx is specified, (hd0) will be hda, then all devices
-	will follow as normal, with sd devices following at the end. If it's
-	sdx, then it will reverse, (hd0) will be sda, followed by all other sd
-	devices, then hd devices following at the end. <b>If a device.map was
-	found:</b> kexec-loader will attempt to load settings from this, before
-	failing back to this directive.
+	Mark this target as the default.
 	</li>
 	
 	<li><b>reset-vga</b><br />
 	Reset the VGA adaptor before starting the kernel, may be useful if you get garbled or no output on bootup.
 	</li>
 	
-	<li><b>module &lt;filename&gt; [&lt;args&gt;]</b><br />
+	<li><b>module &lt;path&gt; [args]</b><br />
 	Load a multiboot module for the target kernel.
 	</li>
 </ul>
 <p>
-Where parameters are shown in &lt;angled brackets&gt;, they are required for that directive. Ones in [square brackets] are optional. For mount and rootfs, if you do specify a fstype, it should be specified as ext2:/dev/hda1 for example.
+Where parameters are shown in &lt;angled brackets&gt;, they are required for that directive. Ones in [square brackets] are optional.
 </p>
-
-<h3><a name="s2s2">2.2. Using the Menu</a></h3>
-<p>To navigate the kexec-loader menu, use your arrow keys to select an item and press enter to boot it. A number of functions are available; press L to list the detected devices and their filesystems. Press enter if you are on the device screen or an error and you want to escape.</p>
-<p>Upon asking a kernel to boot, it may take a few seconds for it to load the kernel and switch to it. After switching, your new kernel will start and the boot process will happen as it would normally.</p>
 
 <h3><a name="s2s3">2.3. Built in shell</a></h3>
 <p>kexec-loader has a built in shell. To access it press "s" on the menu screen. This shell allows </p>
