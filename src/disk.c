@@ -278,6 +278,7 @@ kl_disk *mount_retry(char const *device, char const *name) {
 	
 	if(!rval) {
 		free(disk);
+		disk = NULL;
 	}
 	
 	return disk;
