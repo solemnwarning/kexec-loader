@@ -1,3 +1,6 @@
+Version 2.0:
+	Full rewrite, far more stable code.
+
 Version 1.6.2:
 	Fixed a bug: specifying filesystem type AND /dev/ for a non-existant
 	device no longer attempts to free an invalid address.
