@@ -32,7 +32,7 @@ a:hover {
 <body>
 <h1>kexec-loader manual</h1>
 <p>Version: 2.0.0</p>
-<p>&copy; 2007-2009 Daniel Collins<br />&copy; 2008-2009 Philip Kent</p>
+<p>Copyright &copy; 2007-2009 Daniel Collins<br />Copyright &copy; 2008-2009 Philip Kent</p>
 <ul>
 	<li><a href="#s1">1. Introduction</a></li>
 	<li><a href="#s2">2. Usage</a>
@@ -61,10 +61,10 @@ a:hover {
 
 <h2><a name="s1">1. Introduction</a></h2>
 <p>
-kexec-loader is a Linux based bootloader that uses kexec to start the kernel of your choice. It fits on a 1.44MB floppy, supports most block devices supported by Linux and is easy to use. kexec-loader supports reading GRUB configuration files, this allows kexec-loader to be used as a drop-in replacement for GRUB by merely setting the GRUB installation path.
+kexec-loader is a Linux based bootloader that allows you to boot Linux and multiboot systems from storage devices your BIOS does not support, such as USB drives and PCI expansion cards. It fits on a 1.44MB floppy, supports most block devices supported by Linux and is easy to use. kexec-loader supports reading GRUB configuration files, this allows kexec-loader to be used as a drop-in replacement for GRUB by merely setting the GRUB installation path.
 </p>
 <p>
-The kexec-loader project site has prebuilt disk images available for download, unless you have a very good reason for compiling from source, this is the best option, as the process for building disk images is complicated and requires an understanding of the Linux boot process. The prebuilt images have support for PC floppy drives, USB mass storage devices and the FAT filesystem, other devices and filesystems may be used if the appropriate module is loaded.
+The kexec-loader project site has prebuilt disk images available for download, unless you have a very good reason for compiling from source, this is the best option, as the process for building disk images is complicated and requires a good understanding of Linux. The prebuilt images have support for PC floppy drives, USB mass storage devices and the FAT filesystem, other devices and filesystems may be used if the appropriate modules are loaded.
 </p>
 
 <h2><a name="s2">2. Usage</a></h2>
@@ -156,11 +156,11 @@ Where parameters are shown in &lt;angled brackets&gt;, they are required for tha
 
 <h3><a name="s2s4">2.4. Shell</a></h3>
 <p>
-kexec-loader has a shell which can be used for configuring a target at boot time and performing some other actions. To access it press C on the menu screen, it is also displayed if there are no pre-configured targets available.
+kexec-loader has a shell which can be used for configuring a target at boot time and performing some other actions. To access it press C on the menu screen, it is also displayed if there are no pre-configured targets available. You can scroll through the command history using the up/down arrow keys.
 </p>
 <ul>
 	<li><b>root &lt;device&gt;</b><br />
-	Set the root device, you must specify a root device, even if all paths specify their own device.
+	Set the root device, you must specify a root device to boot.
 	</li>
 	
 	<li><b>kernel &lt;path&gt;</b><br />
@@ -205,16 +205,13 @@ kexec-loader has a shell which can be used for configuring a target at boot time
 	</li>
 	
 	<li><b>cat &lt;filename&gt;</b><br />
-	Print the contents of 'filename' to screen.
+	Print the contents of a file to the console.
 	</li>
 	
 	<li><b>exit</b>
 	<br />Leave the shell and go back to the menu.
 	</li>
 </ul>
-<p>
-To scroll through the command history, use the up and down keys. A maximum of 32 commands are remembered (upon exceeding this, the oldest command will be removed from the history to make space).
-</p>
 
 <h3><a name="s2s5">2.5. Debug Console</a></h3>
 <p>
