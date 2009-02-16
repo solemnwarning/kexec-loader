@@ -543,7 +543,7 @@ static void cmd_cat(char *cmd, char *args) {
 	
 	FILE *fh = fopen(filename, "r");
 	if(!fh) {
-		printf("Cannot open %s: %s\n", sh_vpath(args), strerror(errno));
+		printf("Cannot open %s: %s\n", sh_vpath(filename), strerror(errno));
 		return;
 	}
 	
@@ -557,7 +557,7 @@ static void cmd_cat(char *cmd, char *args) {
 	}
 	
 	if(ferror(fh)) {
-		printf("Cannot read %s: %s\n", sh_vpath(args), strerror(errno));
+		printf("Cannot read %s: %s\n", sh_vpath(filename), strerror(errno));
 	}
 	
 	fclose(fh);
