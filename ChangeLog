@@ -1,3 +1,9 @@
+Version 2.0.1:
+	Fixed bug: skipped "chainload" GRUB targets instead of "chainloader"
+	
+	Updated menu.lst parser to skip entries with empty root devices, since
+	some distros use this (broken?) behaviour for divider lines.
+
 Version 2.0:
 	Full rewrite, far more stable code.
 
