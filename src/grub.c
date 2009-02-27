@@ -237,10 +237,15 @@ static void load_menu(char const *root) {
 		}
 		if(kl_streq(name, "root")) {
 			CHECK_TOPEN();
-			CHECK_HASARG();
 			CHECK_GDEV();
 			
-			strlcpy(target.root, val, sizeof(target.root));
+			if(*val) {
+				strlcpy(target.root, val, sizeof(target.root));
+			}else{
+				debug("Empty root device at %d, ignoring target", lnum);
+				topen = -1;
+			}
+			
 			continue;
 		}
 		if(kl_streq(name, "kernel")) {
@@ -272,7 +277,7 @@ static void load_menu(char const *root) {
 			
 			continue;
 		}
-		if(kl_streq(name, "chainload")) {
+		if(kl_streq(name, "chainloader")) {
 			topen = -1;
 		}
 	}
