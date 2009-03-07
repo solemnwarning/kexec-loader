@@ -36,12 +36,27 @@
 
 #define CMDBUF_SIZE 1024
 #define HISTORY_SIZE 32
+#define AC_SIZE 1024
+
+enum ac_mode {
+	ac_none = 0,
+	ac_cmd,
+	ac_file,
+	ac_dir,
+	ac_dev
+};
 
 struct shell_command {
 	char const *name;
 	char const *help;
+	enum ac_mode mode;
 	
 	void (*func)(char*, char*);
+};
+
+struct ac_list {
+	struct ac_list *next;
+	char text[AC_SIZE];
 };
 
 extern int rows, cols;
@@ -52,6 +67,7 @@ static void replace_input(char const *cmd, int offset);
 static void set_cursor(int offset);
 static char *sh_get_rpath(char const *path);
 static char *sh_vpath(char const *path);
+static struct ac_list *ac_search(char *cmd, int offset);
 
 static void cmd_module(char *cmd, char *args);
 static void cmd_ls(char *cmd, char *args);
@@ -63,19 +79,19 @@ static kl_target target;
 static int srow, scol;
 
 static struct shell_command commands[] = {
-	{"root", "root <device>\t\tSet root device", NULL},
-	{"kernel", "kernel <file>\t\tSelect a kernel", NULL},
-	{"initrd", "initrd <file>\t\tSelect an initrd", NULL},
-	{"cmdline", "cmdline <text>\t\tSet the kernel command line", NULL},
-	{"append", "append <text>\t\tLike cmdline, but less portable", NULL},
-	{"boot", "boot\t\t\tBoot the system", NULL},
-	{"module", "module <file> [<args>]\tLoad a multiboot module", &cmd_module},
-	{"reset-vga", "reset-vga\t\tEnable the kexec --reset-vga switch", NULL},
-	{"ls", "ls <path>\t\tList the contents of a directory", &cmd_ls},
-	{"find", "find <name> <path>\tSearch for files named <name>", &cmd_find},
-	{"cat", "cat <file>\t\tDisplay the contents of a file", &cmd_cat},
-	{"disks", "disks\t\t\tDisplay disks which have been detected", NULL},
-	{"exit", "exit\t\t\tReturn to the menu", NULL},
+	{"root", "root <device>\t\tSet root device", ac_dev, NULL},
+	{"kernel", "kernel <file>\t\tSelect a kernel", ac_file, NULL},
+	{"initrd", "initrd <file>\t\tSelect an initrd", ac_file, NULL},
+	{"cmdline", "cmdline <text>\t\tSet the kernel command line", ac_none, NULL},
+	{"append", "append <text>\t\tLike cmdline, but less portable", ac_none, NULL},
+	{"boot", "boot\t\t\tBoot the system", ac_none, NULL},
+	{"module", "module <file> [<args>]\tLoad a multiboot module", ac_file, &cmd_module},
+	{"reset-vga", "reset-vga\t\tEnable the kexec --reset-vga switch", ac_none, NULL},
+	{"ls", "ls <path>\t\tList the contents of a directory", ac_dir, &cmd_ls},
+	{"find", "find <name> <path>\tSearch for files named <name>", ac_dir, &cmd_find},
+	{"cat", "cat <file>\t\tDisplay the contents of a file", ac_file, &cmd_cat},
+	{"disks", "disks\t\t\tDisplay disks which have been detected", ac_none, NULL},
+	{"exit", "exit\t\t\tReturn to the menu", ac_none, NULL},
 	{NULL, NULL}
 };
 
@@ -290,6 +306,9 @@ static char *read_cmd(char **history) {
 			continue;
 		}
 		if(c == '\t') {
+			struct ac_list *ac_list = ac_search(cmdbuf, offset);
+			list_nuke(ac_list);
+			
 			continue;
 		}
 		
@@ -406,6 +425,52 @@ static char *sh_vpath(char const *path) {
 	strlcat(buf, path, sizeof(buf));
 	
 	return buf;
+}
+
+static struct ac_list *ac_search(char *cmd, int offset) {
+	int i, len;
+	struct ac_list *ac_list = NULL, ac_node;
+	enum ac_mode mode = ac_none;
+	
+	char *argbuf = kl_strndup(cmd, offset);
+	char *arg0 = NULL, *argx = argbuf+strspn(argbuf, " ");
+	
+	if(strchr(argx, ' ')) {
+		arg0 = argx;
+		argx = next_value(argx);
+		len = strlen(arg0);
+		
+		mode = ac_cmd;
+	}
+	
+	if(arg0) {
+		for(i = 0; commands[i].name; i++) {
+			if(kl_streq(commands[i].name, arg0)) {
+				mode = commands[i].mode;
+			}
+		}
+		
+		if(kl_streq(arg0, "find")) {
+			argx = next_value(argx);
+			if(!*argx) {
+				mode = ac_none;
+			}
+		}
+	}
+	
+	if(mode == ac_cmd) {
+		for(i = 0; commands[i].name; i++) {
+			if(kl_strneq(commands[i].name, argx, len)) {
+				strlcpy(ac_node.text, commands[i].name, AC_SIZE);
+				ac_node.next = NULL;
+				
+				list_add_copy(&ac_list, &ac_node, sizeof(ac_node));
+			}
+		}
+	}
+	
+	free(argbuf);
+	return ac_list;
 }
 
 /* Add a multiboot module to the target */
