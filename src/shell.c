@@ -315,15 +315,30 @@ static char *read_cmd(char **history) {
 			if(ac_ptr && !ac_ptr->next) {
 				i = strlen(ac_ptr->append);
 				
-				if(cmdlen+i+1 < CMDBUF_SIZE) {
-					memmove(cmdbuf+offset+i, cmdbuf+offset, cmdlen-offset+1);
-					memcpy(cmdbuf+offset, ac_ptr->append, i);
-					
-					replace_input(cmdbuf, offset);
+				char *tmp = kl_strdup(cmdbuf+offset);
+				strlcpy(cmdbuf+offset, ac_ptr->append, CMDBUF_SIZE-offset);
+				strlcat(cmdbuf, tmp, CMDBUF_SIZE);
+				free(tmp);
+				
+				cmdlen = strlen(cmdbuf);
+				replace_input(cmdbuf, offset);
+				
+				if(offset+i+1 > CMDBUF_SIZE) {
+					set_cursor(offset = cmdlen);
+				}else{
 					set_cursor(offset += i);
 				}
+			}else if(ac_ptr) {
+				putchar('\n');
 				
-				ac_ptr = NULL;
+				while(ac_ptr) {
+					printf("%s\n", ac_ptr->display);
+					ac_ptr = ac_ptr->next;
+				}
+				
+				printf("> ");
+				console_getpos(&scol, &srow);
+				replace_input(cmdbuf, 0);
 			}
 			
 			list_nuke(ac_list);
