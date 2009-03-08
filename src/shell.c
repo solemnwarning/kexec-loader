@@ -475,6 +475,8 @@ static struct ac_list *ac_search(char *cmd, int offset) {
 		mode = ac_cmd;
 	}
 	
+	len = strlen(argx);
+	
 	if(arg0) {
 		for(i = 0; commands[i].name; i++) {
 			if(kl_streq(commands[i].name, arg0)) {
@@ -491,13 +493,42 @@ static struct ac_list *ac_search(char *cmd, int offset) {
 	}
 	
 	if(mode == ac_cmd) {
-		len = strlen(argx);
-		
 		for(i = 0; commands[i].name; i++) {
 			if(kl_strneq(commands[i].name, argx, len)) {
 				ac_add(&ac_list, commands[i].name+len, " ", commands[i].name, "");
 			}
 		}
+	}
+	if(mode == ac_dev) {
+		kl_disk *disks = get_disks();
+		kl_disk *disk = disks;
+		
+		if(kl_strneq(argx, "UUID=", len)) {
+			ac_add(&ac_list, "UUID="+len, "", "UUID=", "");
+		}
+		if(kl_strneq(argx, "LABEL=", len)) {
+			ac_add(&ac_list, "LABEL="+len, "", "LABEL=", "");
+		}
+		
+		while(disk) {
+			if(kl_strneq(argx, "UUID=", 5)) {
+				if(disk->uuid[0] && kl_strnceq(disk->uuid, argx+5, len-5)) {
+					ac_add(&ac_list, disk->uuid+len, "", disk->uuid, "");
+				}
+			}else if(kl_strneq(argx, "LABEL=", 6)) {
+				if(disk->label[0] && kl_strneq(disk->label, argx+6, len-6)) {
+					ac_add(&ac_list, disk->label+len, "", disk->label, "");
+				}
+			}else{
+				if(kl_strneq(disk->name, argx, len)) {
+					ac_add(&ac_list, disk->name+len, "", disk->name, "");
+				}
+			}
+			
+			disk = disk->next;
+		}
+		
+		list_nuke(disks);
 	}
 	
 	free(argbuf);
