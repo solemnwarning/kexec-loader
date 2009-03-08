@@ -56,7 +56,9 @@ struct shell_command {
 
 struct ac_list {
 	struct ac_list *next;
-	char text[AC_SIZE];
+	
+	char append[AC_SIZE];
+	char display[AC_SIZE];
 };
 
 extern int rows, cols;
@@ -68,6 +70,7 @@ static void set_cursor(int offset);
 static char *sh_get_rpath(char const *path);
 static char *sh_vpath(char const *path);
 static struct ac_list *ac_search(char *cmd, int offset);
+static void ac_add(struct ac_list **root, char const *a1, char const *a2, char const *d1, char const *d2);
 
 static void cmd_module(char *cmd, char *args);
 static void cmd_ls(char *cmd, char *args);
@@ -307,8 +310,23 @@ static char *read_cmd(char **history) {
 		}
 		if(c == '\t') {
 			struct ac_list *ac_list = ac_search(cmdbuf, offset);
-			list_nuke(ac_list);
+			struct ac_list *ac_ptr = ac_list;
 			
+			if(ac_ptr && !ac_ptr->next) {
+				i = strlen(ac_ptr->append);
+				
+				if(cmdlen+i+1 < CMDBUF_SIZE) {
+					memmove(cmdbuf+offset+i, cmdbuf+offset, cmdlen-offset+1);
+					memcpy(cmdbuf+offset, ac_ptr->append, i);
+					
+					replace_input(cmdbuf, offset);
+					set_cursor(offset += i);
+				}
+				
+				ac_ptr = NULL;
+			}
+			
+			list_nuke(ac_list);
 			continue;
 		}
 		
@@ -429,7 +447,7 @@ static char *sh_vpath(char const *path) {
 
 static struct ac_list *ac_search(char *cmd, int offset) {
 	int i, len;
-	struct ac_list *ac_list = NULL, ac_node;
+	struct ac_list *ac_list = NULL;
 	enum ac_mode mode = ac_none;
 	
 	char *argbuf = kl_strndup(cmd, offset);
@@ -438,8 +456,7 @@ static struct ac_list *ac_search(char *cmd, int offset) {
 	if(strchr(argx, ' ')) {
 		arg0 = argx;
 		argx = next_value(argx);
-		len = strlen(arg0);
-		
+	}else{
 		mode = ac_cmd;
 	}
 	
@@ -459,18 +476,28 @@ static struct ac_list *ac_search(char *cmd, int offset) {
 	}
 	
 	if(mode == ac_cmd) {
+		len = strlen(argx);
+		
 		for(i = 0; commands[i].name; i++) {
 			if(kl_strneq(commands[i].name, argx, len)) {
-				strlcpy(ac_node.text, commands[i].name, AC_SIZE);
-				ac_node.next = NULL;
-				
-				list_add_copy(&ac_list, &ac_node, sizeof(ac_node));
+				ac_add(&ac_list, commands[i].name+len, " ", commands[i].name, "");
 			}
 		}
 	}
 	
 	free(argbuf);
 	return ac_list;
+}
+
+static void ac_add(struct ac_list **root, char const *a1, char const *a2, char const *d1, char const *d2) {
+	struct ac_list *ptr = kl_malloc(sizeof(struct ac_list));
+	strlcpy(ptr->append, a1, AC_SIZE);
+	strlcat(ptr->append, a2, AC_SIZE);
+	strlcpy(ptr->display, d1, AC_SIZE);
+	strlcat(ptr->display, d2, AC_SIZE);
+	ptr->next = NULL;
+	
+	list_add(root, ptr);
 }
 
 /* Add a multiboot module to the target */
