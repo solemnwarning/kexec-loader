@@ -503,21 +503,21 @@ static struct ac_list *ac_search(char *cmd, int offset) {
 		kl_disk *disks = get_disks();
 		kl_disk *disk = disks;
 		
-		if(kl_strneq(argx, "UUID=", len)) {
-			ac_add(&ac_list, "UUID="+len, "", "UUID=", "");
+		if(kl_strneq(argx, "UUID=", len) && len < 5) {
+			ac_add(&ac_list, "UUID="+len, "", "UUID=...", "");
 		}
-		if(kl_strneq(argx, "LABEL=", len)) {
-			ac_add(&ac_list, "LABEL="+len, "", "LABEL=", "");
+		if(kl_strneq(argx, "LABEL=", len) && len < 6) {
+			ac_add(&ac_list, "LABEL="+len, "", "LABEL=...", "");
 		}
 		
 		while(disk) {
 			if(kl_strneq(argx, "UUID=", 5)) {
 				if(disk->uuid[0] && kl_strnceq(disk->uuid, argx+5, len-5)) {
-					ac_add(&ac_list, disk->uuid+len, "", disk->uuid, "");
+					ac_add(&ac_list, disk->uuid+len-5, "", disk->uuid, "");
 				}
 			}else if(kl_strneq(argx, "LABEL=", 6)) {
 				if(disk->label[0] && kl_strneq(disk->label, argx+6, len-6)) {
-					ac_add(&ac_list, disk->label+len, "", disk->label, "");
+					ac_add(&ac_list, disk->label+len-6, "", disk->label, "");
 				}
 			}else{
 				if(kl_strneq(disk->name, argx, len)) {
