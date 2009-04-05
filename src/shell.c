@@ -568,6 +568,8 @@ static struct ac_list *ac_search(char *cmd, int offset) {
 				
 				disk = disk->next;
 			}
+			
+			list_nuke(disks);
 		}
 	}
 	
