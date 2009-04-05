@@ -530,6 +530,46 @@ static struct ac_list *ac_search(char *cmd, int offset) {
 		
 		list_nuke(disks);
 	}
+	if(mode == ac_file || mode == ac_dir) {
+		if(*argx == '\0' || (*argx == '(' && !strchr(argx, ')'))) {
+			kl_disk *disks = get_disks();
+			kl_disk *disk = disks;
+			
+			if(kl_strneq(argx, "(UUID=", len) && len < 6) {
+				ac_add(&ac_list, "(UUID="+len, "", "(UUID=...)", "");
+			}
+			if(kl_strneq(argx, "(LABEL=", len) && len < 7) {
+				ac_add(&ac_list, "(LABEL="+len, "", "(LABEL=...)", "");
+			}
+			
+			while(disk) {
+				if(disk->uuid[0]) {
+					kl_strins(disk->uuid, "(UUID=", 0, sizeof(disk->uuid));
+					strlcat(disk->uuid, ")", sizeof(disk->uuid));
+				}
+				if(disk->label[0]) {
+					kl_strins(disk->label, "(LABEL=", 0, sizeof(disk->label));
+					strlcat(disk->label, ")", sizeof(disk->label));
+				}
+				if(disk->name[0]) {
+					kl_strins(disk->name, "(", 0, sizeof(disk->name));
+					strlcat(disk->name, ")", sizeof(disk->name));
+				}
+				
+				if(disk->uuid[0] && kl_strneq(argx, "(UUID=", 6) && kl_strnceq(disk->uuid, argx, len)) {
+					ac_add(&ac_list, disk->uuid+len, "", disk->uuid, "");
+				}
+				if(disk->label[0] && kl_strneq(argx, "(LABEL=", 7)  && kl_strneq(disk->label, argx, len)) {
+					ac_add(&ac_list, disk->label+len, "", disk->label, "");
+				}
+				if(kl_strneq(disk->name, argx, len)) {
+					ac_add(&ac_list, disk->name+len, "", disk->name, "");
+				}
+				
+				disk = disk->next;
+			}
+		}
+	}
 	
 	free(argbuf);
 	return ac_list;

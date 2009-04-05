@@ -392,6 +392,34 @@ int kl_strnceq(char const *s1, char const *s2, int max) {
 	return i == max ? 1 : 0;
 }
 
+/* Insert text into a string
+ * Returns the total size required for the new string
+*/
+int kl_strins(char *dest, char const *src, int offset, int size) {
+	if(offset > 0) {
+		dest += offset;
+		size -= offset;
+	}
+	
+	int dlen = strlen(dest);
+	int slen = strlen(src);
+	int req = dlen+slen+1;
+	
+	if(slen+1 > size) {
+		strlcpy(dest, src, size);
+	}else if(req > size) {
+		memmove(dest+slen, dest, size-slen-1);
+		strncpy(dest, src, slen);
+		dest[size-1] = '\0';
+	}else{
+		memmove(dest+slen, dest, dlen);
+		strncpy(dest, src, slen);
+		dest[dlen+slen] = '\0';
+	}
+	
+	return req;
+}
+
 struct list { struct list *next; };
 
 /* Add an entry to a list */
