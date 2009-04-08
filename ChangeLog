@@ -1,4 +1,7 @@
 Version 2.0.1:
+	Added contextual shell autocompletion, only returns results appropriate
+	for the current command.
+	
 	Fixed bug: skipped "chainload" GRUB targets instead of "chainloader"
 	
 	Updated menu.lst parser to skip entries with empty root devices, since
