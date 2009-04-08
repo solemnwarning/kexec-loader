@@ -71,6 +71,7 @@ static char *sh_get_rpath(char const *path);
 static char *sh_vpath(char const *path);
 static struct ac_list *ac_search(char *cmd, int offset);
 static void ac_add(struct ac_list **root, char const *a1, char const *a2, char const *d1, char const *d2);
+static void ac_path(struct ac_list **list, char const *argx, enum ac_mode mode);
 
 static void cmd_module(char *cmd, char *args);
 static void cmd_ls(char *cmd, char *args);
@@ -571,6 +572,10 @@ static struct ac_list *ac_search(char *cmd, int offset) {
 			
 			list_nuke(disks);
 		}
+		
+		if(*argx != '(' || strchr(argx, ')')) {
+			ac_path(&ac_list, argx, mode);
+		}
 	}
 	
 	free(argbuf);
@@ -586,6 +591,76 @@ static void ac_add(struct ac_list **root, char const *a1, char const *a2, char c
 	ptr->next = NULL;
 	
 	list_add(root, ptr);
+}
+
+static void ac_path(struct ac_list **list, char const *argx, enum ac_mode mode) {
+	char const *vpath = argx;
+	if(*argx == '(') {
+		argx = strchr(argx, ')')+1;
+	}
+	
+	if(*argx == '\0') {
+		ac_add(list, "/", "", "/", "");
+		return;
+	}
+	if(*argx != '/') {
+		return;
+	}
+	
+	char const *error = NULL;
+	char *rpath = get_rpath(target.root, vpath, &error);
+	if(!rpath) {
+		debug("get_rpath(%s, %s) failed: %s", target.root, vpath, error);
+		return;
+	}
+	
+	if(argx[strlen(argx)-1] == '/') {
+		argx += strlen(argx);
+	}else{
+		strrchr(rpath, '/')[1] = '\0';
+		argx = strrchr(argx, '/')+1;
+	}
+	
+	DIR *dir = opendir(rpath);
+	if(!dir) {
+		debug("opendir(%s) failed: %s", rpath, strerror(errno));
+		free(rpath);
+		
+		return;
+	}
+	
+	int alen = strlen(argx);
+	struct dirent *node;
+	struct stat info;
+	
+	while((node = readdir(dir))) {
+		if(!kl_strneq(argx, node->d_name, alen)) {
+			continue;
+		}
+		if(node->d_name[0] == '.' && !alen) {
+			continue;
+		}
+		
+		char *sp = kl_sprintf("%s/%s", rpath, node->d_name);
+		if(stat(sp, &info) == -1) {
+			debug("stat(%s) failed: %s", sp, strerror(errno));
+			free(sp);
+			
+			continue;
+		}
+		
+		free(sp);
+		
+		if(!S_ISDIR(info.st_mode) && mode == ac_dir) {
+			continue;
+		}
+		
+		char *s2 = (S_ISDIR(info.st_mode) ? "/" : "");
+		ac_add(list, node->d_name+alen, s2, node->d_name+alen, s2);
+	}
+	
+	closedir(dir);
+	free(rpath);
 }
 
 /* Add a multiboot module to the target */
