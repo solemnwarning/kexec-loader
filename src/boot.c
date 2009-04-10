@@ -93,6 +93,9 @@ void boot_target(kl_target *target) {
 	if(target->append[0]) {
 		ARGV_PRINTF("--append=%s", target->cmdline);
 	}
+	if(target->flags & TARGET_RESET) {
+		ARGV_COPY("--reset-vga");
+	}
 	
 	kl_module *modptr = target->modules;
 	while(modptr) {
