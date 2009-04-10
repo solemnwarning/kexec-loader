@@ -159,12 +159,18 @@ static void elf2host_(void *dest, void const *src, int size, char eidata) {
 	}
 }
 
+#define MODPROBE_TEST(...) \
+	snprintf(path, sizeof(path), __VA_ARGS__); \
+	if(access(path, F_OK) == 0) { \
+		found = 1; \
+	}
+
 /* Load a module */
 static int modprobe(char const *name) {
 	char path[1024], dep[256];
 	char *buf = NULL, *args = "";
 	int bsize = 64000, rbytes = 0;
-	int retval = 0, fret;
+	int retval = 0, fret, found = 0;
 	
 	kl_module *optptr = kmods;
 	while(optptr) {
@@ -176,7 +182,16 @@ static int modprobe(char const *name) {
 		optptr = optptr->next;
 	}
 	
-	snprintf(path, 1024, "/mnt/%s/modules/%s.ko", boot_disk->name, name);
+	if(boot_disk) {
+		MODPROBE_TEST("/mnt/%s/modules/%s.ko", boot_disk->name, name);
+	}
+	
+	MODPROBE_TEST("/modules/%s.ko", name);
+	
+	if(!found) {
+		printD("Module '%s' not found", name);
+		return 0;
+	}
 	
 	gzFile fh = gzopen(path, "rb");
 	if(!fh) {
@@ -260,13 +275,34 @@ static const char *moderror(int err) {
 }
 
 /* Load all modules */
-void modprobe_all(void) {
+void modprobe_boot(void) {
 	char filename[1024];
 	snprintf(filename, 1024, "/mnt/%s/modules/", boot_disk->name);
 	
 	DIR *dir = opendir(filename);
 	if(!dir) {
 		printD("Error opening /modules/: %s", strerror(errno));
+		return;
+	}
+	
+	struct dirent *node;
+	while((node = readdir(dir))) {
+		int i = strlen(node->d_name)-3;
+		
+		if(kl_streq(node->d_name+i, ".ko")) {
+			node->d_name[i] = '\0';
+			modprobe(node->d_name);
+		}
+	}
+	
+	closedir(dir);
+}
+
+/* Load modules from rootfs */
+void modprobe_root(void) {
+	DIR *dir = opendir("/modules/");
+	if(!dir) {
+		debug("Error opening /modules/: %s", strerror(errno));
 		return;
 	}
 	

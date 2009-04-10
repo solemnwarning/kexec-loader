@@ -67,6 +67,8 @@ int main(int argc, char **argv) {
 		LINUX_REBOOT_CMD_CAD_OFF, NULL
 	);
 	
+	modprobe_root();
+	
 	char *kdevice = get_cmdline("root");
 	char *device = kdevice ? kdevice : "LABEL=kexecloader";
 	boot_disk = mount_retry(device, "boot disk");
@@ -74,7 +76,7 @@ int main(int argc, char **argv) {
 	
 	if(boot_disk) {
 		load_conf();
-		modprobe_all();
+		modprobe_boot();
 		grub_load();
 	}
 	
