@@ -1,4 +1,9 @@
 Version 2.0.1:
+	Updated module loading code: kernel modules in /modules/ on the rootfs
+	will be loaded before trying to mount the boot disk.
+	
+	Fixed bug: forgot to pass --reset-vga to kexec
+	
 	Added contextual shell autocompletion, only returns results appropriate
 	for the current command.
 	
