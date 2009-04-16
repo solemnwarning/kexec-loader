@@ -57,6 +57,10 @@ if(!defined($outfile)) {
 	exit(1);
 }
 
+my $t = $infile;
+$t =~ s/\/[^\/]+$//;
+$path .= ":$t";
+
 open(TMP, ">keymap.txt") or die("Can't open keymap.txt: $!");
 
 sub parse_keymap {
@@ -78,6 +82,14 @@ sub parse_keymap {
 		}
 		if(-e "$dir/$file.gz") {
 			$file = "$dir/$file.gz";
+			goto READFILE;
+		}
+		if(-e "$dir/$file.inc") {
+			$file = "$dir/$file.inc";
+			goto READFILE;
+		}
+		if(-e "$dir/$file.inc.gz") {
+			$file = "$dir/$file.inc.gz";
 			goto READFILE;
 		}
 	}
@@ -128,7 +140,7 @@ sub parse_keymap {
 		
 		if($line =~ /include ".+"/) {
 			my (undef, $ifile) = split(/"/, $line);
-			parse_keymap("$ifile.inc");
+			parse_keymap($ifile);
 		}
 	}
 }
