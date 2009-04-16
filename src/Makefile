@@ -15,7 +15,7 @@
 # with this program; if not, write to the Free Software Foundation, Inc.,
 # 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 
-DEPS := misc.o disk.o console.o menu.o modprobe.o boot.o grub.o shell.o globcmp.o kexec.a libblkid.a libuuid.a
+DEPS := misc.o disk.o console.o menu.o modprobe.o boot.o grub.o shell.o globcmp.o keymap.o kexec.a libblkid.a libuuid.a
 OBJS := $(DEPS)
 
 KT_VER := 2.0.0
@@ -77,6 +77,9 @@ shell.o: shell.c
 
 globcmp.o: globcmp.c
 	$(CC) $(CFLAGS) $(INCLUDES) -c -o globcmp.o globcmp.c
+
+keymap.o: keymap.c
+	$(CC) $(CFLAGS) $(INCLUDES) -c -o keymap.o keymap.c
 
 kexec.a:
 	wget -nc $(KT_URL)

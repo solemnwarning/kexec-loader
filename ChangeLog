@@ -1,4 +1,6 @@
 Version 2.0.1:
+	Added support for loading keymaps.
+	
 	Updated module loading code: kernel modules in /modules/ on the rootfs
 	will be loaded before trying to mount the boot disk.
 	

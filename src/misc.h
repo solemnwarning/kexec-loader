@@ -148,5 +148,6 @@ void modprobe_boot(void);
 void modprobe_root(void);
 void boot_target(kl_target *target);
 void shell_main(void);
+void load_keymap(char const *file);
 
 #endif /* !KL_MISC_H */

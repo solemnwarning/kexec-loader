@@ -67,6 +67,10 @@ int main(int argc, char **argv) {
 		LINUX_REBOOT_CMD_CAD_OFF, NULL
 	);
 	
+	if(access("/keymap.txt", F_OK) == 0) {
+		load_keymap("/keymap.txt");
+	}
+	
 	modprobe_root();
 	
 	char *kdevice = get_cmdline("root");
