@@ -1,4 +1,6 @@
-Version 2.0.1:
+Version 2.1:
+	Fixed a bug: grub-map caused an "Unknown directive" error.
+	
 	Added support for loading keymaps.
 	
 	Updated module loading code: kernel modules in /modules/ on the rootfs

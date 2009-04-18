@@ -561,6 +561,8 @@ static void load_conf(void) {
 			
 			strlcpy(gdev.device, val2, sizeof(gdev.device));
 			list_add_copy(&grub_devmap, &gdev, sizeof(gdev));
+			
+			continue;
 		}
 		
 		if(kl_streq(name, "title")) {
