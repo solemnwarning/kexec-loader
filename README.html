@@ -87,6 +87,9 @@ You can load kernel modules which allow kexec-loader to support more devices/fil
 <p>
 These are not to be confused with multiboot modules, which are modules loaded by the bootloader and passed to a multiboot kernel, they are commonly used for the same purpose as Linux kernel modules, read your OS documentation for more information.
 </p>
+<p>
+If there is a modules directory in the rootfs, modules will also be loaded from it. This can be used if you want to include modules in an initramfs, for example to run the official kexec-loader build from a CD or ext2 filesystem without recompiling the kernel.
+</p>
 
 <h3><a name="s2s3">2.3. Configuration File</a></h3>
 <p>
