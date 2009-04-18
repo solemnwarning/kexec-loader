@@ -31,7 +31,7 @@ a:hover {
 
 <body>
 <h1>kexec-loader manual</h1>
-<p>Version: 2.0</p>
+<p>Version: 2.1</p>
 <p>Copyright &copy; 2007-2009 Daniel Collins<br />Copyright &copy; 2008-2009 Philip Kent</p>
 <ul>
 	<li><a href="#s1">1. Introduction</a></li>
@@ -42,6 +42,7 @@ a:hover {
 		<li><a href="#s2s3">2.3. Configuration File</a></li>
 		<li><a href="#s2s4">2.4. Shell</a></li>
 		<li><a href="#s2s5">2.5. Debug Console</a></li>
+		<li><a href="#s2s6">2.6. Changing the keymap</a></li>
 	</ul>
 	</li>
 	<li><a href="#s3">3. Building kexec-loader</a>
@@ -216,6 +217,14 @@ kexec-loader has a shell which can be used for configuring a target at boot time
 <h3><a name="s2s5">2.5. Debug Console</a></h3>
 <p>
 Once kexec-loader has started, debugging messages are sent to a separate console. By default the debug console is tty3, this can be changed by setting debug_tty on the kernel command line. Kernel messages are sent to tty2.
+</p>
+
+<h3><a name="s2s6">2.6. Changing the keymap</a></h3>
+<p>
+If the file keymap.txt exists in the rootfs, it will be loaded as the keymap. The official kexec-loader disks store this file in the keymap.cpio file on the boot floppy, allowing it to be changed, the US keymap is included by default.
+</p>
+<p>
+New keymap.cpio files can be downloaded <a href="http://www.solemnwarning.net/kexec-loader/keymaps/">here</a>, remember to rename them before use. If your keymap isn't available here, you can use the conv-keymap.pl script from the source download to generate one from a Linux console keymap. (normally found in /usr/share/keymaps)
 </p>
 
 <h2><a name="s3">3. Building kexec-loader</a></h2>
