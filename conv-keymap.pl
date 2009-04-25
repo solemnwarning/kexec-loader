@@ -34,12 +34,12 @@ foreach my $arg(@ARGV) {
 	
 	if(substr($arg, 0, 1) eq "-") {
 		if($arg eq "-h") {
-			print "Usage: ./conv-keymap.pl [-p include-path] <input keymap>\n";
+			print "Usage: ./conv-keymap.pl [-p include-path] <input keymap> <output keymap>\n";
 			exit(0);
 		}elsif($arg eq "-p") {
 			$pw = 1;
 		}else{
-			print STDERR "Usage: ./conv-keymap.pl [-p include-path] <input keymap>\n";
+			print STDERR "Usage: ./conv-keymap.pl [-p include-path] <input keymap> <output keymap>\n";
 			exit(1);
 		}
 	}elsif(!defined($infile)) {
@@ -47,13 +47,13 @@ foreach my $arg(@ARGV) {
 	}elsif(!defined($outfile)) {
 		$outfile = $arg;
 	}else{
-		print STDERR "Usage: ./conv-keymap.pl [-p include-path] <input keymap>\n";
+		print STDERR "Usage: ./conv-keymap.pl [-p include-path] <input keymap> <output keymap>\n";
 		exit(1);
 	}
 }
 
 if(!defined($outfile)) {
-	print STDERR "Usage: ./conv-keymap.pl [-p include-path] <input keymap>\n";
+	print STDERR "Usage: ./conv-keymap.pl [-p include-path] <input keymap> <output keymap>\n";
 	exit(1);
 }
 
@@ -61,7 +61,7 @@ my $t = $infile;
 $t =~ s/\/[^\/]+$//;
 $path .= ":$t";
 
-open(TMP, ">keymap.txt") or die("Can't open keymap.txt: $!");
+open(TMP, ">$outfile") or die("Can't open keymap.txt: $!");
 
 sub parse_keymap {
 	my $file = $_[0];
@@ -148,5 +148,3 @@ sub parse_keymap {
 parse_keymap($infile);
 
 close(TMP);
-system("echo keymap.txt | cpio --create --format=newc --quiet > $outfile");
-unlink("keymap.txt");

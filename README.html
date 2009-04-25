@@ -224,10 +224,10 @@ Once kexec-loader has started, debugging messages are sent to a separate console
 
 <h3><a name="s2s6">2.6. Changing the keymap</a></h3>
 <p>
-If the file keymap.txt exists in the rootfs, it will be loaded as the keymap. The official kexec-loader disks store this file in the keymap.cpio file on the boot floppy, allowing it to be changed, the US keymap is included by default.
+If the file keymap.txt exists on the boot floppy, it will be loaded as the keymap. The official kexec-loader disks do not include a keymap.txt file, so the US kernel keymap will be used.
 </p>
 <p>
-New keymap.cpio files can be downloaded <a href="http://www.solemnwarning.net/kexec-loader/keymaps/">here</a>, remember to rename them before use. If your keymap isn't available here, you can use the conv-keymap.pl script from the source download to generate one from a Linux console keymap. (normally found in /usr/share/keymaps)
+New keymap.txt files can be downloaded <a href="http://www.solemnwarning.net/kexec-loader/keymaps/">here</a>, remember to rename them before use. If your keymap isn't available here, you can use the conv-keymap.pl script from the source download to generate one from a Linux console keymap. (normally found in /usr/share/keymaps)
 </p>
 
 <h2><a name="s3">3. Building kexec-loader</a></h2>

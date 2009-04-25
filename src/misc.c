@@ -67,10 +67,6 @@ int main(int argc, char **argv) {
 		LINUX_REBOOT_CMD_CAD_OFF, NULL
 	);
 	
-	if(access("/keymap.txt", F_OK) == 0) {
-		load_keymap("/keymap.txt");
-	}
-	
 	modprobe_root();
 	
 	char *kdevice = get_cmdline("root");
@@ -82,6 +78,14 @@ int main(int argc, char **argv) {
 		load_conf();
 		modprobe_boot();
 		grub_load();
+		
+		char *keymap = kl_sprintf("/mnt/%s/keymap.txt", boot_disk->name);
+		
+		if(access(keymap, F_OK) == 0) {
+			load_keymap(keymap);
+		}
+		
+		free(keymap);
 	}
 	
 	while(1) {
