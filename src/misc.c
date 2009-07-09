@@ -45,7 +45,7 @@ kl_target *targets = NULL;
 kl_module *kmods = NULL;
 
 static void redirect_klog(void);
-static void load_conf(void);
+static void load_conf(char const *filename);
 static void sighandler(int sig);
 
 int main(int argc, char **argv) {
@@ -67,25 +67,48 @@ int main(int argc, char **argv) {
 		LINUX_REBOOT_CMD_CAD_OFF, NULL
 	);
 	
-	modprobe_root();
-	
-	char *kdevice = get_cmdline("root");
-	char *device = kdevice ? kdevice : "LABEL=kexecloader";
-	boot_disk = mount_retry(device, "boot disk");
-	free(kdevice);
-	
-	if(boot_disk) {
-		load_conf();
-		modprobe_boot();
-		grub_load();
+	if(check_file("/noboot")) {
+		debug("Found /noboot on initramfs, not searching for boot disk");
 		
-		char *keymap = kl_sprintf("/mnt/%s/keymap.txt", boot_disk->name);
-		
-		if(access(keymap, F_OK) == 0) {
-			load_keymap(keymap);
+		if(check_file("/kexec-loader.conf")) {
+			load_conf("/kexec-loader.conf");
+		}else{
+			printd("Warning: No kexec-loader.conf present on initramfs");
 		}
 		
-		free(keymap);
+		modprobe_root();
+		
+		if(check_file("/keymap.txt")) {
+			load_keymap("/keymap.txt");
+		}
+	}else{
+		modprobe_root();
+		
+		char *kdevice = get_cmdline("root");
+		char *device = kdevice ? kdevice : "LABEL=kexecloader";
+		boot_disk = mount_retry(device, "boot disk");
+		free(kdevice);
+		
+		if(boot_disk) {
+			char *config = kl_sprintf("/mnt/%s/kexec-loader.conf", boot_disk->name);
+			char *keymap = kl_sprintf("/mnt/%s/keymap.txt", boot_disk->name);
+			
+			if(check_file(config)) {
+				load_conf(config);
+			}else{
+				printd("Warning: No kexec-loader.conf present on boot disk");
+			}
+			
+			modprobe_boot();
+			grub_load();
+			
+			if(access(keymap, F_OK) == 0) {
+				load_keymap(keymap);
+			}
+			
+			free(keymap);
+			free(config);
+		}
 	}
 	
 	while(1) {
@@ -506,10 +529,7 @@ void list_nuke(void *root) {
 }
 
 /* Load kexec-loader.conf */
-static void load_conf(void) {
-	char filename[1024];
-	snprintf(filename, 1024, "/mnt/%s/kexec-loader.conf", boot_disk->name);
-	
+static void load_conf(char const *filename) {
 	FILE *fh = fopen(filename, "r");
 	if(!fh) {
 		printD("Error opening kexec-loader.conf: %s", strerror(errno));
@@ -681,4 +701,9 @@ static void sighandler(int sig) {
 	}
 	
 	signal(sig, &sighandler);
+}
+
+/* Check if a file exists */
+int check_file(char const *file) {
+	return access(file, F_OK) == 0 ? 1 : 0;
 }

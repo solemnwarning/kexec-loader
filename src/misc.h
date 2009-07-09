@@ -144,6 +144,8 @@ void list_del(void *rptr, void *node);
 void *list_prev(void *root, void *node);
 void list_nuke(void *root);
 
+int check_file(char const *file);
+
 void modprobe_boot(void);
 void modprobe_root(void);
 void boot_target(kl_target *target);
