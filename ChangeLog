@@ -15,6 +15,9 @@ Version 2.1:
 	
 	Updated menu.lst parser to skip entries with empty root devices, since
 	some distros use this (broken?) behaviour for divider lines.
+	
+	Added check for /noboot file on rootfs to load everything from rootfs
+	instead of searching for a boot disk.
 
 Version 2.0:
 	Full rewrite, far more stable code.
