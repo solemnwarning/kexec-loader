@@ -626,7 +626,8 @@ static void clear_keymaps(void) {
 void load_keymap(char const *file) {
 	FILE *fh = fopen(file, "r");
 	if(!fh) {
-		printD("Error reading %s: %s\n", strerror(errno));
+		printD("Error opening %s: %s\n", strerror(errno));
+		return;
 	}
 	
 	char line[1024], *lp;
