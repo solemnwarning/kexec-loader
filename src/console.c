@@ -89,7 +89,6 @@ void console_getpos(int *cptr, int *rptr) {
 					
 					if(c == 0x1B) {
 						ungetc(0x1B, stdin);
-						debug("fail");
 						goto NEXT;
 					}
 					
@@ -98,10 +97,7 @@ void console_getpos(int *cptr, int *rptr) {
 				}
 				
 				if(sscanf(tbuf, "%d;%dR", &row, &col) == 2) {
-					debug("win");
 					break;
-				}else{
-					debug("phail");
 				}
 				
 				NEXT:
