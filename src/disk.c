@@ -255,7 +255,7 @@ kl_disk *mount_retry(char const *device, char const *name) {
 	
 	while(1) {
 		if(poll(&pollset, 1, 1000)) {
-			getchar();
+			console_getchar();
 			break;
 		}
 		

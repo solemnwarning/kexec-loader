@@ -50,6 +50,16 @@
 #define P2_DEBUG	(1<<0)
 #define P2_ALERT	(1<<1)
 
+/* Special keys */
+#define KEY_UP		-129
+#define KEY_DOWN	-130
+#define KEY_LEFT	-131
+#define KEY_RIGHT	-132
+#define KEY_HOME	-133
+#define KEY_END		-134
+#define KEY_DEL		-135
+#define KEY_BACKSPACE	-136
+
 #define printd(...) print2(P2_DEBUG, __VA_ARGS__);
 #define printD(...) print2(P2_DEBUG | P2_ALERT, __VA_ARGS__);
 #define printm(...) print2(0, __VA_ARGS__);
@@ -68,6 +78,7 @@ void console_bgcolour(int colour);
 void console_attrib(int attrib);
 void console_getsize(int* cols_p, int* rows_p);
 void console_erase(char const *mode);
+int console_getchar(void);
 
 void print2(int flags, char const *fmt, ...);
 

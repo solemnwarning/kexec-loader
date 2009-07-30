@@ -18,6 +18,9 @@ Version 2.1:
 	
 	Added check for /noboot file on rootfs to load everything from rootfs
 	instead of searching for a boot disk.
+	
+	Implemented console_getchar() wrapper to handle terminal escapes in one
+	place and to allow characters to be queued from processing escapes.
 
 Version 2.0:
 	Full rewrite, far more stable code.

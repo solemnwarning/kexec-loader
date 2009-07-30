@@ -215,15 +215,13 @@ static char *read_cmd(char **history) {
 	console_getpos(&scol, &srow);
 	
 	while(1) {
-		c = getchar();
+		c = console_getchar();
 		
 		if(c == '\n') {
 			putchar('\n');
 			break;
 		}
-		if(c == 0x7F) {
-			/* 0x7F == DEL (Backspace??) */
-			
+		if(c == KEY_BACKSPACE) {
 			if(offset > 0) {
 				memmove(cmdbuf+offset-1, cmdbuf+offset, cmdlen-offset+1);
 				offset--;
@@ -234,80 +232,50 @@ static char *read_cmd(char **history) {
 				replace_input(cmdbuf, offset);
 				set_cursor(offset);
 			}
-			
-			continue;
 		}
-		if(c == 0x1B) {
-			if((c = getchar()) != '[') {
-				ungetc(c, stdin);
-				continue;
+		if(c == KEY_LEFT && offset > 0) {
+			set_cursor(--offset);
+		}
+		if(c == KEY_RIGHT && cmdlen - offset > 0) {
+			set_cursor(++offset);
+		}
+		if(c == KEY_HOME) {
+			set_cursor(offset = 0);
+		}
+		if(c == KEY_END) {
+			set_cursor(offset = cmdlen);
+		}
+		if(c == KEY_DEL) {
+			if(offset < cmdlen) {
+				memmove(cmdbuf+offset, cmdbuf+offset+1, cmdlen-offset+1);
+				
+				erase_input(offset, cmdlen-offset);
+				cmdlen--;
+				
+				replace_input(cmdbuf, offset);
+				set_cursor(offset);
 			}
+		}
+		if(c == KEY_UP && hnum+1 < HISTORY_SIZE && history[hnum+1]) {
+			erase_input(0, cmdlen);
 			
-			c = getchar();
+			strlcpy(cmdbuf, history[++hnum], CMDBUF_SIZE);
+			offset = cmdlen = strlen(cmdbuf);
 			
-			if(c == 0x44 && offset > 0) {
-				/* Left arrow */
-				set_cursor(--offset);
-			}
-			if(c == 0x43 && cmdlen - offset > 0) {
-				/* Right arrow */
-				set_cursor(++offset);
-			}
-			if(c == 0x31) {
-				/* Home */
-				
-				getchar();
-				set_cursor(offset = 0);
-			}
-			if(c == 0x34) {
-				/* End */
-				
-				getchar();
-				set_cursor(offset = cmdlen);
-			}
-			if(c == 0x33) {
-				/* Del */
-				
-				getchar();
-				
-				if(offset < cmdlen) {
-					memmove(cmdbuf+offset, cmdbuf+offset+1, cmdlen-offset+1);
-					
-					erase_input(offset, cmdlen-offset);
-					cmdlen--;
-					
-					replace_input(cmdbuf, offset);
-					set_cursor(offset);
-				}
-			}
+			replace_input(cmdbuf, 0);
+		}
+		if(c == KEY_DOWN && hnum >= 0) {
+			erase_input(0, cmdlen);
 			
-			if(c == 0x41 && hnum+1 < HISTORY_SIZE && history[hnum+1]) {
-				/* Up arrow */
-				
-				erase_input(0, cmdlen);
-				
-				strlcpy(cmdbuf, history[++hnum], CMDBUF_SIZE);
+			if(--hnum == -1) {
+				cmdbuf[0] = '\0';
+				offset = cmdlen = 0;
+			}else{
+				strlcpy(cmdbuf, history[hnum], CMDBUF_SIZE);
 				offset = cmdlen = strlen(cmdbuf);
-				
-				replace_input(cmdbuf, 0);
-			}
-			if(c == 0x42 && hnum >= 0) {
-				/* Down arrow */
-				
-				erase_input(0, cmdlen);
-				
-				if(--hnum == -1) {
-					cmdbuf[0] = '\0';
-					offset = cmdlen = 0;
-				}else{
-					strlcpy(cmdbuf, history[hnum], CMDBUF_SIZE);
-					offset = cmdlen = strlen(cmdbuf);
-				}
-				
-				replace_input(cmdbuf, 0);
 			}
 			
-			continue;
+			replace_input(cmdbuf, 0);
 		}
 		if(c == '\t') {
 			struct ac_list *ac_list = ac_search(cmdbuf, offset);
@@ -343,6 +311,10 @@ static char *read_cmd(char **history) {
 			}
 			
 			list_nuke(ac_list);
+			continue;
+		}
+		
+		if(c < -127) {
 			continue;
 		}
 		

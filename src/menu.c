@@ -75,9 +75,7 @@ void menu_main(void) {
 			);
 			
 			if(poll(&inpoll, 1, 1000)) {
-				getchar();
 				timeout = 0;
-				
 				break;
 			}
 			
@@ -100,40 +98,30 @@ void menu_main(void) {
 	puts("a target, D to display disks or C to open the console.");
 	
 	while(1) {
-		int c = getchar();
+		int c = console_getchar();
 		
-		if(c == 0x1B && getchar() == '[') {
-			c = getchar();
+		if(c == KEY_UP && row > 6) {
+			target = list_prev(targets, target);
+			tptr = list_prev(targets, start);
 			
-			/* 0x41 = Up arrow
-			 * 0x42 = Down arrow
-			*/
-			
-			if(c == 0x41 && row > 6) {
-				target = list_prev(targets, target);
-				tptr = list_prev(targets, start);
-				
-				if(row == 7 && tptr) {
-					start = tptr;
-				}else{
-					row--;
-				}
-				
-				draw_menu(start, row);
-			}
-			if(c == 0x42 && target->next) {
-				target = target->next;
-				
-				if(row+3 == console_rows && target->next) {
-					start = start->next;
-				}else{
-					row++;
-				}
-				
-				draw_menu(start, row);
+			if(row == 7 && tptr) {
+				start = tptr;
+			}else{
+				row--;
 			}
 			
-			continue;
+			draw_menu(start, row);
+		}
+		if(c == KEY_DOWN && target->next) {
+			target = target->next;
+			
+			if(row+3 == console_rows && target->next) {
+				start = start->next;
+			}else{
+				row++;
+			}
+			
+			draw_menu(start, row);
 		}
 		if(c == '\n') {
 			console_setpos(0,2);
@@ -142,6 +130,12 @@ void menu_main(void) {
 			
 			goto FOOBAR;
 		}
+		
+		/* Don't trigger stupid asserts... */
+		if(c < -127 || c > 127) {
+			continue;
+		}
+		
 		if(toupper(c) == 'D') {
 			console_setpos(0,2);
 			console_erase(ERASE_DOWN);

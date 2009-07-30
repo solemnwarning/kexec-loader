@@ -29,10 +29,20 @@
 #include "misc.h"
 #include "console.h"
 
+#define GETC_SIZE 256
+
+#define GETC_PUSH(x) \
+	if(getc_count < GETC_SIZE) { \
+		getc_buf[getc_count++] = x; \
+	}
+
 int alert = 0;
 
 int console_cols = 80;
 int console_rows = 24;
+
+static int getc_count = 0;
+static int getc_buf[GETC_SIZE];
 
 /* Initialize console(s) */
 void console_init(void) {
@@ -62,15 +72,10 @@ void console_setpos(int col, int row) {
 	printf("%c[%d;%dH", 0x1B, row+1, col+1);
 }
 
-#define INBUF_APPEND(c) \
-	if(insize < 256) { \
-		inbuf[++insize] = c; \
-	}
-
 /* Fetch the cursor position */
 void console_getpos(int *cptr, int *rptr) {
-	char inbuf[256], c;
-	int insize = 0, row, col;
+	char tbuf[32];
+	int row, col, ts, i, c;
 	
 	printf("%c[6n", 0x1B);
 	
@@ -79,30 +84,52 @@ void console_getpos(int *cptr, int *rptr) {
 		
 		if(c == 0x1B) {
 			if((c = getchar()) == '[') {
-				break;
+				for(ts = 0; c != 'R' && ts < 31; ts++) {
+					c = getchar();
+					
+					if(c == 0x1B) {
+						ungetc(0x1B, stdin);
+						debug("fail");
+						goto NEXT;
+					}
+					
+					tbuf[ts] = c;
+					tbuf[ts+1] = '\0';
+				}
+				
+				if(sscanf(tbuf, "%d;%dR", &row, &col) == 2) {
+					debug("win");
+					break;
+				}else{
+					debug("phail");
+				}
+				
+				NEXT:
+				
+				GETC_PUSH(0x1B);
+				GETC_PUSH('[');
+				
+				for(i = 0; i < ts; i++) {
+					GETC_PUSH(tbuf[i]);
+				}
+			}else{
+				GETC_PUSH(0x1B);
+				GETC_PUSH(c);
 			}
-			
-			INBUF_APPEND(0x1B);
+		}else{
+			GETC_PUSH(c);
 		}
-		
-		INBUF_APPEND(c);
 	}
-	
-	scanf("%d;%dR", &row, &col);
 	
 	if(rptr) { *rptr = row-1; }
 	if(cptr) { *cptr = col-1; }
-	
-	while(insize > 0) {
-		ungetc(inbuf[--insize], stdin);
-	}
 }
 
 /* Clear the console */
 void console_clear(void) {
 	if(alert) {
 		printf("\nPress any key to continue...\a");
-		getchar();
+		console_getchar();
 	}
 	
 	console_erase(ERASE_ALL);
@@ -155,6 +182,57 @@ void console_erase(char const *mode) {
 	printf("%c[%s", 0x1B, mode);
 	
 	console_setpos(col, row);
+}
+
+static int getchar_cbuf(void) {
+	if(getc_count) {
+		int ret = getc_buf[0], i;
+		
+		for(i = 1; i < getc_count; i++) {
+			getc_buf[i-1] = getc_buf[i];
+		}
+		
+		getc_count--;
+		
+		return ret;
+	}
+	
+	return getchar();
+}
+
+/* Get a character */
+int console_getchar(void) {
+	while(1) {
+		int c = getchar_cbuf();
+		
+		if(c == 0x7F) {
+			return KEY_BACKSPACE;
+		}
+		
+		if(c == 0x1B) {
+			if((c = getchar_cbuf()) == '[') {
+				c = getchar_cbuf();
+				
+				switch(c) {
+					case 0x41: return KEY_UP;
+					case 0x42: return KEY_DOWN;
+					case 0x43: return KEY_RIGHT;
+					case 0x44: return KEY_LEFT;
+					case 0x31: getchar(); return KEY_HOME;
+					case 0x34: getchar(); return KEY_END;
+					case 0x33: getchar(); return KEY_DEL;
+				}
+				
+				/* Unknown escape, hope it's only 3 bytes */
+				continue;
+			}else{
+				GETC_PUSH(c);
+				return 0x1B;
+			}
+		}
+		
+		return c;
+	}
 }
 
 /* Print output */
