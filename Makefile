@@ -63,7 +63,7 @@ kexec-loader: $(OBJS) src/kexec.a
 	$(CC) $(CFLAGS) -o kexec-loader $(OBJS) $(LIBS)
 
 kexec-loader.static: $(OBJS) src/kexec.a
-	$(CC) $(CFLAGS) -static -o kexec-loader $(OBJS) $(LIBS)
+	$(CC) $(CFLAGS) -static -o kexec-loader.static $(OBJS) $(LIBS)
 
 %.o: %.c src/libblkid.a
 	$(CC) $(CFLAGS) $(INCLUDES) -c -o $@ $<

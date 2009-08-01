@@ -60,7 +60,7 @@ echo "Creating $initramfs tree..."
 mkdir -p -m 0755 "$initramfs/"{dev,mnt/target,proc,sbin} || exit 1
 
 echo "Copying programs..."
-install -m 0755 src/kexec-loader.static "$initramfs/init" || exit 1
+install -m 0755 kexec-loader.static "$initramfs/init" || exit 1
 
 echo "Stripping symbols..."
 strip -s "$initramfs/init"
