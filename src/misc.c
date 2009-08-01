@@ -72,8 +72,10 @@ int main(int argc, char **argv) {
 		
 		if(check_file("/kexec-loader.conf")) {
 			load_conf("/kexec-loader.conf");
+		}else if(check_file("/kxloader.cfg")) {
+			load_conf("/kxloader.cfg");
 		}else{
-			printd("Warning: No kexec-loader.conf present on initramfs");
+			printd("Warning: No configuration file present on initramfs");
 		}
 		
 		modprobe_root();
@@ -92,11 +94,14 @@ int main(int argc, char **argv) {
 		if(boot_disk) {
 			char *config = kl_sprintf("/mnt/%s/kexec-loader.conf", boot_disk->name);
 			char *keymap = kl_sprintf("/mnt/%s/keymap.txt", boot_disk->name);
+			char *config_83 = kl_sprintf("/mnt/%s/kxloader.cfg", boot_disk->name);
 			
 			if(check_file(config)) {
 				load_conf(config);
+			}else if(check_file(config_83)) {
+				load_conf(config_83);
 			}else{
-				printd("Warning: No kexec-loader.conf present on boot disk");
+				printd("Warning: No configuration file present on boot disk");
 			}
 			
 			modprobe_boot();
@@ -108,6 +113,7 @@ int main(int argc, char **argv) {
 			
 			free(keymap);
 			free(config);
+			free(config_83);
 		}
 	}
 	
