@@ -19,26 +19,68 @@
 #
 VERSION=r$(shell svn info | grep 'Revision:' | sed -e 's/Revision: //')
 
-export CC := gcc
-export CFLAGS := -Wall -DVERSION=\"$(VERSION)\"
-export INCLUDES :=
-export LIBS := -lz
+# kexec-tools
+KT_VER := 2.0.0
+KT_URL := http://www.kernel.org/pub/linux/kernel/people/horms/kexec-tools/kexec-tools-$(KT_VER).tar.gz
+KT_CONFIGURE :=
+
+# e2fsprogs
+E2FS_VER := 1.41.8
+E2FS_URL := http://surfnet.dl.sourceforge.net/sourceforge/e2fsprogs/e2fsprogs-$(E2FS_VER).tar.gz
+E2FS_CONFIGURE :=
+
+CC := gcc
+LD := ld
+CFLAGS := -Wall -DVERSION=\"$(VERSION)\"
+INCLUDES := -Isrc/e2fsprogs-$(E2FS_VER)/lib/
+LIBS := src/kexec.a src/libblkid.a src/libuuid.a -lz
 export KLBASE := $(PWD)
 
 ifdef HOST
 	CC := $(HOST)-gcc
+	LD := $(HOST)-ld
+	
+	KT_CONFIGURE += --host=$(HOST)
+	E2FS_CONFIGURE += --host=$(HOST) --with-cc=$(CC) --with-linker=$(LD)
 endif
 
-TARFILE := kexec-loader-$(shell echo $(VERSION) | sed -e 's/^v//').tar
+OBJS := src/misc.o src/disk.o src/console.o src/menu.o src/modprobe.o \
+	src/boot.o src/grub.o src/shell.o src/globcmp.o src/keymap.o
 
-all:
-	@$(MAKE) -C src/
+all: kexec-loader kexec-loader.static
 
 clean:
-	@$(MAKE) -C src/ clean
+	rm -f src/*.o src/*.a
+	rm -f kexec-loader kexec-loader.static
+	rm -rf src/kexec-tools-$(KT_VER)/
+	rm -rf src/e2fsprogs-$(E2FS_VER)/
 
 distclean: clean
-	@$(MAKE) -C src/ distclean
+	rm -f kexec-tools-$(KT_VER).tar.gz
+	rm -f e2fsprogs-$(E2FS_VER).tar.gz
 
-dist: distclean
-	tar --exclude='*.svn' -cpf ../$(TARFILE) -C ../ $(shell basename $(KLBASE))
+kexec-loader: $(OBJS) src/kexec.a
+	$(CC) $(CFLAGS) -o kexec-loader $(OBJS) $(LIBS)
+
+kexec-loader.static: $(OBJS) src/kexec.a
+	$(CC) $(CFLAGS) -static -o kexec-loader $(OBJS) $(LIBS)
+
+%.o: %.c src/libblkid.a
+	$(CC) $(CFLAGS) $(INCLUDES) -c -o $@ $<
+
+src/kexec.a:
+	wget -nc $(KT_URL)
+	tar -C src -xzf kexec-tools-$(KT_VER).tar.gz
+	cd src/kexec-tools-$(KT_VER)/ && \
+	patch -Np1 -i ../../patches/kexec-tools-2.0.0.diff && \
+	./configure $(KT_CONFIGURE)
+	$(MAKE) -C src/kexec-tools-$(KT_VER)/
+
+src/libblkid.a:
+	wget -nc $(E2FS_URL)
+	tar -C src -xzf e2fsprogs-$(E2FS_VER).tar.gz
+	cd src/e2fsprogs-$(E2FS_VER)/ && \
+	./configure $(E2FS_CONFIGURE)
+	$(MAKE) -C src/e2fsprogs-$(E2FS_VER)/lib/blkid/
+	$(MAKE) -C src/e2fsprogs-$(E2FS_VER)/lib/uuid/
+	cp src/e2fsprogs-$(E2FS_VER)/lib/lib{blkid,uuid}.a src
