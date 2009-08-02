@@ -25,6 +25,12 @@ a:link, a:visited {
 a:hover {
 	color: red;
 }
+.code {
+	background-color: #E5E5E5;
+	border: 1px solid #000000;
+	padding: 5px;
+	font-family: monospace;
+}
 -->
 </style>
 </head>
@@ -37,7 +43,7 @@ a:hover {
 	<li><a href="#s1">1. Introduction</a></li>
 	<li><a href="#s2">2. Usage</a>
 	<ul>
-		<li><a href="#s2s1">2.1. Device/Path syntax</a></li>
+		<li><a href="#s2s1">2.1. Basic Configuration</a></li>
 		<li><a href="#s2s2">2.2. Kernel modules</a></li>
 		<li><a href="#s2s3">2.3. Configuration File</a></li>
 		<li><a href="#s2s4">2.4. Shell</a></li>
@@ -69,17 +75,55 @@ The kexec-loader project site has prebuilt disk images available for download, u
 </p>
 
 <h2><a name="s2">2. Usage</a></h2>
-<h3><a name="s2s1">2.1. Device/Path syntax</a></h3>
+<h3><a name="s2s1">2.1. Basic Configuration</a></h3>
 <p>
-There are three ways of specifying devices, you can specify the device name which may change without warning, this is only recommended on systems that have a single drive, for example a single USB drive being booted by kexec-loader on an internal floppy drive. You may also use 'LABEL=foobar' and 'UUID=xxxx' to specify the volume label and UUID, respectively.
+On startup kexec-loader looks for a configuration file named kexec-loader.conf in the root directory of the boot disk. If it does not exist it will attempt to load kxloader.cfg instead, this is to allow writing a configuration file on systems that only support 8.3 filenames such as DOS.
 </p>
 <p>
-If a device name contains a colon it is assumed you are manually specifying the filesystem type, for example 'ext3:hda1' will overrule filesystem detection and attempt to mount the filesystem as ext3, this may be used if the detection is not working correctly.
+The configuration file below shows how to boot a simple Linux system with two kernel versions installed. Each target beginning with a title line will be displayed on the boot menu. If no key is pressed within 10 seconds the second entry will be booted automatically. If there are no targets with a default line the first one will be booted.
+</p>
+<p class="code">
+timeout 10<br />
+<br />
+title Generic Linux System (Kernel 2.6.20)<br />
+root hda1<br />
+kernel /boot/vmlinuz-2.6.20<br />
+cmdline root=/dev/hda1 ro<br />
+initrd /boot/initrd.img-2.6.20<br />
+<br />
+title Generic Linux System (Kernel 2.6.21)<br />
+root hda1<br />
+kernel /boot/vmlinuz-2.6.21<br />
+cmdline root=/dev/hda1 ro<br />
+initrd /boot/initrd.img-2.6.21<br />
+default
 </p>
 <p>
-You may specify a device in a path as well as a file, for example '(hda1)/boot/vmlinuz' will point to the /boot/vmlinuz file on hda1, instead of /boot/vmlinuz on the root device.
+The next example does the same thing, but demonstrates how to specify a disk as part of the filename, this can be used to load files from disks other than the one specified on the root line. Directives that take a path and are not part of a target definition must specify the disk.
 </p>
-
+<p class="code">
+timeout 10<br />
+<br />
+title Generic Linux System (Kernel 2.6.20)<br />
+root hda1<br />
+kernel /boot/vmlinuz-2.6.20<br />
+cmdline root=/dev/hda1 ro<br />
+initrd <b>(hda1)</b>/boot/initrd.img-2.6.20<br />
+<br />
+title Generic Linux System (Kernel 2.6.21)<br />
+root hda1<br />
+kernel /boot/vmlinuz-2.6.21<br />
+cmdline root=/dev/hda1 ro<br />
+initrd <b>(hda1)</b>/boot/initrd.img-2.6.21<br />
+default
+</p>
+<p>
+It is also possible to reference a disk by its volume label or UUID, this may be useful in cases where the device name may change, for example a USB drive which is used on multiple machines. The following example shows how to use both, you can also use the LABEL/UUID syntax in filenames.
+</p>
+<p class="code">
+root LABEL=disklabel<br />
+root UUID=75ac0d6c-5dc0-402f-9f0f-9ab313816439
+</p>
 <h3><a name="s2s2">2.2. Kernel modules</a></h3>
 <p>
 You can load kernel modules which allow kexec-loader to support more devices/filesystems/etc, to load a kernel module simply copy it to the 'modules' directory on the boot floppy. If you are using an official disk image you can download the modules package appropriate for your kernel from the project site. Your kernel version is displayed at the top of the menu and when you start the shell.
