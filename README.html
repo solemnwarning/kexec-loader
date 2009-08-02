@@ -44,7 +44,7 @@ a:hover {
 	<li><a href="#s2">2. Usage</a>
 	<ul>
 		<li><a href="#s2s1">2.1. Basic Configuration</a></li>
-		<li><a href="#s2s2">2.2. Kernel modules</a></li>
+		<li><a href="#s2s2">2.2. GRUB Integration</a></li>
 		<li><a href="#s2s3">2.3. Configuration File</a></li>
 		<li><a href="#s2s4">2.4. Shell</a></li>
 		<li><a href="#s2s5">2.5. Debug Console</a></li>
@@ -123,6 +123,30 @@ It is also possible to reference a disk by its volume label or UUID, this may be
 <p class="code">
 root LABEL=disklabel<br />
 root UUID=75ac0d6c-5dc0-402f-9f0f-9ab313816439
+</p>
+<h3><a name="s2s2">2.2. GRUB Integration</a></h3>
+<p>
+If you have a GRUB installation, kexec-loader can load its configuration. To use it you simply need to set the path of your GRUB install directory (containing menu.lst and device.map) in kexec-loader.conf:
+</p>
+<p class="code">
+grub-path (hda1)/boot/grub
+</p>
+<p>
+On startup kexec-loader will read the list of GRUB devices from devices.map, it will use these to convert the BIOS disk numbers in menu.lst to Linux device names. All bootable entries in menu.lst will then be loaded and added to the boot menu. It will also load the default and timeout options from menu.lst if they are not specified in kexec-loader.conf.
+</p>
+<p>
+If you want to override the device mappings in device.map, for example if GRUB is installed to a USB drive which is used on multiple machines, you can use the <b>grub-map</b> directive in kexec-loader.conf to specify new mappings. There are two types of device mappings possible, which are shown below.
+</p>
+<p class="code">
+grub-map hd0 sda<br />
+grub-map hd1,0 sda2
+</p>
+<p>
+The first line maps the first BIOS disk (hd0) to Linux disk sda. The second line maps the first partition of the second BIOS disk (hd1,0) to the second partition on Linux disk sda. When mapping single partitions you can use the UUID/LABEL syntax as shown below.
+</p>
+<p class="code">
+grub-map hd0,0 LABEL=boot<br />
+grub-map hd0,2 LABEL=root
 </p>
 <h3><a name="s2s2">2.2. Kernel modules</a></h3>
 <p>
