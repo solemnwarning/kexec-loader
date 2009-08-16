@@ -204,7 +204,7 @@ static void load_menu(char const *root) {
 			continue;
 		}
 		
-		if(kl_streq(name, "timeout") && !timeout) {
+		if(kl_streq(name, "timeout") && timeout == -1) {
 			CHECK_HASARG();
 			
 			timeout = atoi(val);

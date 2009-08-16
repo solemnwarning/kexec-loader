@@ -62,7 +62,7 @@ void menu_main(void) {
 	draw_static();
 	draw_menu(start, row);
 	
-	if(timeout) {
+	if(timeout >= 0) {
 		console_setpos(1, 3);
 		puts("Press any key to abort");
 		
@@ -75,17 +75,19 @@ void menu_main(void) {
 			);
 			
 			if(poll(&inpoll, 1, 1000)) {
-				timeout = 0;
+				timeout = -1;
 				break;
 			}
 			
-			if(--timeout == 0) {
-				console_setpos(0,2);
-				console_erase(ERASE_DOWN);
-				boot_target(target);
-				
-				goto FOOBAR;
-			}
+			timeout--;
+		}
+		
+		if(timeout == 0) {
+			console_setpos(0,2);
+			console_erase(ERASE_DOWN);
+			boot_target(target);
+			
+			goto FOOBAR;
 		}
 	}
 	

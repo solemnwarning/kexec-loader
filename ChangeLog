@@ -1,6 +1,11 @@
 Version 2.1.1:
 	Updated config loading code to look for kxloader.cfg if there is no
 	kexec-loader.conf file.
+	
+	Changed behaviour of timeout directive: 0 timeout will boot instantly
+	instead of waiting forever, use "off" to force no timeout. The default
+	setting is "off", but will be overridden by menu.lst unless explicitly
+	set in kexec-loader.conf.
 
 Version 2.1:
 	Fixed a bug: grub-map caused an "Unknown directive" error.

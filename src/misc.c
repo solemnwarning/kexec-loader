@@ -39,7 +39,7 @@
 #define DEBUG_TTY "/dev/tty3"
 
 kl_disk *boot_disk = NULL;
-int timeout = 0;
+int timeout = -1;
 char grub_path[1024] = {'\0'};
 kl_target *targets = NULL;
 kl_module *kmods = NULL;
@@ -565,7 +565,12 @@ static void load_conf(char const *filename) {
 		if(kl_streq(name, "timeout")) {
 			CHECK_HASARG();
 			
-			timeout = atoi(val);
+			if(kl_streq(name, "off")) {
+				timeout = -2;
+			}else{
+				timeout = atoi(val);
+			}
+			
 			continue;
 		}
 		if(kl_streq(name, "grub-path")) {
