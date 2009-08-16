@@ -46,9 +46,7 @@ a:hover {
 		<li><a href="#s2s1">2.1. Basic Configuration</a></li>
 		<li><a href="#s2s2">2.2. GRUB Integration</a></li>
 		<li><a href="#s2s3">2.3. Kernel Modules</a></li>
-		<li><a href="#s2s4">2.4. Shell</a></li>
-		<li><a href="#s2s5">2.5. Debug Console</a></li>
-		<li><a href="#s2s6">2.6. Changing the keymap</a></li>
+		<li><a href="#s2s4">2.4. Changing the keymap</a></li>
 	</ul>
 	</li>
 	<li><a href="#s3">3. Building kexec-loader</a>
@@ -158,6 +156,15 @@ Some modules or hardware combinations may require arguments to be passed to the 
 <p class="code">
 kmod module-name arg1 arg2=value arg3 ...
 </p>
+
+<h3><a name="s2s4">2.4. Changing the keymap</a></h3>
+<p>
+If the file keymap.txt exists on the boot floppy, it will be loaded as the keymap. The official kexec-loader disks do not include a keymap.txt file, so the US kernel keymap will be used.
+</p>
+<p>
+New keymap.txt files can be downloaded <a href="http://www.solemnwarning.net/kexec-loader/keymaps/">here</a>, remember to rename them before use. If your keymap isn't available here, you can use the conv-keymap.pl script from the source download to generate one from a Linux console keymap. (normally found in /usr/share/keymaps)
+</p>
+
 <h3><a name="s2s3">2.3. Configuration File</a></h3>
 <p>
 The kexec-loader configuration is stored in a text file named kexec-loader.conf on the boot floppy, it may be in UNIX or DOS format. There must be one directive per line with arguments seperated by spaces or tabs, lines beginning with a hash (#) are ignored. You may additionally load the configuration from a GRUB install, which allows kexec-loader to be a drop-in GRUB replacement.
@@ -283,19 +290,6 @@ kexec-loader has a shell which can be used for configuring a target at boot time
 	<br />Leave the shell and go back to the menu.
 	</li>
 </ul>
-
-<h3><a name="s2s5">2.5. Debug Console</a></h3>
-<p>
-Once kexec-loader has started, debugging messages are sent to a separate console. By default the debug console is tty3, this can be changed by setting debug_tty on the kernel command line. Kernel messages are sent to tty2.
-</p>
-
-<h3><a name="s2s6">2.6. Changing the keymap</a></h3>
-<p>
-If the file keymap.txt exists on the boot floppy, it will be loaded as the keymap. The official kexec-loader disks do not include a keymap.txt file, so the US kernel keymap will be used.
-</p>
-<p>
-New keymap.txt files can be downloaded <a href="http://www.solemnwarning.net/kexec-loader/keymaps/">here</a>, remember to rename them before use. If your keymap isn't available here, you can use the conv-keymap.pl script from the source download to generate one from a Linux console keymap. (normally found in /usr/share/keymaps)
-</p>
 
 <h2><a name="s3">3. Building kexec-loader</a></h2>
 <h3><a name="s3s1">3.1. Introduction</a></h3>
