@@ -6,6 +6,8 @@ Version 2.1.1:
 	instead of waiting forever, use "off" to force no timeout. The default
 	setting is "off", but will be overridden by menu.lst unless explicitly
 	set in kexec-loader.conf.
+	
+	Fixed bug: Module loading failed due to my lack of testing.
 
 Version 2.1:
 	Fixed a bug: grub-map caused an "Unknown directive" error.

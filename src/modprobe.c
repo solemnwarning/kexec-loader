@@ -186,7 +186,9 @@ static int modprobe(char const *name) {
 		MODPROBE_TEST("/mnt/%s/modules/%s.ko", boot_disk->name, name);
 	}
 	
-	MODPROBE_TEST("/modules/%s.ko", name);
+	if(!found) {
+		MODPROBE_TEST("/modules/%s.ko", name);
+	}
 	
 	if(!found) {
 		printD("Module '%s' not found", name);
