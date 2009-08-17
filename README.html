@@ -50,11 +50,9 @@ a:hover {
 		<li><a href="#s2s5">2.5. Shell</a>
 	</ul>
 	</li>
-	<li><a href="#s3">3. Building kexec-loader</a>
+	<li><a href="#s3">3. Reference</a>
 	<ul>
-		<li><a href="#s3s1">3.1. Introduction</a></li>
-		<li><a href="#s3s2">3.2. Compiling</a></li>
-		<li><a href="#s3s3">3.3. Creating a Disk Image</a></li>
+		<li><a href="#s3s1">3.1. Configuration Reference</a></li>
 	</ul>
 	</li>
 	<li><a href="#s4">4. Support</a>
@@ -208,73 +206,6 @@ The <b>find</b> command searches directories for files that match a pattern, the
 (fd0)/syslinux.cfg
 </p>
 
-<h3><a name="s2s3">2.3. Configuration File</a></h3>
-<p>
-The kexec-loader configuration is stored in a text file named kexec-loader.conf on the boot floppy, it may be in UNIX or DOS format. There must be one directive per line with arguments seperated by spaces or tabs, lines beginning with a hash (#) are ignored. You may additionally load the configuration from a GRUB install, which allows kexec-loader to be a drop-in GRUB replacement.
-</p>
-
-<p>The following directives are supported:</p>
-<ul>
-	<li><b>timeout &lt;integer&gt;</b><br />
-	Number of seconds to wait before booting the default target, the first target will be booted if none are marked as default.
-	</li>
-	
-	<li><b>grub-path &lt;path&gt;</b><br />
-	Load device.map and menu.lst from a GRUB installation at this directory. You must specify a device.
-	</li>
-	
-	<li><b>grub-map &lt;GRUB device&gt; &lt;device&gt;</b><br />
-	Map a GRUB device, hd0 => sda will map the disk hd0 to sda whereas hd0,a => sda5 will map BSD partition a on hd0 to sda5, kexec-loader does not support BSD disklabels so you will need to map any BSD partitions you intend to boot. Mappings in kexec-loader.conf will overrule those in device.map.
-	</li>
-	
-	<li><b>kmod &lt;module&gt; &lt;args&gt;</b><br />
-	Set options to be passed to a kernel module if it is loaded.
-	</li>
-</ul>
-
-<p>The following directives are per-target:</p>
-<ul>
-	<li><b>title &lt;text&gt;</b><br />
-	Set the target title, all targets must begin with a title directive.
-	</li>
-	
-	<li><b>root &lt;device&gt;</b><br />
-	Set the root device, you must specify a root device, even if all paths specify their own device.
-	</li>
-	
-	<li><b>kernel &lt;path&gt;</b><br />
-	Path to the kernel, all targets must specify a kernel.
-	</li>
-	
-	<li><b>initrd &lt;path&gt;</b><br />
-	Path to an initrd/initramfs.
-	</li>
-	
-	<li><b>cmdline &lt;text&gt;</b><br />
-	Set the command line which will be passed to the target kernel.
-	</li>
-	
-	<li><b>append &lt;text&gt;</b><br />
-	Set the kernel command line using --append, this appears to do exactly
-	the same thing as cmdline, but is implemented for completeness.
-	</li>
-	
-	<li><b>module &lt;path&gt; [args]</b><br />
-	Load and pass a multiboot module to the target kernel.
-	</li>
-	
-	<li><b>default</b><br />
-	Mark this target as the default.
-	</li>
-	
-	<li><b>reset-vga</b><br />
-	Reset the VGA adaptor before starting the kernel, may be useful if you get garbled or no output on bootup.
-	</li>
-</ul>
-<p>
-Where parameters are shown in &lt;angled brackets&gt;, they are required for that directive. Ones in [square brackets] are optional.
-</p>
-
 <h3><a name="s2s4">2.4. Shell</a></h3>
 <p>
 kexec-loader has a shell which can be used for configuring a target at boot time and performing some other actions. To access it press C on the menu screen, it is also displayed if there are no pre-configured targets available. You can scroll through the command history using the up/down arrow keys.
@@ -333,6 +264,74 @@ kexec-loader has a shell which can be used for configuring a target at boot time
 	<br />Leave the shell and go back to the menu.
 	</li>
 </ul>
+
+<h2><a name="s3">3. Reference</a></h2>
+<h3><a name="s3s1">3.1. Configuration Reference</a></h3>
+<p>
+The configuration file must be named kexec-loader.conf or kxloader.cfg, kexec-loader.conf will be checked for first. The file may be in UNIX or DOS format. Each line may contain a single directive, where the name and value are seperated by spaces/tabs. Lines beginning with a hash (#) symbol are treated as comments.
+</p>
+
+<p>The following directives are supported:</p>
+<ul>
+	<li><b>timeout &lt;off|integer&gt;</b><br />
+	Number of seconds to wait at the menu screen before booting the default target, the first target will be booted if none are marked as default. The default is "off" which will make the menu wait forever.
+	</li>
+	
+	<li><b>grub-path &lt;path&gt;</b><br />
+	Load device.map and menu.lst from a GRUB installation at this directory. You must specify a device.
+	</li>
+	
+	<li><b>grub-map &lt;GRUB device&gt; &lt;device&gt;</b><br />
+	Map a GRUB device, hd0 => sda will map the disk hd0 to sda whereas hd0,a => sda5 will map BSD partition a on hd0 to sda5, kexec-loader does not support BSD disklabels so you will need to map any BSD partitions you intend to boot. Mappings in kexec-loader.conf will overrule those in device.map.
+	</li>
+	
+	<li><b>kmod &lt;module&gt; &lt;args&gt;</b><br />
+	Set options to be passed to a kernel module if it is loaded.
+	</li>
+</ul>
+
+<p>The following directives are per-target:</p>
+<ul>
+	<li><b>title &lt;text&gt;</b><br />
+	Set the target title, all targets must begin with a title directive.
+	</li>
+	
+	<li><b>root &lt;device&gt;</b><br />
+	Set the root device, you must specify a root device, even if all paths specify their own device.
+	</li>
+	
+	<li><b>kernel &lt;path&gt;</b><br />
+	Path to the kernel, all targets must specify a kernel.
+	</li>
+	
+	<li><b>initrd &lt;path&gt;</b><br />
+	Path to an initrd/initramfs.
+	</li>
+	
+	<li><b>cmdline &lt;text&gt;</b><br />
+	Set the command line which will be passed to the target kernel.
+	</li>
+	
+	<li><b>append &lt;text&gt;</b><br />
+	Set the kernel command line using --append, this appears to do exactly
+	the same thing as cmdline, but is implemented for completeness.
+	</li>
+	
+	<li><b>module &lt;path&gt; [args]</b><br />
+	Load and pass a multiboot module to the target kernel.
+	</li>
+	
+	<li><b>default</b><br />
+	Mark this target as the default.
+	</li>
+	
+	<li><b>reset-vga</b><br />
+	Reset the VGA adaptor before starting the kernel, may be useful if you get garbled or no output on bootup.
+	</li>
+</ul>
+<p>
+Where parameters are shown in &lt;angled brackets&gt;, they are required for that directive. Ones in [square brackets] are optional.
+</p>
 
 <h2><a name="s3">3. Building kexec-loader</a></h2>
 <h3><a name="s3s1">3.1. Introduction</a></h3>
