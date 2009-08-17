@@ -87,6 +87,8 @@ void menu_main(void) {
 			console_erase(ERASE_DOWN);
 			boot_target(target);
 			
+			timeout = -1;
+			
 			goto FOOBAR;
 		}
 	}
