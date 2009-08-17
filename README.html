@@ -56,10 +56,16 @@ a:hover {
 		<li><a href="#s3s2">3.2. Shell Reference</a></li>
 	</ul>
 	</li>
-	<li><a href="#s4">4. Support</a>
+	<li><a href="#s4">4. Building kexec-loader</a>
 	<ul>
-		<li><a href="#s4s1">4.1. Website</a></li>
-		<li><a href="#s4s2">4.2. Developer</a></li>
+		<li><a href="#s4s1">4.1. Introduction</a></li>
+		<li><a href="#s4s2">4.2. Compiling</a></li>
+	</ul>
+	</li>
+	<li><a href="#s5">5. Support</a>
+	<ul>
+		<li><a href="#s5s1">5.1. Website</a></li>
+		<li><a href="#s5s2">5.2. Developer</a></li>
 	</ul>
 	</li>
 </ul>
@@ -339,8 +345,8 @@ The kexec-loader shell is designed to closely mimic a traditional UNIX shell, ex
 Keymap files are loaded from the boot floppy, they must be stored in the root directory and named keymap.txt. The file format is a plain text file in UNIX or DOS format with one record per line. The record values are table, key index and action, seperated by tabs. For more information read the keymap.c file.
 </p>
 
-<h2><a name="s3">3. Building kexec-loader</a></h2>
-<h3><a name="s3s1">3.1. Introduction</a></h3>
+<h2><a name="s4">4. Building kexec-loader</a></h2>
+<h3><a name="s4s1">4.1. Introduction</a></h3>
 <p>
 This section explains how to build a kexec-loader disk image, you must build a kernel and toolchain which is not explained in this document. I recommend using uClibc as a toolchain as glibc is too big to fit on a floppy, you must also use Linux 2.6.13 or above, as earlier versions did not have the kexec syscalls.
 </p>
@@ -348,15 +354,14 @@ This section explains how to build a kexec-loader disk image, you must build a k
 You will need the following to compile kexec-loader:
 </p>
 <ul>
-	<li>GNU C compiler</li>
+	<li>GCC Toolchain</li>
 	<li>Linux kernel headers</li>
 	<li>GNU Make</li>
-	<li>cpio archiver</li>
-	<li>Toolchain</li>
 	<li>zlib with headers</li>
+	<li>cpio archiver (For making initramfs)</li>
 </ul>
 
-<h3><a name="s3s2">3.2. Compiling</a></h3>
+<h3><a name="s4s2">4.2. Compiling</a></h3>
 <p>
 To compile kexec-loader, use the following commands:
 </p>
@@ -368,30 +373,17 @@ HOST=i386-linux-uclibc make<br />
 The first command assumes your toolchain was built to target i386-linux-uclibc, in which case the various tools such as gcc can be invoked as i386-linux-uclibc-gcc, ensure you set this to the correct target, or the compile may fail, or end up being compiled with the wrong toolchain. You must also make sure that the toolchain bin directories are included in $PATH.
 </p>
 <p>
-The first command compiles kexec-loader, downloads, patches and compiles kexec-tools, then links them as the binaries src/kexec-loader and src/kexec-loader.static, which are dynamically and statically linked respectively. The second command creates a Linux initramfs archive as initramfs.cpio, the initramfs contains kexec-loader.static as /init, some device nodes and empty directories.
-</p>
-<h3><a name="s3s3">3.3. Creating a Disk Image</a></h3>
-<p>
-This is a fairly generic floppy building method:
-</p>
-<ol>
-	<li>Create a 1.44MB file and format using mkfs.vfat</li>
-	<li>Install and configure SYSLINUX on the floppy image</li>
-	<li>Copy a UPX compressed kernel image to the floppy image</li>
-	<li>Copy misc. files (kexec-loader.conf, README, etc)</li>
-</ol>
-<p>
-Please note that the kexec-loader initramfs is included in the kernel for space reasons, however, this is not required should your chosen bootloader (to load kexec-loader) can support loading it. In addition the UPX compression step is optional.
+The first command compiles kexec-loader, downloads, patches and compiles kexec-tools and e2fsprogs, then links them as the binaries src/kexec-loader and src/kexec-loader.static, which are dynamically and statically linked respectively. The second command creates a Linux initramfs archive as initramfs.cpio, the initramfs contains kexec-loader.static as /init, some device nodes and empty directories.
 </p>
 
-<h2><a name="s4">4. Support</a></h2>
-<h3><a name="s4s1">4.1. Website</a></h3>
+<h2><a name="s5">5. Support</a></h2>
+<h3><a name="s5s1">5.1. Website</a></h3>
 <p>
 For information on kexec-loader, including current development and latest
 releases, please see the project <a href="http://www.solemnwarning.net/kexec-loader/">website</a>.
 </p>
 
-<h3><a name="s4s2">4.2. Developer</a></h3>
+<h3><a name="s5s2">5.2. Developer</a></h3>
 <p>
 The developer of kexec-loader, Daniel Collins (aka solemnwarning), can often be
 found on the Freenode IRC network. To contact solemnwarning, you can use the
