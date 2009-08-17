@@ -334,6 +334,11 @@ The kexec-loader shell is designed to closely mimic a traditional UNIX shell, ex
 	</li>
 </ul>
 
+<h2><a name="s3s3">3.3. Keymap Files</a></h2>
+<p>
+Keymap files are loaded from the boot floppy, they must be stored in the root directory and named keymap.txt. The file format is a plain text file in UNIX or DOS format with one record per line. The record values are table, key index and action, seperated by tabs. For more information read the keymap.c file.
+</p>
+
 <h2><a name="s3">3. Building kexec-loader</a></h2>
 <h3><a name="s3s1">3.1. Introduction</a></h3>
 <p>
