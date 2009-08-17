@@ -53,6 +53,7 @@ a:hover {
 	<li><a href="#s3">3. Reference</a>
 	<ul>
 		<li><a href="#s3s1">3.1. Configuration Reference</a></li>
+		<li><a href="#s3s2">3.2. Shell Reference</a></li>
 	</ul>
 	</li>
 	<li><a href="#s4">4. Support</a>
@@ -206,65 +207,6 @@ The <b>find</b> command searches directories for files that match a pattern, the
 (fd0)/syslinux.cfg
 </p>
 
-<h3><a name="s2s4">2.4. Shell</a></h3>
-<p>
-kexec-loader has a shell which can be used for configuring a target at boot time and performing some other actions. To access it press C on the menu screen, it is also displayed if there are no pre-configured targets available. You can scroll through the command history using the up/down arrow keys.
-</p>
-<ul>
-	<li><b>root &lt;device&gt;</b><br />
-	Set the root device, you must specify a root device to boot.
-	</li>
-	
-	<li><b>kernel &lt;path&gt;</b><br />
-	Path to the kernel, you must specify a kernel.
-	</li>
-	
-	<li><b>initrd &lt;path&gt;</b><br />
-	Path to an initrd/initramfs.
-	</li>
-	
-	<li><b>cmdline &lt;text&gt;</b><br />
-	Set the command line which will be passed to the target kernel.
-	</li>
-	
-	<li><b>append &lt;text&gt;</b><br />
-	Set the kernel command line using --append, this appears to do exactly
-	the same thing as cmdline, but is implemented for completeness.
-	</li>
-	
-	<li><b>module &lt;path&gt; [args]</b><br />
-	Load and pass a multiboot module to the target kernel.
-	</li>
-	
-	<li><b>reset-vga</b><br />
-	Reset the VGA adaptor before starting the kernel, may be useful if you get garbled or no output on bootup.
-	</li>
-	
-	<li><b>boot</b><br />
-	Boot the system using settings entered in the shell.
-	</li>
-	
-	<li><b>disks</b><br />
-	Display a list of disks and partitions which have been detected by Linux.
-	</li>
-	
-	<li><b>ls &lt;directory&gt;</b><br />
-	List the contents of a directory.
-	</li>
-	
-	<li><b>find &lt;filename&gt; &lt;directory&gt;</b><br />
-	Search a directory for files matching the pattern 'filename', filename may include the wildcard characters * or ?.
-	</li>
-	
-	<li><b>cat &lt;filename&gt;</b><br />
-	Print the contents of a file to the console.
-	</li>
-	
-	<li><b>exit</b>
-	<br />Leave the shell and go back to the menu.
-	</li>
-</ul>
-
 <h2><a name="s3">3. Reference</a></h2>
 <h3><a name="s3s1">3.1. Configuration Reference</a></h3>
 <p>
@@ -332,6 +274,65 @@ The configuration file must be named kexec-loader.conf or kxloader.cfg, kexec-lo
 <p>
 Where parameters are shown in &lt;angled brackets&gt;, they are required for that directive. Ones in [square brackets] are optional.
 </p>
+
+<h3><a name="s3s2">3.2. Shell Reference</a></h3>
+<p>
+The kexec-loader shell is designed to closely mimic a traditional UNIX shell, except the parsing is far simpler. Escaping or quoting spaces is unnecassary as the parser only breaks at spaces if the command is expecting multiple arguments, therefor if a command takes multiple arguments only the last one may contain spaces.
+</p>
+<ul>
+	<li><b>root &lt;device&gt;</b><br />
+	Set the root device, you must specify a root device to boot.
+	</li>
+	
+	<li><b>kernel &lt;path&gt;</b><br />
+	Path to the kernel, you must specify a kernel.
+	</li>
+	
+	<li><b>initrd &lt;path&gt;</b><br />
+	Path to an initrd/initramfs.
+	</li>
+	
+	<li><b>cmdline &lt;text&gt;</b><br />
+	Set the command line which will be passed to the target kernel.
+	</li>
+	
+	<li><b>append &lt;text&gt;</b><br />
+	Set the kernel command line using --append, this appears to do exactly
+	the same thing as cmdline, but is implemented for completeness.
+	</li>
+	
+	<li><b>module &lt;path&gt; [args]</b><br />
+	Load and pass a multiboot module to the target kernel.
+	</li>
+	
+	<li><b>reset-vga</b><br />
+	Reset the VGA adaptor before starting the kernel, may be useful if you get garbled or no output on bootup.
+	</li>
+	
+	<li><b>boot</b><br />
+	Boot the system using settings entered in the shell.
+	</li>
+	
+	<li><b>disks</b><br />
+	Display a list of disks and partitions which have been detected by Linux.
+	</li>
+	
+	<li><b>ls &lt;directory&gt;</b><br />
+	List the contents of a directory.
+	</li>
+	
+	<li><b>find &lt;filename&gt; &lt;directory&gt;</b><br />
+	Search a directory for files matching the pattern 'filename', filename may include the wildcard characters * or ?.
+	</li>
+	
+	<li><b>cat &lt;filename&gt;</b><br />
+	Print the contents of a file to the console.
+	</li>
+	
+	<li><b>exit</b>
+	<br />Leave the shell and go back to the menu.
+	</li>
+</ul>
 
 <h2><a name="s3">3. Building kexec-loader</a></h2>
 <h3><a name="s3s1">3.1. Introduction</a></h3>
