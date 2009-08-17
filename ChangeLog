@@ -8,6 +8,8 @@ Version 2.1.1:
 	set in kexec-loader.conf.
 	
 	Fixed bug: Module loading failed due to my lack of testing.
+	
+	Changed ls command to not output timestamps or list ./.. directories.
 
 Version 2.1:
 	Fixed a bug: grub-map caused an "Unknown directive" error.
