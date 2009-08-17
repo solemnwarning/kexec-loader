@@ -673,9 +673,13 @@ static void cmd_ls(char *cmd, char *args) {
 	
 	struct dirent *node;
 	struct stat stbuf;
-	char timestr[1024], filename[1024];
+	char filename[1024];
 	
 	while((node = readdir(dir))) {
+		if(kl_streq(node->d_name, ".") || kl_streq(node->d_name, "..")) {
+			continue;
+		}
+		
 		snprintf(filename, 1024, "%s/%s", path, node->d_name);
 		
 		if(lstat(filename, &stbuf) == -1) {
@@ -683,12 +687,10 @@ static void cmd_ls(char *cmd, char *args) {
 			break;
 		}
 		
-		strftime(timestr, 1024, "%Y-%m-%d %H:%M", gmtime(&(stbuf.st_mtime)));
-		
 		if(stbuf.st_mode & S_IFDIR) {
-			printf("%s\t%s/\n", timestr, node->d_name);
+			printf("%s/\n", node->d_name);
 		}else{
-			printf("%s\t%s\n", timestr, node->d_name);
+			printf("%s\n", node->d_name);
 		}
 	}
 	
