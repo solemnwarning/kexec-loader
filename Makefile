@@ -33,7 +33,7 @@ CC := gcc
 LD := ld
 CFLAGS := -Wall -DVERSION=\"$(VERSION)\"
 INCLUDES := -Isrc/e2fsprogs-$(E2FS_VER)/lib/
-LIBS := src/kexec.a src/libblkid.a src/libuuid.a -lz
+LIBS := src/kexec.a src/libblkid.a src/libuuid.a -lz -llzmadec
 export KLBASE := $(PWD)
 
 ifdef HOST

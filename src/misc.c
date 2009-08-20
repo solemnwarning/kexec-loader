@@ -78,13 +78,13 @@ int main(int argc, char **argv) {
 			printd("Warning: No configuration file present on initramfs");
 		}
 		
-		modprobe_root();
+		load_kmod(NULL);
 		
 		if(check_file("/keymap.txt")) {
 			load_keymap("/keymap.txt");
 		}
 	}else{
-		modprobe_root();
+		load_kmod(NULL);
 		
 		char *kdevice = get_cmdline("root");
 		char *device = kdevice ? kdevice : "LABEL=kexecloader";
@@ -104,7 +104,7 @@ int main(int argc, char **argv) {
 				printd("Warning: No configuration file present on boot disk");
 			}
 			
-			modprobe_boot();
+			load_kmod(NULL);
 			grub_load();
 			
 			if(access(keymap, F_OK) == 0) {

@@ -146,8 +146,7 @@ void list_nuke(void *root);
 
 int check_file(char const *file);
 
-void modprobe_boot(void);
-void modprobe_root(void);
+int load_kmod(char const *module);
 void boot_target(kl_target *target);
 void shell_main(void);
 void load_keymap(char const *file);

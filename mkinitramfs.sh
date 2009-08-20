@@ -57,7 +57,7 @@ else
 fi
 
 echo "Creating $initramfs tree..."
-mkdir -p -m 0755 "$initramfs/"{dev,mnt/target,proc,sbin} || exit 1
+mkdir -p -m 0755 "$initramfs/"{dev,mnt/target,proc,sbin,modules} || exit 1
 
 echo "Copying programs..."
 install -m 0755 kexec-loader.static "$initramfs/init" || exit 1
