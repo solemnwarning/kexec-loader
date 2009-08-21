@@ -91,7 +91,7 @@ void boot_target(kl_target *target) {
 		ARGV_PRINTF("--command-line=%s", target->cmdline);
 	}
 	if(target->append[0]) {
-		ARGV_PRINTF("--append=%s", target->cmdline);
+		ARGV_PRINTF("--append=%s", target->append);
 	}
 	if(target->flags & TARGET_RESET) {
 		ARGV_COPY("--reset-vga");
