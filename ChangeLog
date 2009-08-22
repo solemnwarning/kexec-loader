@@ -12,6 +12,9 @@ Version 2.1.1:
 	Changed ls command to not output timestamps or list ./.. directories.
 	
 	Fixed bug: Append option ignored and cmdline used in its place.
+	
+	Fixed bug: Error from kexec-tools dying not visible when booting menu
+	target as alert was not set on failure.
 
 Version 2.1:
 	Fixed a bug: grub-map caused an "Unknown directive" error.

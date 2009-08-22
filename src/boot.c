@@ -123,6 +123,7 @@ void boot_target(kl_target *target) {
 	
 	wait(&status);
 	if(!WIFEXITED(status) || WEXITSTATUS(status) != 0) {
+		alert = 1;
 		goto CLEANUP;
 	}
 	
