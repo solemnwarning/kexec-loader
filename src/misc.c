@@ -565,7 +565,7 @@ static void load_conf(char const *filename) {
 		if(kl_streq(name, "timeout")) {
 			CHECK_HASARG();
 			
-			if(kl_streq(name, "off")) {
+			if(kl_streq(val, "off")) {
 				timeout = -2;
 			}else{
 				timeout = atoi(val);
