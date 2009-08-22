@@ -104,7 +104,9 @@ int main(int argc, char **argv) {
 				printd("Warning: No configuration file present on boot disk");
 			}
 			
+			extract_module_tars();
 			load_kmod(NULL);
+			
 			grub_load();
 			
 			if(access(keymap, F_OK) == 0) {

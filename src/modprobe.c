@@ -468,3 +468,31 @@ int load_kmod(char const *module) {
 	
 	return 0;
 }
+
+/* Extract tarballs from the boot floppy modules directory */
+void extract_module_tars(void) {
+	if(!boot_disk) {
+		return;
+	}
+	
+	char *dname = kl_sprintf("/mnt/%s/modules/", boot_disk->name), *tname;
+	
+	DIR *dh = opendir(dname);
+	if(!dh && errno != ENOENT) {
+		printD("Error opening modules directory: %s", strerror(errno));
+		return ;
+	}
+	
+	struct dirent *node;
+	while((node = readdir(dh))) {
+		char *ext = strrchr(node->d_name, '.');
+		
+		if(ext && (kl_streq(ext, ".tar") || kl_streq(ext, ".tlz"))) {
+			tname = kl_sprintf("%s%s", dname, node->d_name);
+			extract_tar(tname, "/modules/");
+			free(tname);
+		}
+	}
+	
+	closedir(dh);
+}

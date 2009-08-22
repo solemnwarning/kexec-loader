@@ -114,6 +114,8 @@ typedef struct kl_target {
 		list_add_copy(&targets, &target, sizeof(target)); \
 	}
 
+#define SMALLEST(a, b) ((a) > (b) ? (b) : (a))
+
 extern kl_disk *boot_disk;
 extern int timeout;
 extern char grub_path[];
@@ -147,8 +149,10 @@ void list_nuke(void *root);
 int check_file(char const *file);
 
 int load_kmod(char const *module);
+void extract_module_tars(void);
 void boot_target(kl_target *target);
 void shell_main(void);
 void load_keymap(char const *file);
+int extract_tar(char const *name, char const *dest);
 
 #endif /* !KL_MISC_H */
