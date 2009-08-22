@@ -171,6 +171,8 @@ int extract_tar(char const *name, char const *dest) {
 			if(!outfh) {
 				FAIL("Error opening tarfile.tmp: %s", strerror(errno));
 			}
+		}else{
+			debug("Not extracting file '%s', already exists", header.name);
 		}
 		
 		while(file_count < file_size) {

@@ -42,20 +42,6 @@
 
 #define elf2host(dest, src) elf2host_(&(dest), src, sizeof(dest), elf[EI_DATA])
 
-typedef struct klm_record klm_record;
-typedef struct klm_list klm_list;
-
-struct klm_record {
-	char name[56];
-	uint32_t offset;
-	uint32_t size;
-} __attribute__((__packed__));
-
-struct klm_list {
-	klm_list *next;
-	klm_record r;
-};
-
 static char *elf_getsection(char const *elf, char const *name, size_t *size);
 static char *elf32_getsection(char const *elf, char const *name, size_t *size);
 static char *elf64_getsection(char const *elf, char const *name, size_t *size);
@@ -255,86 +241,6 @@ static const char *moderror(int err) {
 	}
 }
 
-/* Attempt to load a kernel module from a .klm file, NULL will load them all
- * Returns 1 if a module was loaded, 0 otherwise.
-*/
-static int klm_load(char const *klm, char const *module) {
-	lzmadec_FILE *fh = lzmadec_open(klm);
-	if(!fh) {
-		printD("%s: open failed (%s)", klm, strerror(errno));
-		return -1;
-	}
-	
-	int retval = 0, i, s;
-	klm_list *modules = NULL, *rp, lb;
-	klm_record rb;
-	
-	do {
-		int i = lzmadec_read(fh, (uint8_t*)&rb, sizeof(rb));
-		if(i == -1) {
-			printD("%s: read failed (%s)", klm, strerror(errno));
-			goto END;
-		}
-		
-		if(i < sizeof(rb)) {
-			printD("%s: incomplete file", klm);
-			goto END;
-		}
-		
-		rb.offset = ntohl(rb.offset);
-		rb.size = ntohl(rb.size);
-		
-		if(rb.offset) {
-			lb.next = NULL;
-			lb.r = rb;
-			
-			list_add_copy(&modules, &lb, sizeof(lb));
-		}
-	} while(rb.offset);
-	
-	for(rp = modules; rp; rp = rp->next) {
-		if(module && !kl_streq(module, rp->r.name)) {
-			continue;
-		}
-		
-		if(lzmadec_seek(fh, rp->r.offset, SEEK_SET) == -1) {
-			printD("%s: seek failed (%s)", klm, strerror(errno));
-			goto END;
-		}
-		
-		unsigned char *buf = kl_malloc(rp->r.size);
-		
-		for(s = 0; s < rp->r.size; s += i) {
-			if(lzmadec_eof(fh)) {
-				printD("%s: incomplete file", klm);
-				free(buf);
-				
-				goto END;
-			}
-			
-			i = lzmadec_read(fh, buf+s, rp->r.size-s);
-			if(i == -1) {
-				printD("%s: read failed (%s)", klm, strerror(errno));
-				free(buf);
-				
-				goto END;
-			}
-		}
-		
-		if(modprobe(rp->r.name, (char*)buf, s)) {
-			retval = 1;
-		}
-		
-		free(buf);
-	}
-	
-	END:
-	lzmadec_close(fh);
-	list_nuke(modules);
-	
-	return retval;
-}
-
 /* Attempt to load a kernel module from an uncompressed or gzip compressed file
  * Returns 1 if the module was loaded, 0 otherwise
 */
@@ -413,41 +319,6 @@ static int try_kodir(char const *path, char const *module) {
 	return ret;
 }
 
-#define TRY_KLMDIR(fmt, ...) \
-	sprintf(path, fmt, ## __VA_ARGS__); \
-	if(try_klmdir(path, module)) { \
-		return 1; \
-	}
-
-static int try_klmdir(char const *path, char const *module) {
-	DIR *dh = opendir(path);
-	if(!dh) {
-		printD("%s: diropen failed (%s)", path, strerror(errno));
-		return 0;
-	}
-	
-	int ret = 0;
-	struct dirent *node = NULL;
-	char klmfile[1024];
-	
-	while((node = readdir(dh))) {
-		if(globcmp(node->d_name, "*.klm", GLOB_STAR)) {
-			sprintf(klmfile, "%s/%s", path, node->d_name);
-			
-			if(klm_load(klmfile, module)) {
-				ret = 1;
-				
-				if(module) {
-					break;
-				}
-			}
-		}
-	}
-	
-	closedir(dh);
-	return ret;
-}
-
 /* Find and load modules
  * Returns 1 if a module was loaded, 0 otherwise
 */
@@ -459,12 +330,6 @@ int load_kmod(char const *module) {
 	}
 	
 	TRY_KODIR("/modules");
-	
-	if(boot_disk) {
-		TRY_KLMDIR("/mnt/%s/modules", boot_disk->name);
-	}
-	
-	TRY_KLMDIR("/modules");
 	
 	return 0;
 }
