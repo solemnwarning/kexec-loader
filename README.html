@@ -154,7 +154,7 @@ grub-map hd0,2 LABEL=root
 </p>
 <h3><a name="s2s3">2.3. Kernel Modules</a></h3>
 <p>
-If you are running a modular kernel (All official builds use a modular kernel) you can load modules to support hardware, filesystems and encodings not supported by the base kernel. To install a module copy it to the modules directory on the boot disk, if the module is required to access the boot disk you can create a directory called modules in the initramfs and copy it there.
+If you are running a modular kernel (All official builds use a modular kernel) you can load modules to support hardware, filesystems and encodings not supported by the base kernel. To install a module copy it to the modules directory on the boot disk, if the module is required to access the boot disk you can create a directory called modules in the initramfs and copy it there. One or more modules may be packaged in a tar file, or an LZMA compressed tar file with the .tlz extension.
 </p>
 <p>
 Some modules or hardware combinations may require arguments to be passed to the module, this is usually for ISA and non-PnP hardware. If you have such hardware you can specify arguments to be passed in kexec-loader.conf, these will only be used for modules loaded after kexec-loader.conf.
