@@ -535,20 +535,19 @@ void list_nuke(void *root) {
 }
 
 /* Load kexec-loader.conf */
-static void load_conf(char const *filename) {
-	FILE *fh = fopen(filename, "r");
+static void load_conf(char const *fname) {
+	FILE *fh = fopen(fname, "r");
 	if(!fh) {
-		printD("Error opening kexec-loader.conf: %s", strerror(errno));
+		printD("Error opening %s: %s", fname, strerror(errno));
 		return;
 	}
 	
-	printd("Loading kexec-loader.conf...");
+	printd("Loading %s...", fname);
 	
 	char line[1024], *name, *val, *val2;
 	int lnum = 0, topen = 0;
 	kl_target target;
 	kl_module mod;
-	char *fname = "kexec-loader.conf";
 	kl_gdev gdev;
 	
 	while(fgets(line, 1024, fh)) {
@@ -578,7 +577,7 @@ static void load_conf(char const *filename) {
 			CHECK_VPATH();
 			
 			if(*val != '(') {
-				printD("kexec-loader.conf:%d: No device specified", lnum);
+				printD("%s:%d: No device specified", fname, lnum);
 				continue;
 			}
 			
@@ -590,7 +589,7 @@ static void load_conf(char const *filename) {
 			CHECK_HASARG_MULTI(val2, 2);
 			
 			if(!parse_gdev(&gdev, val)) {
-				printD("kexec-loader.conf:%d: Invalid GRUB device '%s'", lnum, val);
+				printD("%s:%d: Invalid GRUB device '%s'", fname, lnum, val);
 				continue;
 			}
 			
@@ -686,10 +685,10 @@ static void load_conf(char const *filename) {
 			continue;
 		}
 		
-		printD("kexec-loader.conf:%d: Unknown directive '%s'", lnum, name);
+		printD("%s:%d: Unknown directive '%s'", fname, lnum, name);
 	}
 	if(ferror(fh)) {
-		printD("Error reading kexec-loader.conf: %s", strerror(errno));
+		printD("Error reading %s: %s", fname, strerror(errno));
 	}
 	
 	if(topen) {
