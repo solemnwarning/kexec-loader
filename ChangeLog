@@ -15,6 +15,9 @@ Version 2.1.1:
 	
 	Fixed bug: Error from kexec-tools dying not visible when booting menu
 	target as alert was not set on failure.
+	
+	Added support for modules packed in TAR archives, optionally compressed
+	with LZMA using the .tlz extension.
 
 Version 2.1:
 	Fixed a bug: grub-map caused an "Unknown directive" error.
