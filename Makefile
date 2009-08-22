@@ -47,7 +47,7 @@ endif
 OBJS := src/misc.o src/disk.o src/console.o src/menu.o src/modprobe.o \
 	src/boot.o src/grub.o src/shell.o src/globcmp.o src/keymap.o
 
-all: kexec-loader kexec-loader.static
+all: kexec-loader kexec-loader.static mkklm
 
 clean:
 	rm -f src/*.o src/*.a
@@ -64,6 +64,9 @@ kexec-loader: $(OBJS) src/kexec.a
 
 kexec-loader.static: $(OBJS) src/kexec.a
 	$(CC) $(CFLAGS) -static -o kexec-loader.static $(OBJS) $(LIBS)
+
+mkklm: src/mkklm.c
+	gcc -Wall -o mkklm src/mkklm.c
 
 %.o: %.c src/libblkid.a
 	$(CC) $(CFLAGS) $(INCLUDES) -c -o $@ $<

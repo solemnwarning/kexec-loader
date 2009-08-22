@@ -266,7 +266,7 @@ static int klm_load(char const *klm, char const *module) {
 	}
 	
 	int retval = 0, i, s;
-	klm_list *modules = NULL, *rp;
+	klm_list *modules = NULL, *rp, lb;
 	klm_record rb;
 	
 	do {
@@ -275,16 +275,20 @@ static int klm_load(char const *klm, char const *module) {
 			printD("%s: read failed (%s)", klm, strerror(errno));
 			goto END;
 		}
+		
 		if(i < sizeof(rb)) {
 			printD("%s: incomplete file", klm);
 			goto END;
 		}
 		
 		rb.offset = ntohl(rb.offset);
-		rb.size = ntohl(rb.offset);
+		rb.size = ntohl(rb.size);
 		
 		if(rb.offset) {
-			list_add_copy(&modules, &rb, sizeof(rb));
+			lb.next = NULL;
+			lb.r = rb;
+			
+			list_add_copy(&modules, &lb, sizeof(lb));
 		}
 	} while(rb.offset);
 	
@@ -300,17 +304,17 @@ static int klm_load(char const *klm, char const *module) {
 		
 		unsigned char *buf = kl_malloc(rp->r.size);
 		
-		for(s = 0; s < rp->r.size;) {
-			i = lzmadec_read(fh, buf+s, rp->r.size-s);
-			if(i == -1) {
-				printD("%s: read failed (%s)", klm, strerror(errno));
+		for(s = 0; s < rp->r.size; s += i) {
+			if(lzmadec_eof(fh)) {
+				printD("%s: incomplete file", klm);
 				free(buf);
 				
 				goto END;
 			}
 			
-			if(lzmadec_eof(fh)) {
-				printD("%s: incomplete file", klm);
+			i = lzmadec_read(fh, buf+s, rp->r.size-s);
+			if(i == -1) {
+				printD("%s: read failed (%s)", klm, strerror(errno));
 				free(buf);
 				
 				goto END;
