@@ -230,8 +230,10 @@ static int tar_mkdirs(char const *rpath) {
 	char path[128];
 	strncpy(path, rpath, 128);
 	
-	if(strchr(path, '/')) {
-		strrchr(path, '/')[0] = '\0';
+	char *last = strrchr(path, '/');
+	
+	if(last && last > path) {
+		last[0] = '\0';
 		
 		if(strchr(path, '/') && !tar_mkdirs(path)) {
 			return 0;
