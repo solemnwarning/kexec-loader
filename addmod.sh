@@ -22,15 +22,30 @@ if [ -z "$2" ]; then
 fi
 
 TMPDIR="/tmp/addmod.$$"
+MOD_EXT=`echo "$1" | sed -e 's/.*\.//g'`
 
 mkdir -p "$TMPDIR/modules/"
 
-if [ `echo "$1" | sed -e 's/.*\.//g'` = 'tlz' ]
+# I find your lack of else if disturbing
+#
+if [ $MOD_EXT = 'ko' ]
 then
-	# Tar is stupid...
-	tar --lzma -xf "$1" -C "$TMPDIR/modules/"
+	cat "$1" | gunzip > "$TMPDIR/modules/`basename "$1"`" 2>&1
+	
+	# If decompression fails, assume module is uncompressed
+	#
+	if [ $? == 1 ]
+	then
+		cp "$1" "$TMPDIR/modules/"
+	fi
 else
-	tar -xf "$1" -C "$TMPDIR/modules/"
+	if [ $MOD_EXT = 'tlz' ]
+	then
+		# Tar is stupid...
+		tar --lzma -xf "$1" -C "$TMPDIR/modules/"
+	else
+		tar -xf "$1" -C "$TMPDIR/modules/"
+	fi
 fi
 
 cp "$2" "$TMPDIR/initramfs.cpio.lzma"
