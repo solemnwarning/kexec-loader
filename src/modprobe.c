@@ -280,7 +280,7 @@ static int gzfile_load(char const *filename, char const *module) {
 
 #define TRY_KODIR(fmt, ...) \
 	sprintf(path, fmt, ## __VA_ARGS__); \
-	if(try_kodir(path, module)) { \
+	if(check_file(path) && try_kodir(path, module)) { \
 		return 1; \
 	}
 
@@ -343,9 +343,13 @@ void extract_module_tars(void) {
 	char *dname = kl_sprintf("/mnt/%s/modules/", boot_disk->name), *tname;
 	
 	DIR *dh = opendir(dname);
-	if(!dh && errno != ENOENT) {
+	if(!dh) {
+		if(errno == ENOENT) {
+			return;
+		}
+		
 		printD("Error opening modules directory: %s", strerror(errno));
-		return ;
+		return;
 	}
 	
 	struct dirent *node;
