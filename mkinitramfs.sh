@@ -1,5 +1,5 @@
 #!/bin/bash
-# Create an initramfs for kexec-loader
+# Create an LZMA compressed initramfs for kexec-loader
 # Copyright (C) 2007-2009 Daniel Collins <solemnwarning@solemnwarning.net>
 #
 # This program is free software; you can redistribute it and/or modify
@@ -36,9 +36,10 @@ cprog mknod
 cprog find
 cprog cpio
 cprog rm
+cprog lzma
 
 if [ -z "$1" ]; then
-	echo "Usage: $0 <outfile.cpio>" 1>&2
+	echo "Usage: $0 <outfile.cpio.lzma>" 1>&2
 	exit 1
 fi
 
@@ -80,7 +81,7 @@ mknod -m 0600 "$initramfs/dev/ttyS2" c 4 66 || exit 1
 mknod -m 0600 "$initramfs/dev/ttyS3" c 4 67 || exit 1
 
 echo "Creating $initramfs_cpio..."
-cd "$initramfs" && find | cpio --create --format=newc --quiet > "$initramfs_cpio" || exit 1
+cd "$initramfs" && find | cpio --create --format=newc --quiet | lzma -9 > "$initramfs_cpio" || exit 1
 cd "$rdir"
 
 echo "Deleting $initramfs..."

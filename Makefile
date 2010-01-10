@@ -86,8 +86,7 @@ syslinux.cfg:
 	echo "DEFAULT /vmlinuz initrd=/initrd.img" > syslinux.cfg
 
 initrd.img: kexec-loader.static
-	./mkinitramfs.sh initramfs.cpio
-	lzma -c -9 initramfs.cpio > initrd.img
+	./mkinitramfs.sh initrd.img
 
 kexec-loader.static: $(OBJS) src/kexec.a
 	$(CC) $(CFLAGS) -static -o kexec-loader.static $(OBJS) $(LIBS)
