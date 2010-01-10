@@ -65,6 +65,9 @@ kexec-loader: $(OBJS) src/kexec.a
 	$(CC) $(CFLAGS) -o kexec-loader $(OBJS) $(LIBS)
 
 floppy: syslinux.cfg initrd.img
+ifeq ($(KERNEL),)
+	@echo "Please set KERNEL to the Linux kernel source directory"
+else
 	mformat -i $(FLOPPY) -C -f 1440 -v kexecloader ::
 	mmd -i $(FLOPPY) ::/syslinux
 	syslinux -d /syslinux $(FLOPPY)
@@ -73,6 +76,9 @@ floppy: syslinux.cfg initrd.img
 	mcopy -i $(FLOPPY) README.html ::/
 	mcopy -i $(FLOPPY) kexec-loader.conf ::/
 	mmd -i $(FLOPPY) ::/modules
+	mcopy -i $(FLOPPY) $(KERNEL)/.config ::/linux.cfg
+	mcopy -i $(FLOPPY) $(KERNEL)/arch/x86/boot/bzImage ::/vmlinuz
+endif
 
 syslinux.cfg:
 	echo "DEFAULT /vmlinuz initrd=/initrd.img" > syslinux.cfg
