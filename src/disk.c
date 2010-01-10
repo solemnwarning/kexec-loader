@@ -157,11 +157,11 @@ kl_disk *find_disk(char const *id) {
 	
 	while(ptr) {
 		if(!ret && kl_strnceq(id, "LABEL=", 6)) {
-			if(ptr->label[0] && kl_streq(ptr->label, id+6)) {
+			if(ptr->label[0] && kl_strceq(ptr->label, id+6)) {
 				match = 1;
 			}
 		}else if(!ret && kl_strnceq(id, "UUID=", 5)) {
-			if(ptr->uuid[0] && kl_streq(ptr->uuid, id+5)) {
+			if(ptr->uuid[0] && kl_strceq(ptr->uuid, id+5)) {
 				match = 1;
 			}
 		}else if(!ret && kl_streq(ptr->name, id)) {

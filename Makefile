@@ -36,6 +36,8 @@ INCLUDES := -Isrc/e2fsprogs-$(E2FS_VER)/lib/
 LIBS := src/kexec.a src/libblkid.a src/libuuid.a -lz -llzmadec
 export KLBASE := $(PWD)
 
+FLOPPY ?= floppy.img
+
 ifdef HOST
 	CC := $(HOST)-gcc
 	LD := $(HOST)-ld
@@ -61,6 +63,23 @@ distclean: clean
 
 kexec-loader: $(OBJS) src/kexec.a
 	$(CC) $(CFLAGS) -o kexec-loader $(OBJS) $(LIBS)
+
+floppy: syslinux.cfg initrd.img
+	mformat -i $(FLOPPY) -C -f 1440 -v kexecloader ::
+	mmd -i $(FLOPPY) ::/syslinux
+	syslinux -d /syslinux $(FLOPPY)
+	mcopy -i $(FLOPPY) syslinux.cfg ::/syslinux
+	mcopy -i $(FLOPPY) initrd.img ::/
+	mcopy -i $(FLOPPY) README.html ::/
+	mcopy -i $(FLOPPY) kexec-loader.conf ::/
+	mmd -i $(FLOPPY) ::/modules
+
+syslinux.cfg:
+	echo "DEFAULT /vmlinuz initrd=/initrd.img" > syslinux.cfg
+
+initrd.img: kexec-loader.static
+	./mkinitramfs.sh initramfs.cpio
+	lzma -c -9 initramfs.cpio > initrd.img
 
 kexec-loader.static: $(OBJS) src/kexec.a
 	$(CC) $(CFLAGS) -static -o kexec-loader.static $(OBJS) $(LIBS)
