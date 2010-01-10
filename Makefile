@@ -78,8 +78,8 @@ endif
 	mcopy -i $(FLOPPY) kexec-loader.conf ::/
 	mmd -i $(FLOPPY) ::/modules
 	mcopy -i $(FLOPPY) $(KERNEL) ::/vmlinuz
-ifneq ($(KERNEL_CFG),)
-	mcopy -i $(FLOPPY) $(KERNEL_CFG) ::/linux.cfg
+ifneq ($(KCONFIG),)
+	mcopy -i $(FLOPPY) $(KCONFIG) ::/linux.cfg
 endif
 
 syslinux.cfg:
