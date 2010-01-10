@@ -30,7 +30,6 @@ function cprog() {
 cprog whoami
 cprog mkdir
 cprog install
-cprog ln
 cprog strip
 cprog mknod
 cprog find
@@ -45,44 +44,27 @@ fi
 
 if [ "`whoami`" != "root" ]; then
 	cprog fakeroot
-	exec fakeroot -- $0 $1 $2
+	exec fakeroot -- $0 $*
 fi
 
-initramfs="initramfs.tmp"
-rdir="$PWD"
+mkdir -p -m 0755 initramfs.tmp/{dev,mnt,proc,modules} || exit 1
 
-if echo "$1" | grep -e "\/.*/" > /dev/null; then
-	initramfs_cpio="$1"
-else
-	initramfs_cpio="$PWD/$1"
-fi
+install -m 0755 kexec-loader.static initramfs.tmp/init || exit 1
+strip -s initramfs.tmp/init || exit 1
 
-echo "Creating $initramfs tree..."
-mkdir -p -m 0755 "$initramfs/"{dev,mnt/target,proc,sbin,modules} || exit 1
+mknod -m 0600 initramfs.tmp/dev/console c 5 1 || exit 1
+mknod -m 0600 initramfs.tmp/dev/tty1 c 4 1 || exit 1
+mknod -m 0600 initramfs.tmp/dev/tty2 c 4 2 || exit 1
+mknod -m 0600 initramfs.tmp/dev/tty3 c 4 3 || exit 1
+mknod -m 0600 initramfs.tmp/dev/tty4 c 4 4 || exit 1
+mknod -m 0600 initramfs.tmp/dev/tty5 c 4 5 || exit 1
+mknod -m 0600 initramfs.tmp/dev/tty6 c 4 6 || exit 1
 
-echo "Copying programs..."
-install -m 0755 kexec-loader.static "$initramfs/init" || exit 1
+mknod -m 0600 initramfs.tmp/dev/ttyS0 c 4 64 || exit 1
+mknod -m 0600 initramfs.tmp/dev/ttyS1 c 4 65 || exit 1
+mknod -m 0600 initramfs.tmp/dev/ttyS2 c 4 66 || exit 1
+mknod -m 0600 initramfs.tmp/dev/ttyS3 c 4 67 || exit 1
 
-echo "Stripping symbols..."
-strip -s "$initramfs/init"
+bash -c 'cd initramfs.tmp && find | cpio --create --format=newc --quiet' | lzma -9 > "$1" || exit 1
 
-echo "Creating devices..."
-mknod -m 0600 "$initramfs/dev/console" c 5 1 || exit 1
-mknod -m 0600 "$initramfs/dev/tty1" c 4 1 || exit 1
-mknod -m 0600 "$initramfs/dev/tty2" c 4 2 || exit 1
-mknod -m 0600 "$initramfs/dev/tty3" c 4 3 || exit 1
-mknod -m 0600 "$initramfs/dev/tty4" c 4 4 || exit 1
-mknod -m 0600 "$initramfs/dev/tty5" c 4 5 || exit 1
-mknod -m 0600 "$initramfs/dev/tty6" c 4 6 || exit 1
-
-mknod -m 0600 "$initramfs/dev/ttyS0" c 4 64 || exit 1
-mknod -m 0600 "$initramfs/dev/ttyS1" c 4 65 || exit 1
-mknod -m 0600 "$initramfs/dev/ttyS2" c 4 66 || exit 1
-mknod -m 0600 "$initramfs/dev/ttyS3" c 4 67 || exit 1
-
-echo "Creating $initramfs_cpio..."
-cd "$initramfs" && find | cpio --create --format=newc --quiet | lzma -9 > "$initramfs_cpio" || exit 1
-cd "$rdir"
-
-echo "Deleting $initramfs..."
-rm -rf "$initramfs"
+rm -rf initramfs.tmp
