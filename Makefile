@@ -47,7 +47,8 @@ ifdef HOST
 endif
 
 OBJS := src/misc.o src/disk.o src/console.o src/menu.o src/modprobe.o \
-	src/boot.o src/grub.o src/shell.o src/globcmp.o src/keymap.o src/tar.o
+	src/boot.o src/grub.o src/shell.o src/globcmp.o src/keymap.o src/tar.o \
+	src/vfs.o
 
 all: kexec-loader kexec-loader.static
 
