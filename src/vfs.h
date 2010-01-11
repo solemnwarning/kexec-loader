@@ -18,10 +18,16 @@
 
 #ifndef KL_VFS_H
 #define KL_VFS_H
+#include <sys/stat.h>
+#include <sys/types.h>
+#include <fcntl.h>
+#include <stdio.h>
+#include <dirent.h>
 
 char *vfs_translate_path(char const *path_in);
 void vfs_set_root(char const *root);
 int vfs_open(char const *filename, int flags, ...);
 FILE *vfs_fopen(char const *filename, char const *mode);
+DIR *vfs_opendir(char const *filename);
 
 #endif /* !KL_VFS_H */

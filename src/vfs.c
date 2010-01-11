@@ -24,6 +24,7 @@
 #include <fcntl.h>
 #include <stdarg.h>
 #include <errno.h>
+#include <dirent.h>
 
 #include "disk.h"
 #include "misc.h"
@@ -136,4 +137,16 @@ FILE *vfs_fopen(char const *filename, char const *mode) {
 	
 	free(path);
 	return fh;
+}
+
+DIR *vfs_opendir(char const *filename) {
+	char *path = vfs_translate_path(filename);
+	if(!path) {
+		return NULL;
+	}
+	
+	DIR *dh = opendir(path);
+	
+	free(path);
+	return dh;
 }
