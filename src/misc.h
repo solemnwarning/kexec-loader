@@ -21,6 +21,10 @@
 
 #include "disk.h"
 
+#define EINFILE	256	/* Invalid filename */
+#define EBADFS	257	/* Unknown filesystem format */
+#define ENDISK	258	/* No disk specified */
+
 #define TARGET_DEFAULT	(int)(1<<0)
 #define TARGET_RESET	(int)(1<<1)
 
@@ -139,6 +143,7 @@ int kl_strneq(char const *s1, char const *s2, int max);
 int kl_strceq(char const *s1, char const *s2);
 int kl_strnceq(char const *s1, char const *s2, int max);
 int kl_strins(char *dest, char const *src, int offset, int size);
+char const *kl_strerror(int errnum);
 
 void list_add(void *rptr, void *node);
 void list_add_copy(void *rptr, void *node, int size);

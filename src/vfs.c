@@ -29,10 +29,6 @@
 #include "misc.h"
 #include "vfs.h"
 
-#define EINFILE	256	/* Invalid filename */
-#define EBADFS	257	/* Unknown filesystem format */
-#define ENDISK	258	/* No disk specified */
-
 static char *vfs_root = NULL;
 
 char *vfs_translate_path(char const *path_in) {

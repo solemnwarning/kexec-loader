@@ -461,6 +461,15 @@ int kl_strins(char *dest, char const *src, int offset, int size) {
 	return req;
 }
 
+char const *kl_strerror(int errnum) {
+	switch(errnum) {
+		case EINFILE:	return "Invalid filename";
+		case EBADFS:	return "Unknown filesystem format";
+		case ENDISK:	return "No disk specified";
+		default:	return strerror(errno);
+	}
+}
+
 struct list { struct list *next; };
 
 /* Add an entry to a list */
