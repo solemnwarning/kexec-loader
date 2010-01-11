@@ -33,6 +33,7 @@
 #include "misc.h"
 #include "disk.h"
 #include "globcmp.h"
+#include "vfs.h"
 
 #define CMDBUF_SIZE 1024
 #define HISTORY_SIZE 32
@@ -67,8 +68,6 @@ static char *read_cmd(char **history);
 static void erase_input(int offset, int len);
 static void replace_input(char const *cmd, int offset);
 static void set_cursor(int offset);
-static char *sh_get_rpath(char const *path);
-static char *sh_vpath(char const *path);
 static struct ac_list *ac_search(char *cmd, int offset);
 static void ac_add(struct ac_list **root, char const *a1, char const *a2, char const *d1, char const *d2);
 static void ac_path(struct ac_list **list, char const *argx, enum ac_mode mode);
@@ -387,52 +386,6 @@ static void set_cursor(int offset) {
 	console_setpos(col, row);
 }
 
-static char *sh_get_rpath(char const *path) {
-	if(!check_vpath(path)) {
-		printf("Invalid path\n");
-		return NULL;
-	}
-	
-	if(!target.root[0] && *path != '(') {
-		printf("No device specified\n");
-		return NULL;
-	}
-	
-	char const *errmsg;
-	char *rpath = get_rpath(target.root, path, &errmsg);
-	if(!rpath) {
-		printf("Mount error: %s\n", errmsg);
-		return NULL;
-	}
-	
-	return rpath;
-}
-
-static char *sh_vpath(char const *path) {
-	static char buf[1024];
-	int c = 0;
-	
-	while(*path) {
-		if(*path == '/' && ++c == 2) {
-			path++;
-			break;
-		}
-		
-		path++;
-	}
-	
-	c = strcspn(path, "/");
-	strcpy(buf, "(");
-	strlcat(buf, path, c+2);
-	strlcat(buf, ")/", sizeof(buf));
-	
-	path += c;
-	path += strspn(path, "/");
-	strlcat(buf, path, sizeof(buf));
-	
-	return buf;
-}
-
 static struct ac_list *ac_search(char *cmd, int offset) {
 	int i, len;
 	struct ac_list *ac_list = NULL;
@@ -579,12 +532,7 @@ static void ac_path(struct ac_list **list, char const *argx, enum ac_mode mode) 
 		return;
 	}
 	
-	char const *error = NULL;
-	char *rpath = get_rpath(target.root, vpath, &error);
-	if(!rpath) {
-		debug("get_rpath(%s, %s) failed: %s", target.root, vpath, error);
-		return;
-	}
+	char *rpath = kl_strdup(vpath);
 	
 	if(argx[strlen(argx)-1] == '/') {
 		argx += strlen(argx);
@@ -593,9 +541,9 @@ static void ac_path(struct ac_list **list, char const *argx, enum ac_mode mode) 
 		argx = strrchr(argx, '/')+1;
 	}
 	
-	DIR *dir = opendir(rpath);
+	DIR *dir = vfs_opendir(rpath);
 	if(!dir) {
-		debug("opendir(%s) failed: %s", rpath, strerror(errno));
+		debug("vfs_opendir(%s) failed: %s", rpath, kl_strerror(errno));
 		free(rpath);
 		
 		return;
@@ -614,8 +562,8 @@ static void ac_path(struct ac_list **list, char const *argx, enum ac_mode mode) 
 		}
 		
 		char *sp = kl_sprintf("%s/%s", rpath, node->d_name);
-		if(stat(sp, &info) == -1) {
-			debug("stat(%s) failed: %s", sp, strerror(errno));
+		if(vfs_stat(sp, &info) == -1) {
+			debug("vfs_stat(%s) failed: %s", sp, kl_strerror(errno));
 			free(sp);
 			
 			continue;
@@ -658,16 +606,9 @@ static void cmd_ls(char *cmd, char *args) {
 		return;
 	}
 	
-	char *path = sh_get_rpath(args);
-	if(!path) {
-		return;
-	}
-	
-	DIR *dir = opendir(path);
+	DIR *dir = vfs_opendir(args);
 	if(!dir) {
-		printf("Cannot open %s: %s\n", sh_vpath(path), strerror(errno));
-		free(path);
-		
+		printf("Cannot open %s: %s\n", args, kl_strerror(errno));
 		return;
 	}
 	
@@ -680,10 +621,10 @@ static void cmd_ls(char *cmd, char *args) {
 			continue;
 		}
 		
-		snprintf(filename, 1024, "%s/%s", path, node->d_name);
+		snprintf(filename, 1024, "%s/%s", args, node->d_name);
 		
-		if(lstat(filename, &stbuf) == -1) {
-			printf("Cannot stat %s: %s\n", sh_vpath(filename), strerror(errno));
+		if(vfs_lstat(filename, &stbuf) == -1) {
+			printf("Cannot stat %s: %s\n", args, kl_strerror(errno));
 			break;
 		}
 		
@@ -695,7 +636,6 @@ static void cmd_ls(char *cmd, char *args) {
 	}
 	
 	closedir(dir);
-	free(path);
 }
 
 /* Search for a file */
@@ -707,20 +647,14 @@ static void cmd_find(char *cmd, char *args) {
 		return;
 	}
 	
-	char *path = sh_get_rpath(dir);
-	if(!path) {
-		return;
-	}
-	
-	find_files(path, args);
-	free(path);
+	find_files(dir, args);
 }
 
 /* Do the actual work */
 static void find_files(char *path, char const *name) {
-	DIR *dir = opendir(path);
+	DIR *dir = vfs_opendir(path);
 	if(!dir) {
-		printf("Cannot open %s: %s\n", sh_vpath(path), strerror(errno));
+		printf("Cannot open %s: %s\n", path, kl_strerror(errno));
 		return;
 	}
 	
@@ -736,16 +670,16 @@ static void find_files(char *path, char const *name) {
 		free(npath);
 		npath = kl_sprintf("%s/%s", path, node->d_name);
 		
-		if(stat(npath, &stbuf) == -1) {
-			printf("Cannot stat %s: %s\n", sh_vpath(npath), strerror(errno));
+		if(vfs_stat(npath, &stbuf) == -1) {
+			printf("Cannot stat %s: %s\n", npath, kl_strerror(errno));
 			continue;
 		}
 		
 		if(globcmp(node->d_name, name, GLOB_IGNCASE | GLOB_STAR | GLOB_SINGLE)) {
 			if(stbuf.st_mode & S_IFDIR) {
-				printf("%s/\n", sh_vpath(npath));
+				printf("%s/\n", npath);
 			}else{
-				printf("%s\n", sh_vpath(npath));
+				printf("%s\n", npath);
 			}
 		}
 		
@@ -765,14 +699,9 @@ static void cmd_cat(char *cmd, char *args) {
 		return;
 	}
 	
-	char *filename = sh_get_rpath(args);
-	if(!filename) {
-		return;
-	}
-	
-	FILE *fh = fopen(filename, "r");
+	FILE *fh = vfs_fopen(args, "r");
 	if(!fh) {
-		printf("Cannot open %s: %s\n", sh_vpath(filename), strerror(errno));
+		printf("Cannot open %s: %s\n", args, strerror(errno));
 		return;
 	}
 	
@@ -786,7 +715,7 @@ static void cmd_cat(char *cmd, char *args) {
 	}
 	
 	if(ferror(fh)) {
-		printf("Cannot read %s: %s\n", sh_vpath(filename), strerror(errno));
+		printf("Cannot read %s: %s\n", args, strerror(errno));
 	}
 	
 	fclose(fh);

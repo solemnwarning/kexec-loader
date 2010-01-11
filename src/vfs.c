@@ -25,6 +25,7 @@
 #include <stdarg.h>
 #include <errno.h>
 #include <dirent.h>
+#include <unistd.h>
 
 #include "disk.h"
 #include "misc.h"
@@ -149,4 +150,28 @@ DIR *vfs_opendir(char const *filename) {
 	
 	free(path);
 	return dh;
+}
+
+int vfs_stat(char const *path, struct stat *buf) {
+	char *rpath = vfs_translate_path(path);
+	if(!path) {
+		return -1;
+	}
+	
+	int ret = stat(rpath, buf);
+	
+	free(rpath);
+	return ret;
+}
+
+int vfs_lstat(char const *path, struct stat *buf) {
+	char *rpath = vfs_translate_path(path);
+	if(!path) {
+		return -1;
+	}
+	
+	int ret = lstat(rpath, buf);
+	
+	free(rpath);
+	return ret;
 }

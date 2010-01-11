@@ -29,5 +29,7 @@ void vfs_set_root(char const *root);
 int vfs_open(char const *filename, int flags, ...);
 FILE *vfs_fopen(char const *filename, char const *mode);
 DIR *vfs_opendir(char const *filename);
+int vfs_stat(char const *path, struct stat *buf);
+int vfs_lstat(char const *path, struct stat *buf);
 
 #endif /* !KL_VFS_H */
