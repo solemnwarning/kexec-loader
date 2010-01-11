@@ -33,7 +33,7 @@
 #define EBADFS	257	/* Unknown filesystem format */
 #define ENDISK	258	/* No disk specified */
 
-char *vfs_root = NULL;
+static char *vfs_root = NULL;
 
 char *vfs_translate_path(char const *path_in) {
 	char const *disk = vfs_root;
