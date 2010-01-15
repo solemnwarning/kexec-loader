@@ -125,6 +125,8 @@ void shell_main(void) {
 	
 	INIT_TARGET(&target);
 	
+	vfs_set_root(NULL);
+	
 	uname(&kinfo);
 	printf("kexec-loader " VERSION ", Copyright (C) 2007-2009 Daniel Collins\n");
 	printf("Linux kernel version: %s\n", kinfo.release);
@@ -159,11 +161,17 @@ void shell_main(void) {
 			continue;
 		}
 		
-		TEXT_COMMAND("root", target.root);
 		PATH_COMMAND("kernel", target.kernel);
 		PATH_COMMAND("initrd", target.initrd);
 		TEXT_COMMAND("cmdline", target.cmdline);
 		TEXT_COMMAND("append", target.append);
+		
+		if(kl_streq(cmd, "root")) {
+			vfs_set_root(args[0] ? args : NULL);
+			strlcpy(target.root, args, sizeof(target.root));
+			
+			continue;
+		}
 		
 		if(kl_streq(cmd, "reset-vga")) {
 			target.flags |= TARGET_RESET;
