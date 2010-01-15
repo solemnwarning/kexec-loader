@@ -60,9 +60,7 @@
 #define MOUNT_VPATH(path) \
 	tmp = vfs_translate_path(path); \
 	if(!tmp) { \
-		tmp = get_diskid(target->root, path); \
-		printD("Error mounting %s: %s", tmp, kl_strerror(errno)); \
-		free(tmp); \
+		printD("%s: %s", path, kl_strerror(errno)); \
 		goto CLEANUP; \
 	}
 
