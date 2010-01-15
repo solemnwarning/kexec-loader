@@ -318,50 +318,6 @@ int check_vpath(char const *vpath) {
 	return 1;
 }
 
-/* Mount the disk a vpath refers to and return the real path in a string
- * allocated on the heap, returns NULL if mount fails.
- *
- * You MUST pass a valid path, check with check_vpath()
-*/
-char *get_rpath(char const *root, char const *path, char const **error) {
-	char *diskid = NULL, *rpath = NULL;
-	
-	if(*path == '(') {
-		diskid = kl_strndup(path+1, strcspn(path+1, ")"));
-		path += strcspn(path, ")")+1;
-	}else{
-		diskid = kl_strdup(root);
-	}
-	
-	kl_disk *disk = find_disk(diskid);
-	if(!disk) {
-		char *gdisk = lookup_gdev(diskid);
-		if(gdisk) {
-			free(diskid);
-			diskid = gdisk;
-			
-			disk = find_disk(diskid);
-		}
-	}
-	if(!disk) {
-		*error = "Unknown device";
-		goto END;
-	}
-	
-	*error = mount_disk(disk, NULL);
-	if(*error) {
-		goto END;
-	}
-	
-	rpath = kl_sprintf("/mnt/%s/%s", disk->name, path);
-	
-	END:
-	free(diskid);
-	free(disk);
-	
-	return rpath;
-}
-
 /* Return the device in a vpath, fall back to root if vpath does not contain a
  * device, the return value is a string allocatedon the heap
 */

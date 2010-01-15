@@ -29,6 +29,7 @@
 #include "misc.h"
 #include "disk.h"
 #include "console.h"
+#include "vfs.h"
 
 #define MAX_ARGV 256
 
@@ -57,10 +58,10 @@
 	argv[argc] = NULL;
 
 #define MOUNT_VPATH(path) \
-	tmp = get_rpath(target->root, path, (char const**)&error); \
+	tmp = vfs_translate_path(path); \
 	if(!tmp) { \
 		tmp = get_diskid(target->root, path); \
-		printD("Error mounting %s: %s", tmp, error); \
+		printD("Error mounting %s: %s", tmp, kl_strerror(errno)); \
 		free(tmp); \
 		goto CLEANUP; \
 	}
@@ -71,8 +72,10 @@ int kexec_main(int argc, char **argv);
  * Returns on error
 */
 void boot_target(kl_target *target) {
-	char *argv[MAX_ARGV], *tmp, *error;
+	char *argv[MAX_ARGV], *tmp;
 	int argc = 0, status;
+	
+	vfs_set_root(target->root);
 	
 	printd("Preparing to boot...");
 	
