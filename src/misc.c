@@ -94,13 +94,10 @@ int main(int argc, char **argv) {
 		if(boot_disk) {
 			vfs_set_root(device);
 			
-			char *config = kl_sprintf("/mnt/%s/kexec-loader.conf", boot_disk->name);
-			char *config_83 = kl_sprintf("/mnt/%s/kxloader.cfg", boot_disk->name);
-			
-			if(check_file(config)) {
-				load_conf(config);
-			}else if(check_file(config_83)) {
-				load_conf(config_83);
+			if(vfs_check_file("/kexec-loader.conf")) {
+				load_conf("/kexec-loader.conf");
+			}else if(vfs_check_file("/kxloader.cfg")) {
+				load_conf("/kxloader.cfg");
 			}else{
 				printd("Warning: No configuration file present on boot disk");
 			}
@@ -113,9 +110,6 @@ int main(int argc, char **argv) {
 			if(vfs_check_file("/keymap.txt")) {
 				load_keymap("/keymap.txt");
 			}
-			
-			free(config);
-			free(config_83);
 		}
 	}
 	
@@ -550,9 +544,9 @@ void list_nuke(void *root) {
 
 /* Load kexec-loader.conf */
 static void load_conf(char const *fname) {
-	FILE *fh = fopen(fname, "r");
+	FILE *fh = vfs_fopen(fname, "r");
 	if(!fh) {
-		printD("Error opening %s: %s", fname, strerror(errno));
+		printD("Error opening %s: %s", fname, kl_strerror(errno));
 		return;
 	}
 	
