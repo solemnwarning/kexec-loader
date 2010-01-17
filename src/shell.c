@@ -709,7 +709,7 @@ static void cmd_cat(char *cmd, char *args) {
 	
 	FILE *fh = vfs_fopen(args, "r");
 	if(!fh) {
-		printf("Cannot open %s: %s\n", args, strerror(errno));
+		printf("Cannot open %s: %s\n", args, kl_strerror(errno));
 		return;
 	}
 	
