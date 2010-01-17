@@ -128,7 +128,7 @@ extern kl_module *kmods;
 
 void debug(char const *fmt, ...);
 void die(char const *fmt, ...);
-char *get_cmdline(char const *name);
+char const *get_cmdline(char const *name);
 char *next_value(char *ptr);
 void list_disks(void);
 void call_reboot(int cmd);

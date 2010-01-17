@@ -86,10 +86,9 @@ int main(int argc, char **argv) {
 	}else{
 		load_kmod(NULL);
 		
-		char *kdevice = get_cmdline("root");
-		char *device = kdevice ? kdevice : "LABEL=kexecloader";
+		char const *kdevice = get_cmdline("root");
+		char const *device = kdevice ? kdevice : "LABEL=kexecloader";
 		boot_disk = mount_retry(device, "boot disk");
-		free(kdevice);
 		
 		if(boot_disk) {
 			char *config = kl_sprintf("/mnt/%s/kexec-loader.conf", boot_disk->name);
@@ -137,9 +136,8 @@ void debug(char const *fmt, ...) {
 	char msgbuf[256];
 	
 	if(!debug_fh) {
-		char *path = get_cmdline("debug_tty");
+		char const *path = get_cmdline("debug_tty");
 		debug_fh = fopen(path ? path : DEBUG_TTY, "a");
-		free(path);
 		
 		if(!debug_fh) {
 			return;
@@ -219,7 +217,7 @@ void die(char const *fmt, ...) {
 }
 
 /* Search the kernel command line for an option */
-char *get_cmdline(char const *name) {
+char const *get_cmdline(char const *name) {
 	FILE *fh = fopen("/proc/cmdline", "r");
 	if(!fh) {
 		debug("Error opening /proc/cmdline: %s", strerror(errno));
@@ -228,6 +226,7 @@ char *get_cmdline(char const *name) {
 	
 	int len = strlen(name);
 	char *r = NULL, buf[1024];
+	static char val[256];
 	
 	if(fgets(buf, 1024, fh)) {
 		r = buf;
@@ -247,7 +246,10 @@ char *get_cmdline(char const *name) {
 		}
 		
 		if(r) {
-			r = kl_strndup(r, strcspn(r, " "));
+			strlcpy(val, r, sizeof(val));
+			val[strcspn(val, " ")] = '\0';
+			
+			r = val;
 		}
 	}
 	

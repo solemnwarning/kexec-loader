@@ -10,6 +10,9 @@ Version x:
 	Added kexec-loader specific errno values for the new VFS layer.
 	
 	Added 'debug' disk for... debugging.
+	
+	Updated get_cmdline() to return values in a static buffer instead of
+	returning a string on the heap.
 
 Version 2.1.1:
 	Updated config loading code to look for kxloader.cfg if there is no
