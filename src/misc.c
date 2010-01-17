@@ -34,6 +34,7 @@
 #include "disk.h"
 #include "menu.h"
 #include "grub.h"
+#include "vfs.h"
 
 #define KLOG_TTY "/dev/tty2"
 #define DEBUG_TTY "/dev/tty3"
@@ -91,8 +92,9 @@ int main(int argc, char **argv) {
 		boot_disk = mount_retry(device, "boot disk");
 		
 		if(boot_disk) {
+			vfs_set_root(device);
+			
 			char *config = kl_sprintf("/mnt/%s/kexec-loader.conf", boot_disk->name);
-			char *keymap = kl_sprintf("/mnt/%s/keymap.txt", boot_disk->name);
 			char *config_83 = kl_sprintf("/mnt/%s/kxloader.cfg", boot_disk->name);
 			
 			if(check_file(config)) {
@@ -108,11 +110,10 @@ int main(int argc, char **argv) {
 			
 			grub_load();
 			
-			if(access(keymap, F_OK) == 0) {
-				load_keymap(keymap);
+			if(vfs_check_file("/keymap.txt")) {
+				load_keymap("/keymap.txt");
 			}
 			
-			free(keymap);
 			free(config);
 			free(config_83);
 		}

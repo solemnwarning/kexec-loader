@@ -26,6 +26,7 @@
 
 #include "console.h"
 #include "misc.h"
+#include "vfs.h"
 
 struct action_code {
 	char const *name;
@@ -624,9 +625,9 @@ static void clear_keymaps(void) {
 #endif
 
 void load_keymap(char const *file) {
-	FILE *fh = fopen(file, "r");
+	FILE *fh = vfs_fopen(file, "r");
 	if(!fh) {
-		printD("Error opening %s: %s\n", strerror(errno));
+		printD("Error opening %s: %s\n", kl_strerror(errno));
 		return;
 	}
 	
