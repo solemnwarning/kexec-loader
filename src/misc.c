@@ -83,9 +83,9 @@ int main(int argc, char **argv) {
 	}
 	
 	if(boot_disk || check_file("/noboot")) {
-		if(vfs_check_file("/kexec-loader.conf")) {
+		if(vfs_exists("/kexec-loader.conf")) {
 			load_conf("/kexec-loader.conf");
-		}else if(vfs_check_file("/kxloader.cfg")) {
+		}else if(vfs_exists("/kxloader.cfg")) {
 			load_conf("/kxloader.cfg");
 		}else{
 			printd("Warning: No configuration file present");
@@ -96,7 +96,7 @@ int main(int argc, char **argv) {
 		
 		grub_load();
 		
-		if(vfs_check_file("/keymap.txt")) {
+		if(vfs_exists("/keymap.txt")) {
 			load_keymap("/keymap.txt");
 		}
 	}

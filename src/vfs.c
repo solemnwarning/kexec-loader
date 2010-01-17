@@ -192,6 +192,6 @@ int vfs_access(char const *path, int mode) {
 	return ret;
 }
 
-int vfs_check_file(char const *path) {
+int vfs_exists(char const *path) {
 	return vfs_access(path, F_OK) ? 0 : 1;
 }
