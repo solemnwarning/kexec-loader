@@ -56,6 +56,10 @@ char *vfs_translate_path(char const *path_in) {
 		return NULL;
 	}
 	
+	if(kl_streq(disk, "debug")) {
+		return kl_strdup(path_in);
+	}
+	
 	disk_s = find_disk(disk);
 	if(!disk_s) {
 		errno = ENODEV;

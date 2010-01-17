@@ -1,3 +1,16 @@
+Version x:
+	Added 'floppy' target to automatically build floppy images.
+	
+	Updated mkinitramfs.sh to create an LZMA compressed archive.
+	
+	Cleaned up mkinitramfs.sh.
+	
+	Wrote improved VFS wrapper functions, removed some old ones.
+	
+	Added kexec-loader specific errno values for the new VFS layer.
+	
+	Added 'debug' disk for... debugging.
+
 Version 2.1.1:
 	Updated config loading code to look for kxloader.cfg if there is no
 	kexec-loader.conf file.
