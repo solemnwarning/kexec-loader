@@ -158,7 +158,7 @@ DIR *vfs_opendir(char const *filename) {
 
 int vfs_stat(char const *path, struct stat *buf) {
 	char *rpath = vfs_translate_path(path);
-	if(!path) {
+	if(!rpath) {
 		return -1;
 	}
 	
@@ -170,7 +170,7 @@ int vfs_stat(char const *path, struct stat *buf) {
 
 int vfs_lstat(char const *path, struct stat *buf) {
 	char *rpath = vfs_translate_path(path);
-	if(!path) {
+	if(!rpath) {
 		return -1;
 	}
 	
@@ -178,4 +178,20 @@ int vfs_lstat(char const *path, struct stat *buf) {
 	
 	free(rpath);
 	return ret;
+}
+
+int vfs_access(char const *path, int mode) {
+	char *rpath = vfs_translate_path(path);
+	if(!rpath) {
+		return -1;
+	}
+	
+	int ret = access(rpath, mode);
+	
+	free(rpath);
+	return ret;
+}
+
+int vfs_check_file(char const *path) {
+	return vfs_access(path, F_OK) ? 0 : 1;
 }

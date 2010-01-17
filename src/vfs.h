@@ -31,5 +31,7 @@ FILE *vfs_fopen(char const *filename, char const *mode);
 DIR *vfs_opendir(char const *filename);
 int vfs_stat(char const *path, struct stat *buf);
 int vfs_lstat(char const *path, struct stat *buf);
+int vfs_access(char const *path, int mode);
+int vfs_check_file(char const *path);
 
 #endif /* !KL_VFS_H */
