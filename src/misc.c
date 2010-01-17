@@ -68,48 +68,36 @@ int main(int argc, char **argv) {
 		LINUX_REBOOT_CMD_CAD_OFF, NULL
 	);
 	
+	load_kmod(NULL);
+	
 	if(check_file("/noboot")) {
 		debug("Found /noboot on initramfs, not searching for boot disk");
-		
-		if(check_file("/kexec-loader.conf")) {
-			load_conf("/kexec-loader.conf");
-		}else if(check_file("/kxloader.cfg")) {
-			load_conf("/kxloader.cfg");
-		}else{
-			printd("Warning: No configuration file present on initramfs");
-		}
-		
-		load_kmod(NULL);
-		
-		if(check_file("/keymap.txt")) {
-			load_keymap("/keymap.txt");
-		}
+		vfs_set_root("debug");
 	}else{
-		load_kmod(NULL);
 		
 		char const *kdevice = get_cmdline("root");
 		char const *device = kdevice ? kdevice : "LABEL=kexecloader";
 		boot_disk = mount_retry(device, "boot disk");
 		
-		if(boot_disk) {
-			vfs_set_root(device);
-			
-			if(vfs_check_file("/kexec-loader.conf")) {
-				load_conf("/kexec-loader.conf");
-			}else if(vfs_check_file("/kxloader.cfg")) {
-				load_conf("/kxloader.cfg");
-			}else{
-				printd("Warning: No configuration file present on boot disk");
-			}
-			
-			extract_module_tars();
-			load_kmod(NULL);
-			
-			grub_load();
-			
-			if(vfs_check_file("/keymap.txt")) {
-				load_keymap("/keymap.txt");
-			}
+		vfs_set_root(device);
+	}
+	
+	if(boot_disk || check_file("/noboot")) {
+		if(vfs_check_file("/kexec-loader.conf")) {
+			load_conf("/kexec-loader.conf");
+		}else if(vfs_check_file("/kxloader.cfg")) {
+			load_conf("/kxloader.cfg");
+		}else{
+			printd("Warning: No configuration file present");
+		}
+		
+		extract_module_tars();
+		load_kmod(NULL);
+		
+		grub_load();
+		
+		if(vfs_check_file("/keymap.txt")) {
+			load_keymap("/keymap.txt");
 		}
 	}
 	
