@@ -33,6 +33,7 @@
 #include "console.h"
 #include "misc.h"
 #include "globcmp.h"
+#include "vfs.h"
 
 #if __BYTE_ORDER == __LITTLE_ENDIAN
 #define ELF_ORDER ELFDATA2LSB
@@ -340,15 +341,13 @@ void extract_module_tars(void) {
 		return;
 	}
 	
-	char *dname = kl_sprintf("/mnt/%s/modules/", boot_disk->name), *tname;
-	
-	DIR *dh = opendir(dname);
+	DIR *dh = vfs_opendir("/modules/");
 	if(!dh) {
 		if(errno == ENOENT) {
 			return;
 		}
 		
-		printD("Error opening modules directory: %s", strerror(errno));
+		printD("Error opening modules directory: %s", kl_strerror(errno));
 		return;
 	}
 	
@@ -357,9 +356,17 @@ void extract_module_tars(void) {
 		char *ext = strrchr(node->d_name, '.');
 		
 		if(ext && (kl_streq(ext, ".tar") || kl_streq(ext, ".tlz"))) {
-			tname = kl_sprintf("%s%s", dname, node->d_name);
-			extract_tar(tname, "/modules/");
+			char *tname = kl_sprintf("/modules/%s", node->d_name);
+			char *rpath = vfs_translate_path(tname);
+			
+			if(rpath) {
+				extract_tar(rpath, "/modules/");
+			}else{
+				debug("vfs_translate_path(%s): %s", tname, kl_strerror(errno));
+			}
+			
 			free(tname);
+			free(rpath);
 		}
 	}
 	
