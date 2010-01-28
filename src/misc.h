@@ -155,7 +155,7 @@ int check_file(char const *file);
 
 int load_kmod(char const *module);
 void extract_module_tars(void);
-void modprobe_dir(char const *dir, char const *modname);
+int modprobe_dir(char const *dir, char const *modname);
 void boot_target(kl_target *target);
 void shell_main(void);
 void load_keymap(char const *file);

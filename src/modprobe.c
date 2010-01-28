@@ -374,13 +374,17 @@ void extract_module_tars(void) {
 	closedir(dh);
 }
 
-/* Load modules from a directory, module name is an optional filter */
-void modprobe_dir(char const *dir, char const *modname) {
+/* Load modules from a directory, module name is an optional filter
+ * Returns 1 if a module was loaded, 0 otherwise
+*/
+int modprobe_dir(char const *dir, char const *modname) {
 	DIR *dh = vfs_opendir(dir);
 	if(!dh) {
 		printD("Failed to open %s: %s", dir, kl_strerror(errno));
-		return;
+		return 0;
 	}
+	
+	int ret = 0;
 	
 	struct dirent *node;
 	while((node = readdir(dh))) {
@@ -411,7 +415,9 @@ void modprobe_dir(char const *dir, char const *modname) {
 				goto NEXT;
 			}
 			
-			modprobe(fname, addr, mfile.st_size);
+			if(modprobe(fname, addr, mfile.st_size)) {
+				ret = 1;
+			}
 			
 			NEXT:
 			if(addr != MAP_FAILED) {
@@ -428,4 +434,5 @@ void modprobe_dir(char const *dir, char const *modname) {
 	}
 	
 	closedir(dh);
+	return ret;
 }
