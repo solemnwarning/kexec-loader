@@ -33,10 +33,36 @@
 
 static char *vfs_root = NULL;
 
+static char *disk_root(char const *name) {
+	char *root = NULL;
+	
+	if(kl_streq(name, "rootfs")) {
+		root = kl_strdup("/");
+	}else{
+		kl_disk *disk = find_disk(name);
+		if(!disk) {
+			errno = ENODEV;
+			return NULL;
+		}
+		
+		char const *m_error = mount_disk(disk, NULL);
+		if(m_error) {
+			if(kl_streq(m_error, "Unknown filesystem format")) {
+				errno = EBADFS;
+			}
+		}else{
+			root = kl_sprintf("/mnt/%s", disk->name);
+		}
+		
+		free(disk);
+	}
+	
+	return root;
+}
+
 char *vfs_translate_path(char const *path_in) {
 	char const *disk = vfs_root;
 	char disk_buf[32];
-	kl_disk *disk_s = NULL;
 	
 	if(path_in[0] == '(') {
 		if(!strchr(path_in, ')')) {
@@ -60,25 +86,16 @@ char *vfs_translate_path(char const *path_in) {
 		return kl_strdup(path_in);
 	}
 	
-	disk_s = find_disk(disk);
-	if(!disk_s) {
-		errno = ENODEV;
+	char *disk_r = disk_root(disk);
+	if(!disk_r) {
 		return NULL;
 	}
 	
-	char const *m_error = mount_disk(disk_s, NULL);
-	if(m_error) {
-		if(kl_streq(m_error, "Unknown filesystem format")) {
-			errno = EBADFS;
-		}
-		
-		free(disk_s);
-		return NULL;
-	}
-	
-	char *path = kl_malloc(strlen(disk_s->name) + strlen(path_in) + 7);
-	sprintf(path, "/mnt/%s", disk_s->name);
+	char *path = kl_malloc(strlen(disk_r) + strlen(path_in) + 2);
 	int path_nodes = 0;
+	
+	strcpy(path, disk_r);
+	free(disk_r);
 	
 	while(*path_in) {
 		int len = strcspn(path_in, "/");
@@ -100,7 +117,6 @@ char *vfs_translate_path(char const *path_in) {
 		free(node);
 	}
 	
-	free(disk_s);
 	return path;
 }
 
