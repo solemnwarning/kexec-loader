@@ -101,6 +101,7 @@ char *vfs_translate_path(char const *path_in) {
 		int len = strcspn(path_in, "/");
 		char *node = kl_strndup(path_in, len);
 		path_in += len;
+		path_in += strspn(path_in, "/");
 		
 		if(len) {
 			if(!kl_streq(node, "..")) {
