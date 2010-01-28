@@ -277,9 +277,7 @@ void extract_module_tars(void) {
 	
 	struct dirent *node;
 	while((node = readdir(dh))) {
-		char *ext = strrchr(node->d_name, '.');
-		
-		if(ext && (kl_streq(ext, ".tar") || kl_streq(ext, ".tlz"))) {
+		if(is_tar_extension(node->d_name)) {
 			char *tname = kl_sprintf("/modules/%s", node->d_name);
 			char *rpath = vfs_translate_path(tname);
 			

@@ -95,14 +95,14 @@ static int lzma_file_eof(struct comp_file *file);
 int extract_tar(char const *name, char const *dest) {
 	struct comp_file file;
 	
-	if(globcmp(name, "*.tar", GLOB_STAR)) {
+	if(kl_streq_end(name, ".tar")) {
 		file.format = comp_raw;
 		file.open = &raw_file_open;
 		file.read = &raw_file_read;
 		file.seek = &raw_file_seek;
 		file.close = &raw_file_close;
 		file.eof = &raw_file_eof;
-	}else if(globcmp(name, "*.tlz", GLOB_STAR)) {
+	}else if(kl_streq_end(name, ".tlz") || kl_streq_end(name, ".tar.lzma")) {
 		file.format = comp_lzma;
 		file.open = &lzma_file_open;
 		file.read = &lzma_file_read;
@@ -366,4 +366,17 @@ static void lzma_file_close(struct comp_file *file) {
 static int lzma_file_eof(struct comp_file *file) {
 	NULL_HANDLE_CHECK();
 	return lzmadec_eof(file->handle) ? 1 : 0;
+}
+
+int is_tar_extension(char const *name) {
+	char const *exts[] = {".tar", ".tlz", ".tar.lzma", NULL};
+	int i;
+	
+	for(i = 0; exts[i]; i++) {
+		if(kl_streq_end(name, exts[i])) {
+			return 1;
+		}
+	}
+	
+	return 0;
 }

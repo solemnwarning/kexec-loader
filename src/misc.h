@@ -144,6 +144,7 @@ int kl_strceq(char const *s1, char const *s2);
 int kl_strnceq(char const *s1, char const *s2, int max);
 int kl_strins(char *dest, char const *src, int offset, int size);
 char const *kl_strerror(int errnum);
+int kl_streq_end(char const *str, char const *match);
 
 void list_add(void *rptr, void *node);
 void list_add_copy(void *rptr, void *node, int size);
@@ -160,5 +161,6 @@ void boot_target(kl_target *target);
 void shell_main(void);
 void load_keymap(char const *file);
 int extract_tar(char const *name, char const *dest);
+int is_tar_extension(char const *name);
 
 #endif /* !KL_MISC_H */

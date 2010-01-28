@@ -455,6 +455,18 @@ char const *kl_strerror(int errnum) {
 	}
 }
 
+/* Check if a string ends in match */
+int kl_streq_end(char const *str, char const *match) {
+	int slen = strlen(str);
+	int mlen = strlen(match);
+	
+	if(slen < mlen) {
+		return 0;
+	}
+	
+	return kl_streq(str + (slen-mlen), match);
+}
+
 struct list { struct list *next; };
 
 /* Add an entry to a list */
