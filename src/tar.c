@@ -23,6 +23,7 @@
 #include <lzmadec.h>
 #include <sys/types.h>
 #include <sys/stat.h>
+#include <zlib.h>
 
 #include "globcmp.h"
 #include "misc.h"
@@ -30,7 +31,8 @@
 
 enum comp_type {
 	comp_raw,
-	comp_lzma
+	comp_lzma,
+	comp_gzip
 };
 
 struct comp_file {
@@ -87,6 +89,12 @@ static int lzma_file_seek(struct comp_file *file, size_t offset);
 static void lzma_file_close(struct comp_file *file);
 static int lzma_file_eof(struct comp_file *file);
 
+static int gzip_file_open(struct comp_file *file, char const *path);
+static size_t gzip_file_read(struct comp_file *file, void* buf, size_t size);
+static int gzip_file_seek(struct comp_file *file, size_t offset);
+static void gzip_file_close(struct comp_file *file);
+static int gzip_file_eof(struct comp_file *file);
+
 #define FAIL(...) \
 	printD(__VA_ARGS__); \
 	file.close(&file); \
@@ -109,6 +117,13 @@ int extract_tar(char const *name, char const *dest) {
 		file.seek = &lzma_file_seek;
 		file.close = &lzma_file_close;
 		file.eof = &lzma_file_eof;
+	}else if(kl_streq_end(name, ".tgz") || kl_streq_end(name, ".tar.gz")) {
+		file.format = comp_gzip;
+		file.open = &gzip_file_open;
+		file.read = &gzip_file_read;
+		file.seek = &gzip_file_seek;
+		file.close = &gzip_file_close;
+		file.eof = &gzip_file_eof;
 	}else{
 		printD("Unknown TAR extension: %s", name);
 		return 0;
@@ -368,8 +383,68 @@ static int lzma_file_eof(struct comp_file *file) {
 	return lzmadec_eof(file->handle) ? 1 : 0;
 }
 
+static int gzip_file_open(struct comp_file *file, char const *path) {
+	RESET_ERROR();
+	
+	file->handle = gzopen(path, "rb");
+	if(!file->handle) {
+		SET_ERROR(gzerror(file->handle, &errno));
+		return 0;
+	}
+	
+	return 1;
+}
+
+static size_t gzip_file_read(struct comp_file *file, void *buf, size_t size) {
+	NULL_HANDLE_CHECK();
+	RESET_ERROR();
+	
+	size_t count = 0;
+	
+	while(count < size) {
+		ssize_t ret = gzread(file->handle, buf+count, size-count);
+		
+		if(gzeof(file->handle)) {
+			break;
+		}
+		if(ret == -1) {
+			SET_ERROR(gzerror(file->handle, &errno));
+			break;
+		}
+		
+		count += ret;
+	}
+	
+	return count;
+}
+
+static int gzip_file_seek(struct comp_file *file, size_t offset) {
+	NULL_HANDLE_CHECK();
+	RESET_ERROR();
+	
+	if(gzseek(file->handle, offset, SEEK_SET) == -1) {
+		SET_ERROR(gzerror(file->handle, &errno));
+		return 0;
+	}
+	
+	return 1;
+}
+
+static void gzip_file_close(struct comp_file *file) {
+	NULL_HANDLE_CHECK();
+	RESET_ERROR();
+	
+	gzclose(file->handle);
+	file->handle = NULL;
+}
+
+static int gzip_file_eof(struct comp_file *file) {
+	NULL_HANDLE_CHECK();
+	return gzeof(file->handle);
+}
+
 int is_tar_extension(char const *name) {
-	char const *exts[] = {".tar", ".tlz", ".tar.lzma", NULL};
+	char const *exts[] = {".tar", ".tlz", ".tar.lzma", ".tgz", ".tar.gz", NULL};
 	int i;
 	
 	for(i = 0; exts[i]; i++) {
