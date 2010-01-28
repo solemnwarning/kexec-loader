@@ -29,6 +29,7 @@
 #include <endian.h>
 #include <lzmadec.h>
 #include <arpa/inet.h>
+#include <sys/mman.h>
 
 #include "console.h"
 #include "misc.h"
@@ -367,6 +368,62 @@ void extract_module_tars(void) {
 			
 			free(tname);
 			free(rpath);
+		}
+	}
+	
+	closedir(dh);
+}
+
+/* Load modules from a directory, module name is an optional filter */
+void modprobe_dir(char const *dir, char const *modname) {
+	DIR *dh = vfs_opendir(dir);
+	if(!dh) {
+		printD("Failed to open %s: %s", dir, kl_strerror(errno));
+		return;
+	}
+	
+	struct dirent *node;
+	while((node = readdir(dh))) {
+		char *ext = strchr(node->d_name, '.');
+		
+		if((node->d_type == DT_REG || node->d_type == DT_LNK) && ext && kl_streq(ext, ".ko")) {
+			char *fname = kl_strndup(node->d_name, ext - node->d_name);
+			char *fpath = kl_sprintf("%s/%s", dir, node->d_name);
+			int fd = -1;
+			void *addr = MAP_FAILED;
+			struct stat mfile;
+			
+			if(modname && !kl_streq(modname, node->d_name)) {
+				goto NEXT;
+			}
+			
+			fd = vfs_open(fpath, O_RDONLY);
+			if(fd == -1) {
+				printD("Failed to open %s: %s", fpath, kl_strerror(errno));
+				goto NEXT;
+			}
+			
+			fstat(fd, &mfile);
+			
+			addr = mmap(NULL, mfile.st_size, PROT_READ, MAP_SHARED, fd, 0);
+			if(addr == MAP_FAILED) {
+				printD("Failed to map %s: %s", fpath, strerror(errno));
+				goto NEXT;
+			}
+			
+			modprobe(fname, addr, mfile.st_size);
+			
+			NEXT:
+			if(addr != MAP_FAILED) {
+				munmap(addr, mfile.st_size);
+			}
+			
+			if(fd >= 0) {
+				close(fd);
+			}
+			
+			free(fname);
+			free(fpath);
 		}
 	}
 	
