@@ -13,6 +13,11 @@ Version x:
 	
 	Updated get_cmdline() to return values in a static buffer instead of
 	returning a string on the heap.
+	
+	Updated modprobe code to mmap() module files instead of reading them
+	into memory, gzipped modules are no longer supported.
+	
+	Added gzip support to TAR extractor to replace gzipped modules.
 
 Version 2.1.1:
 	Updated config loading code to look for kxloader.cfg if there is no
