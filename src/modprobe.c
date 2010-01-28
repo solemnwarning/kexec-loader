@@ -309,16 +309,22 @@ int modprobe_dir(char const *dir, char const *modname) {
 	
 	struct dirent *node;
 	while((node = readdir(dh))) {
-		char *ext = strchr(node->d_name, '.');
+		char *fpath = kl_sprintf("%s/%s", dir, node->d_name);
+		struct stat mfile;
 		
-		if((node->d_type == DT_REG || node->d_type == DT_LNK) && ext && kl_streq(ext, ".ko")) {
-			char *fname = kl_strndup(node->d_name, ext - node->d_name);
-			char *fpath = kl_sprintf("%s/%s", dir, node->d_name);
+		if(vfs_stat(fpath, &mfile) == -1) {
+			printD("Failed to stat %s: %s", fpath, kl_strerror(errno));
+			
+			free(fpath);
+			continue;
+		}
+		
+		if(mfile.st_mode & (S_IFREG | S_IFLNK) && kl_streq_end(node->d_name, ".ko")) {
+			char *fname = kl_strndup(node->d_name, strlen(node->d_name)-3);
 			int fd = -1;
 			void *addr = MAP_FAILED;
-			struct stat mfile;
 			
-			if(modname && !kl_streq(modname, node->d_name)) {
+			if(modname && !kl_streq(modname, fname)) {
 				goto NEXT;
 			}
 			
@@ -327,8 +333,6 @@ int modprobe_dir(char const *dir, char const *modname) {
 				printD("Failed to open %s: %s", fpath, kl_strerror(errno));
 				goto NEXT;
 			}
-			
-			fstat(fd, &mfile);
 			
 			addr = mmap(NULL, mfile.st_size, PROT_READ, MAP_SHARED, fd, 0);
 			if(addr == MAP_FAILED) {
@@ -350,8 +354,9 @@ int modprobe_dir(char const *dir, char const *modname) {
 			}
 			
 			free(fname);
-			free(fpath);
 		}
+		
+		free(fpath);
 	}
 	
 	closedir(dh);
