@@ -243,95 +243,18 @@ static const char *moderror(int err) {
 	}
 }
 
-/* Attempt to load a kernel module from an uncompressed or gzip compressed file
+/* Find and load a module
  * Returns 1 if the module was loaded, 0 otherwise
-*/
-static int gzfile_load(char const *filename, char const *module) {
-	char *buf = NULL;
-	int bsize = 64000, rbytes = 0, i;
-	int ret = 0;
-	
-	gzFile fh = gzopen(filename, "rb");
-	if(!fh) {
-		printD("%s: open failed (%s)", filename, strerror(errno));
-		return 0;
-	}
-	
-	while(!gzeof(fh)) {
-		buf = kl_realloc(buf, bsize);
-		
-		if((i = gzread(fh, buf+rbytes, 64000)) == -1) {
-			printD("%s: read failed (%s)", filename, gzerror(fh, &i));
-			goto END;
-		}
-		
-		rbytes += i;
-		bsize += i;
-	}
-	
-	if(modprobe(module, buf, rbytes)) {
-		ret = 1;
-	}
-	
-	END:
-	gzclose(fh);
-	free(buf);
-	
-	return ret;
-}
-
-#define TRY_KODIR(fmt, ...) \
-	sprintf(path, fmt, ## __VA_ARGS__); \
-	if(check_file(path) && try_kodir(path, module)) { \
-		return 1; \
-	}
-
-static int try_kodir(char const *path, char const *module) {
-	DIR *dh = opendir(path);
-	if(!dh) {
-		printD("%s: diropen failed (%s)", path, strerror(errno));
-		return 0;
-	}
-	
-	int ret = 0;
-	struct dirent *node = NULL;
-	char kofile[1024], modko[256];
-	
-	while((node = readdir(dh))) {
-		if(module && !kl_streq(modko, node->d_name)) {
-			sprintf(modko, "%s.ko", module);
-			
-			if(!kl_streq(modko, node->d_name)) {
-				continue;
-			}
-		}
-		
-		if(globcmp(node->d_name, "*.ko", GLOB_STAR)) {
-			sprintf(kofile, "%s/%s", path, node->d_name);
-			
-			strlcpy(modko, node->d_name, strlen(node->d_name)-2);
-			
-			if(gzfile_load(kofile, modko)) {
-				ret = 1;
-			}
-		}
-	}
-	
-	closedir(dh);
-	return ret;
-}
-
-/* Find and load modules
- * Returns 1 if a module was loaded, 0 otherwise
+ *
+ * NOTE: Only call during init (when VFS root is set to boot disk)
 */
 int load_kmod(char const *module) {
-	char path[1024];
-	
-	if(boot_disk) {
-		TRY_KODIR("/mnt/%s/modules", boot_disk->name);
+	if(modprobe_dir("(rootfs)/modules/", module)) {
+		return 1;
 	}
-	
-	TRY_KODIR("/modules");
+	if(boot_disk && vfs_exists("/modules/") && modprobe_dir("/modules/", module)) {
+		return 1;
+	}
 	
 	return 0;
 }
