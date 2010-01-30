@@ -37,6 +37,8 @@ LIBS := src/kexec.a src/libblkid.a src/libuuid.a -lz -llzmadec
 export KLBASE := $(PWD)
 
 FLOPPY ?= floppy.img
+ISOLINUX ?= /usr/share/syslinux/isolinux.bin
+ISO ?= cdrom.iso
 
 ifdef HOST
 	CC := $(HOST)-gcc
@@ -61,6 +63,7 @@ clean:
 distclean: clean
 	rm -f kexec-tools-$(KT_VER).tar.gz
 	rm -f e2fsprogs-$(E2FS_VER).tar.gz
+	rm -rf iso-files/ iso-modules/
 
 kexec-loader: $(OBJS) src/kexec.a
 	$(CC) $(CFLAGS) -o kexec-loader $(OBJS) $(LIBS)
@@ -88,6 +91,35 @@ syslinux.cfg:
 
 initrd.img: kexec-loader.static
 	./mkinitramfs.sh initrd.img
+
+cdrom: iso-files iso-modules iso-files/isolinux/initrd.img iso-files/isolinux/vmlinuz
+	./mkiso.sh $(ISO)
+
+cdrom-export: iso-files iso-modules iso-files/isolinux/initrd.img iso-files/isolinux/vmlinuz
+	mkdir kexec-loader-$(VERSION)-cdrom
+	cp -a iso-files iso-modules kexec-loader-$(VERSION)-cdrom
+	cp -a mkiso.sh addmod.sh kexec-loader-$(VERSION)-cdrom
+	tar -cf kexec-loader-$(VERSION)-cdrom.tar kexec-loader-$(VERSION)-cdrom
+	rm -rf kexec-loader-$(VERSION)-cdrom
+
+iso-modules:
+	mkdir -p iso-modules
+
+iso-files: $(ISOLINUX)
+	mkdir -p iso-files/isolinux
+	cp $(ISOLINUX) iso-files/isolinux/
+	echo "DEFAULT vmlinuz initrd=initrd.img" > iso-files/isolinux/isolinux.cfg
+	cp kexec-loader.conf iso-files/
+
+iso-files/isolinux/vmlinuz: $(KERNEL)
+ifeq ($(KERNEL),)
+	@echo "Please set KERNEL to the Linux kernel binary"
+	@exit 1
+endif
+	cp $(KERNEL) iso-files/isolinux/vmlinuz
+
+iso-files/isolinux/initrd.img: iso-files initrd.img
+	cp initrd.img iso-files/isolinux/
 
 kexec-loader.static: $(OBJS) src/kexec.a
 	$(CC) $(CFLAGS) -static -o kexec-loader.static $(OBJS) $(LIBS)
