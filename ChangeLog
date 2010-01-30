@@ -18,6 +18,8 @@ Version x:
 	into memory, gzipped modules are no longer supported.
 	
 	Added gzip support to TAR extractor to replace gzipped modules.
+	
+	Updated addmod.sh to accept multiple modules.
 
 Version 2.1.1:
 	Updated config loading code to look for kxloader.cfg if there is no

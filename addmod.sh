@@ -1,6 +1,6 @@
 #!/bin/bash
-# Add a module to an initramfs
-# Copyright (C) 2007-2009 Daniel Collins <solemnwarning@solemnwarning.net>
+# Add modules to an LZMA compressed initramfs
+# Copyright (C) 2007-2010 Daniel Collins <solemnwarning@solemnwarning.net>
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -16,52 +16,81 @@
 # with this program; if not, write to the Free Software Foundation, Inc.,
 # 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 
-if [ -z "$2" ]; then
-	echo "Usage: $0 <module> <initramfs>" 1>&2
-	exit 1
-fi
+tmp="addmod.tmp"
+initramfs=""
 
-TMPDIR="/tmp/addmod.$$"
-MOD_EXT=`echo "$1" | sed -e 's/.*\.//g'`
-
-mkdir -p "$TMPDIR/modules/"
-
-# I find your lack of else if disturbing
-#
-if [ $MOD_EXT = 'ko' ]
-then
-	cat "$1" | gunzip > "$TMPDIR/modules/`basename "$1"`" 2>&1
+abort() {
+	if [ $# -eq "1" ]
+	then
+		echo "$1" 1>&2
+	fi
 	
-	# If decompression fails, assume module is uncompressed
-	#
-	if [ $? == 1 ]
-	then
-		cp "$1" "$TMPDIR/modules/"
+	rm -rf "$tmp"
+	exit 1
+}
+
+cprog() {
+	if which "$1" > /dev/null; then
+		return 0
 	fi
-else
-	if [ $MOD_EXT = 'tlz' ]
-	then
-		# Tar is stupid...
-		tar --lzma -xf "$1" -C "$TMPDIR/modules/"
-	else
-		tar -xf "$1" -C "$TMPDIR/modules/"
-	fi
+	
+	abort "No executable '$1' program found in \$PATH"
+}
+
+if [ $# -lt 2 ]; then
+	abort "Usage: $0 <initramfs> <module> [<module> ...]"
 fi
 
-cp "$2" "$TMPDIR/initramfs.cpio.lzma"
-cd "$TMPDIR"
+cprog tar
+cprog lzcat
+cprog find
+cprog cpio
+cprog lzma
 
-unlzma "initramfs.cpio.lzma"
+rm -rf "$tmp"
+mkdir -p "$tmp/modules/"
 
-for f in `cpio -it --quiet < initramfs.cpio | egrep '^modules\/'`
+for mod in "$@"
 do
-	rm -f "$f"
+	if [ -z "$initramfs" ]
+	then
+		initramfs="$mod"
+	else
+		is_ko=`echo "$mod" | grep -E '\.ko$'`
+		is_tar=`echo "$mod" | grep -E '\.(tar(\.(gz|bz2))?|tgz)$'`
+		is_tlz=`echo "$mod" | grep -E '\.(tar\.lzma|tlz)$'`
+		
+		if [ -n "$is_ko" ]
+		then
+			cp "$mod" "$tmp/modules/" || abort
+		fi
+		
+		if [ -n "$is_tar" ]
+		then
+			tar -xf "$mod" -C "$tmp/modules/" || abort
+		fi
+		
+		if [ -n "$is_tlz" ]
+		then
+			# TAR is really stupid
+			tar --lzma -xf "$mod" -C "$tmp/modules/" || abort
+		fi
+		
+		if [ -z "$is_ko" -a -z "$is_tar" -a -z "$is_tlz" ]
+		then
+			abort "Unknown file extension: $mod"
+		fi
+	fi
 done
 
-find modules | cpio -o --format=newc --quiet --append -F "initramfs.cpio"
-lzma -9 "initramfs.cpio"
+lzcat -S "" "$initramfs" > "$tmp/initramfs.cpio" || abort
 
-cd "$OLDPWD"
-cp "$TMPDIR/initramfs.cpio.lzma" "$2"
+for f in `cpio -it --quiet < "$tmp/initramfs.cpio" | egrep '^modules\/.+'`
+do
+	rm -f "$tmp/$f"
+done
 
-rm -rf "$TMPDIR"
+bash -c "cd \"$tmp\" && find modules -iname '*.ko' | cpio -o --format=newc --quiet --append -F initramfs.cpio" || abort
+lzma -9 "$tmp/initramfs.cpio" -c > "$initramfs" || abort
+
+rm -rf "$tmp"
