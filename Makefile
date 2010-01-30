@@ -60,11 +60,11 @@ clean:
 	rm -rf src/kexec-tools-$(KT_VER)/
 	rm -rf src/e2fsprogs-$(E2FS_VER)/
 	rm -f initrd.img $(FLOPPY) $(ISO)
+	rm -rf iso-files/ iso-modules/
 
 distclean: clean
 	rm -f kexec-tools-$(KT_VER).tar.gz
 	rm -f e2fsprogs-$(E2FS_VER).tar.gz
-	rm -rf iso-files/ iso-modules/
 
 kexec-loader: $(OBJS) src/kexec.a
 	$(CC) $(CFLAGS) -o kexec-loader $(OBJS) $(LIBS)
@@ -116,6 +116,9 @@ iso-files/isolinux/vmlinuz: $(KERNEL)
 ifeq ($(KERNEL),)
 	@echo "Please set KERNEL to the Linux kernel binary"
 	@exit 1
+endif
+ifneq ($(KCONFIG),)
+	cp $(KCONFIG) iso-files/linux.cfg
 endif
 	cp $(KERNEL) iso-files/isolinux/vmlinuz
 
