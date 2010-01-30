@@ -26,6 +26,11 @@ fail() {
 	exit 1
 }
 
+if [ $# -ne 1 ]
+then
+	fail "Usage: $0 <iso filename>"
+fi
+
 if ! which mkisofs > /dev/null
 then
 	fail "No mkisofs program found in \$PATH"
