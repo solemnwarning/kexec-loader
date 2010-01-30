@@ -1,0 +1,100 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+
+<head>
+<title>kexec-loader manual: Building kexec-loader</title>
+<meta name="GENERATOR" content="Quanta Plus">
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+
+<style type="text/css">
+<!--
+body {
+	font-family: Arial, Helvetica, sans-serif;
+}
+h1, h1 a:hover {
+	font-size: xx-large;
+	color: #0099FF;
+}
+h2, h2 a:hover {
+	color: #0066FF;
+}
+h3, h3 a:hover {
+	color: #0033CC;
+}
+a:link, a:visited {
+	text-decoration: none;
+	color: blue;
+}
+a:hover {
+	color: red;
+}
+.code {
+	background-color: #E5E5E5;
+	border: 1px solid #000000;
+	padding: 5px;
+	font-family: monospace;
+}
+td, th {
+	border-top: 1px solid black;
+	border-left: 1px solid black;
+	padding: 2px 5px;
+}
+
+table {
+	border-right: 1px solid black;
+	border-bottom: 1px solid black;
+	border-collapse: collapse;
+}
+-->
+</style>
+</head>
+
+<body>
+<h1>Building kexec-loader</h1>
+<h2>Build Environment</h2>
+<p>
+If compiling kexec-loader the following software is required:
+</p>
+<ul>
+<li>uClibc (Other C libraries are untested)</li>
+<li>GCC (cross) compiler toolchain</li>
+<li>zlib + headers</li>
+<li>liblzmadec + headers</li>
+<li>GNU Make</li>
+<li>Linux kernel headers</li>
+</ul>
+<p>
+You will also need cpio, lzma and fakeroot (or root access) to create an initramfs, mtools and syslinux if building a floppy image or mkisofs and isolinux if building an ISO image.
+</p>
+<p>
+The following environment variables are used by the Makefile while building kexec-loader, they may or may not be required depending on what target is being invoked. For example the 'floppy' target requires KERNEL to be set.
+</p>
+<table>
+<tr><th>Variable</th><th>Default</th><th>Description</th></tr>
+<tr><td>HOST</td><td><i>None</i></td><td>Cross-compiler target (i.e. i386-linux-uclibc)</td></tr>
+<tr><td>FLOPPY</td><td>floppy.img</td><td>Name of floppy image file</td></tr>
+<tr><td>ISO</td><td>cdrom.iso</td><td>Name of ISO image file</td></tr>
+<tr><td>ISOLINUX</td><td>/usr/share/syslinux/isolinux.bin</td><td>Path to isolinux binary</td></tr>
+<tr><td>KERNEL</td><td><i>None</i></td><td>Path to Linux kernel binary</td></tr>
+<tr><td>KCONFIG</td><td><i>None</i></td><td>Path to Linux kernel config file</td></tr>
+</table>
+
+<h2>Building kexec-loader</h2>
+<h3>Compiling the Binaries</h3>
+<p>
+Once you have the build environment setup you can run 'make' to build statically and dynamically linked kexec-loader binaries (kexec-loader.static and kexec-loader respectively). During the build process kexec-tools and e2fsprogs will be downloaded, patched (if necessary) and the required parts will be included in kexec-loader.
+</p>
+<h3>Building an initramfs</h3>
+<p>
+The rootfs filesystem containing kexec-loader and other files such as device nodes is extracted from an initramfs archive during bootup, it is usually named initrd.img to comply with 8.3 filename restrictions and common convention, however it is not an initrd which serves a similar purpose, but is differently implemented. There is an mkinitramfs.sh script in the kexec-loader source distribution which can be used to build one once the binaries have been compiled.
+</p>
+<h3>Building a floppy image</h3>
+<p>
+Floppy images containing kexec-loader can be built using the 'make floppy' command, you will need to provide a kernel in the KERNEL environment variable and optionally the .config file in the KCONFIG variable. Such kernels should include vfat and floppy support at the very least, if built as a module these must be included in the initramfs using the addmod.sh script.
+</p>
+<h3>Building a CD ISO image</h3>
+<p>
+Support exists for running kexec-loader from a CD, however it is recommended to use a floppy image if possible as you will need to rebuild the ISO image and burn a new CD if any changes are made to the configuration/modules/etc. If you still wish to build an ISO image you can use the 'make cdrom' command which uses KERNEL/KCONFIG in the same way as the floppy target. When you first run it, a directory named <i>iso-files</i> will be created, containing the file tree of the CD and an <i>iso-modules</i> directory, to which modules can be added in order to include them in the initramfs. If you make any changes to these directories you can run 'make cdrom' again to update the ISO.
+</p>
+</body>
+</html>
