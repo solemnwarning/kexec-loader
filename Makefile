@@ -1,5 +1,5 @@
-# kexec-loader - Root makefile
-# Copyright (C) 2007-2009 Daniel Collins <solemnwarning@solemnwarning.net>
+# kexec-loader - Makefile
+# Copyright (C) 2007-2010 Daniel Collins <solemnwarning@solemnwarning.net>
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -59,6 +59,7 @@ clean:
 	rm -f kexec-loader kexec-loader.static
 	rm -rf src/kexec-tools-$(KT_VER)/
 	rm -rf src/e2fsprogs-$(E2FS_VER)/
+	rm -f initrd.img $(FLOPPY) $(ISO)
 
 distclean: clean
 	rm -f kexec-tools-$(KT_VER).tar.gz
