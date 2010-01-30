@@ -1,5 +1,5 @@
 /* kexec-loader - Shell code
- * Copyright (C) 2007-2009 Daniel Collins <solemnwarning@solemnwarning.net>
+ * Copyright (C) 2007-2010 Daniel Collins <solemnwarning@solemnwarning.net>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -128,7 +128,7 @@ void shell_main(void) {
 	vfs_set_root(NULL);
 	
 	uname(&kinfo);
-	printf("kexec-loader " VERSION ", Copyright (C) 2007-2009 Daniel Collins\n");
+	printf("kexec-loader " VERSION ", Copyright (C) 2007-2010 Daniel Collins\n");
 	printf("Linux kernel version: %s\n", kinfo.release);
 	printf("Type 'help' for a list of commands\n\n");
 	
