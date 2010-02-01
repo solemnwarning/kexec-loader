@@ -29,18 +29,19 @@
 
 kl_gdev *grub_devmap = NULL;
 
-#define FOOBAR(first, x) \
+#define PARSE_TOKEN(first, x) \
 	if(!first && islower(*src)) { \
 		x[0] = *src; \
 		x[1] = '\0'; \
 		src++; \
 	}else if(isdigit(*src)) { \
-		for(i = 0; isdigit(*src); i++) { \
+		int i = 0; \
+		\
+		for(; isdigit(*src); src++) { \
 			if(i+1 < sizeof(x)) { \
 				x[i++] = *src; \
 				x[i] = '\0'; \
 			} \
-			src++; \
 		} \
 	}else{ \
 		return 0; \
@@ -66,11 +67,9 @@ int parse_gdev(kl_gdev *dest, char const *src) {
 	strlcpy(dest->type, src, 3);
 	src += 2;
 	
-	int i;
-	
-	FOOBAR(1, dest->p1);
-	FOOBAR(0, dest->p2);
-	FOOBAR(0, dest->p3);
+	PARSE_TOKEN(1, dest->p1);
+	PARSE_TOKEN(0, dest->p2);
+	PARSE_TOKEN(0, dest->p3);
 	
 	return 0;
 }
