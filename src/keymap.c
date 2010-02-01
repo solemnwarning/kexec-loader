@@ -624,6 +624,13 @@ static void clear_keymaps(void) {
 }
 #endif
 
+/* Loads a keymap file, takes a VFS path to the file
+ *
+ * Keymap files are UNIX/DOS text files with one key per line, each line should
+ * contain the key table, index and action, seperated by spaces/tabs. There is
+ * a script included with the source for converting Linux console keymaps to this
+ * format.
+*/
 void load_keymap(char const *file) {
 	FILE *fh = vfs_fopen(file, "r");
 	if(!fh) {
