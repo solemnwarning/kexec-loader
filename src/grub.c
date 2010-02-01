@@ -46,7 +46,7 @@ kl_gdev *grub_devmap = NULL;
 	}else{ \
 		return 0; \
 	} \
-	if(*src == '\0') { \
+	if((!brackets && *src == '\0') || (brackets && *src == ')')) { \
 		return 1; \
 	}else if(*src == ',') { \
 		src++; \
@@ -58,6 +58,13 @@ kl_gdev *grub_devmap = NULL;
  * Returns 1 on success, zero on syntax error
 */
 int parse_gdev(kl_gdev *dest, char const *src) {
+	int brackets = 0;
+	
+	if(*src == '(') {
+		brackets = 1;
+		src++;
+	}
+	
 	if((*src != 'f' && *src != 'h') || src[1] != 'd') {
 		return 0;
 	}
@@ -176,6 +183,34 @@ static void load_devmap(char const *root) {
 	fclose(fh);
 }
 
+#define GRUB_CONV_PATH(dest, src) \
+	if(src[0] == '(') { \
+		char *dev = lookup_gdev(src); \
+		if(!dev) { \
+			printD("%s:%d: Invalid GRUB device", fname, lnum); \
+			continue; \
+		} \
+		\
+		strlcpy(dest, dev, sizeof(dest)); \
+		strlcat(dest, strchr(src, ')')+1, sizeof(dest)); \
+		\
+		free(dev); \
+	}else{ \
+		strlcpy(dest, src, sizeof(dest)); \
+	}
+
+#define GRUB_CHECK_TOPEN() \
+	if(!topen) { \
+		printD("%s:%u: %s must come after a title directive", fname, lnum, name); \
+		continue; \
+	}
+
+#define GRUB_CHECK_ARG() \
+	if(!val[0]) { \
+		printD("%s:%u: %s requires an argument", fname, lnum, name); \
+		continue; \
+	}
+
 /* Load GRUB menu.lst */
 static void load_menu(char const *root) {
 	char filename[1024], *fname = "menu.lst";
@@ -187,7 +222,7 @@ static void load_menu(char const *root) {
 		return;
 	}
 	
-	int lnum = 0, topen = 0, defnum = -1, i = 0;
+	int lnum = 0, topen = 0, defnum = -1, tnum = 0, tskip;
 	char buf[1024], *name, *val;
 	kl_target target;
 	kl_module mod;
@@ -204,80 +239,98 @@ static void load_menu(char const *root) {
 		}
 		
 		if(kl_streq(name, "timeout") && timeout == -1) {
-			CHECK_HASARG();
-			
+			GRUB_CHECK_ARG();
 			timeout = atoi(val);
-			continue;
 		}
+		
 		if(kl_streq(name, "default")) {
-			CHECK_HASARG();
-			
+			GRUB_CHECK_ARG();
 			defnum = atoi(val);
-			continue;
 		}
 		
 		if(kl_streq(name, "title")) {
-			CHECK_HASARG();
+			GRUB_CHECK_ARG();
 			
-			if(topen) {
-				ADD_TARGET();
+			if(topen && !tskip) {
+				if(!target.root[0]) {
+					printD("%s:%d: No root device specified", fname, topen);
+					
+					tskip = 1;
+					list_nuke(target.modules);
+					target.modules = NULL;
+				}
+				
+				if(!target.kernel[0]) {
+					printD("%s:%d: No kernel specified", fname, topen);
+					
+					tskip = 1;
+					list_nuke(target.modules);
+					target.modules = NULL;
+				}
+				
+				if(!tskip) {
+					list_add_copy(&targets, &target, sizeof(target));
+				}
 			}
 			
 			INIT_TARGET(&target);
 			strlcpy(target.title, val, sizeof(target.title));
 			target.flags |= TARGET_RESET;
 			topen = lnum;
+			tskip = 0;
 			
-			if(i++ == defnum) {
+			if(tnum++ == defnum) {
 				target.flags |= TARGET_DEFAULT;
 			}
-			
-			continue;
 		}
+		
 		if(kl_streq(name, "root")) {
-			CHECK_TOPEN();
-			CHECK_GDEV();
+			GRUB_CHECK_TOPEN();
 			
-			if(*val) {
-				strlcpy(target.root, val, sizeof(target.root));
+			if(val[0]) {
+				char *dev = lookup_gdev(val);
+				if(!dev) {
+					printD("%s:%d: Invalid GRUB device", fname, lnum);
+					continue;
+				}
+				
+				strlcpy(target.root, dev, sizeof(target.root));
+				free(dev);
 			}else{
 				debug("Empty root device at %d, ignoring target", lnum);
-				topen = -1;
+				tskip = 1;
 			}
-			
-			continue;
 		}
+		
 		if(kl_streq(name, "kernel")) {
-			CHECK_TOPEN();
-			CHECK_HASARG();
-			CHECK_VPATH();
+			GRUB_CHECK_TOPEN();
+			GRUB_CHECK_ARG();
 			
 			strlcpy(target.cmdline, next_value(val), sizeof(target.cmdline));
-			strlcpy(target.kernel, val, sizeof(target.kernel));
-			continue;
+			GRUB_CONV_PATH(target.kernel, val);
 		}
+		
 		if(kl_streq(name, "initrd")) {
-			CHECK_TOPEN();
-			CHECK_HASARG();
-			CHECK_VPATH();
+			GRUB_CHECK_TOPEN();
+			GRUB_CHECK_ARG();
 			
-			strlcpy(target.initrd, val, sizeof(target.initrd));
-			continue;
+			GRUB_CONV_PATH(target.initrd, val);
 		}
+		
 		if(kl_streq(name, "module")) {
-			CHECK_TOPEN();
-			CHECK_HASARG();
-			CHECK_VPATH();
+			GRUB_CHECK_TOPEN();
+			GRUB_CHECK_ARG();
 			
 			INIT_MODULE(&mod);
-			strlcpy(mod.args, next_value(val), sizeof(mod.args));
-			strlcpy(mod.name, val, sizeof(mod.name));
-			list_add_copy(&target.modules, &mod, sizeof(mod));
 			
-			continue;
+			strlcpy(mod.args, next_value(val), sizeof(mod.args));
+			GRUB_CONV_PATH(mod.name, val);
+			
+			list_add_copy(&target.modules, &mod, sizeof(mod));
 		}
+		
 		if(kl_streq(name, "chainloader")) {
-			topen = -1;
+			tskip = 1;
 		}
 	}
 	if(ferror(fh)) {

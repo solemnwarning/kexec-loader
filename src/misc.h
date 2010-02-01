@@ -91,14 +91,6 @@ typedef struct kl_target {
 		continue; \
 	}
 
-#define CHECK_GDEV() \
-	if(*val != '(' || val[strlen(val)-1] != ')') { \
-		printD("%s:%d: Invalid device syntax", fname, lnum); \
-		continue; \
-	} \
-	val++; \
-	val[strlen(val)-1] = '\0';
-
 #define TARGET_FAIL() \
 	topen = 0; \
 	while(target.modules) { \
