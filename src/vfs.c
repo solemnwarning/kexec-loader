@@ -16,6 +16,16 @@
  * 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 */
 
+/* The code in this file is a VFS abstraction layer which translates paths so
+ * they are relative to the root directory of a filesystem. Paths may specify a
+ * device at the beginning in brackets (i.e. (hda1)/path), if no device is
+ * specified, the VFS root device will be used instead. If neither specify a
+ * device the path translation will fail.
+ *
+ * There are two special devices which can be used: 'debug' prevents any path
+ * translation from occuring and 'rootfs' sets the path relative to /
+*/
+
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
@@ -60,6 +70,11 @@ static char *disk_root(char const *name) {
 	return root;
 }
 
+/* Translate a VFS path to a real path
+ *
+ * Returns the real path in an allocated buffer on success, NULL on failure
+ * and sets errno, possibly to a kexec-loader specific error code.
+*/
 char *vfs_translate_path(char const *path_in) {
 	char const *disk = vfs_root;
 	char disk_buf[32];
@@ -121,6 +136,11 @@ char *vfs_translate_path(char const *path_in) {
 	return path;
 }
 
+/* Sets the VFS root device
+ *
+ * The string is copied so it may be changed or deallocated once this function
+ * returns. If NULL is passed, the root device will be unset.
+*/
 void vfs_set_root(char const *root) {
 	free(vfs_root);
 	vfs_root = root ? kl_strdup(root) : NULL;
