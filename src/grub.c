@@ -26,6 +26,7 @@
 #include "grub.h"
 #include "console.h"
 #include "disk.h"
+#include "vfs.h"
 
 kl_gdev *grub_devmap = NULL;
 
@@ -133,13 +134,10 @@ char *lookup_gdev(char const *dev) {
 }
 
 /* Load a device.map file */
-static void load_devmap(char const *root) {
-	char filename[1024];
-	snprintf(filename, 1024, "%s/device.map", root);
-	
-	FILE *fh = fopen(filename, "r");
+static void load_devmap(char const *path) {
+	FILE *fh = vfs_fopen(path, "r");
 	if(!fh) {
-		printD("Error opening device.map: %s", strerror(errno));
+		printD("Error opening device.map: %s", kl_strerror(errno));
 		return;
 	}
 	
@@ -187,7 +185,7 @@ static void load_devmap(char const *root) {
 	if(src[0] == '(') { \
 		char *dev = lookup_gdev(src); \
 		if(!dev) { \
-			printD("%s:%d: Invalid GRUB device", fname, lnum); \
+			printD("menu.lst:%d: Invalid GRUB device", lnum); \
 			continue; \
 		} \
 		\
@@ -201,24 +199,44 @@ static void load_devmap(char const *root) {
 
 #define GRUB_CHECK_TOPEN() \
 	if(!topen) { \
-		printD("%s:%u: %s must come after a title directive", fname, lnum, name); \
+		printD("menu.lst:%u: %s must come after a title directive", lnum, name); \
 		continue; \
 	}
 
 #define GRUB_CHECK_ARG() \
 	if(!val[0]) { \
-		printD("%s:%u: %s requires an argument", fname, lnum, name); \
+		printD("menu.lst:%u: %s requires an argument", lnum, name); \
 		continue; \
 	}
 
+#define GRUB_ADD_TARGET() \
+	if(topen && !tskip) { \
+		if(!target.root[0]) { \
+			printD("menu.lst:%d: No root device specified", topen); \
+			\
+			tskip = 1; \
+			list_nuke(target.modules); \
+			target.modules = NULL; \
+		} \
+		\
+		if(!target.kernel[0]) { \
+			printD("menu.lst:%d: No kernel specified", topen); \
+			\
+			tskip = 1; \
+			list_nuke(target.modules); \
+			target.modules = NULL; \
+		} \
+		\
+		if(!tskip) { \
+			list_add_copy(&targets, &target, sizeof(target)); \
+		} \
+	}
+
 /* Load GRUB menu.lst */
-static void load_menu(char const *root) {
-	char filename[1024], *fname = "menu.lst";
-	snprintf(filename, 1024, "%s/menu.lst", root);
-	
-	FILE *fh = fopen(filename, "r");
+static void load_menu(char const *path) {
+	FILE *fh = vfs_fopen(path, "r");
 	if(!fh) {
-		printD("Error opening menu.lst: %s", strerror(errno));
+		printD("Error opening menu.lst: %s", kl_strerror(errno));
 		return;
 	}
 	
@@ -251,27 +269,7 @@ static void load_menu(char const *root) {
 		if(kl_streq(name, "title")) {
 			GRUB_CHECK_ARG();
 			
-			if(topen && !tskip) {
-				if(!target.root[0]) {
-					printD("%s:%d: No root device specified", fname, topen);
-					
-					tskip = 1;
-					list_nuke(target.modules);
-					target.modules = NULL;
-				}
-				
-				if(!target.kernel[0]) {
-					printD("%s:%d: No kernel specified", fname, topen);
-					
-					tskip = 1;
-					list_nuke(target.modules);
-					target.modules = NULL;
-				}
-				
-				if(!tskip) {
-					list_add_copy(&targets, &target, sizeof(target));
-				}
-			}
+			GRUB_ADD_TARGET();
 			
 			INIT_TARGET(&target);
 			strlcpy(target.title, val, sizeof(target.title));
@@ -290,7 +288,7 @@ static void load_menu(char const *root) {
 			if(val[0]) {
 				char *dev = lookup_gdev(val);
 				if(!dev) {
-					printD("%s:%d: Invalid GRUB device", fname, lnum);
+					printD("menu.lst:%d: Invalid GRUB device", lnum);
 					continue;
 				}
 				
@@ -337,9 +335,7 @@ static void load_menu(char const *root) {
 		printD("Error reading menu.lst: %s", strerror(errno));
 	}
 	
-	if(topen) {
-		ADD_TARGET();
-	}
+	GRUB_ADD_TARGET();
 	
 	fclose(fh);
 }
@@ -354,11 +350,13 @@ void grub_load(void) {
 	kl_disk *disk = mount_retry(device, "GRUB disk");
 	
 	if(disk) {
-		char root[256];
-		snprintf(root, 256, "/mnt/%s/%s", disk->name, get_path(grub_path));
+		char path[1024];
 		
-		load_devmap(root);
-		load_menu(root);
+		snprintf(path, sizeof(path), "%s/device.map", grub_path);
+		load_devmap(path);
+		
+		snprintf(path, sizeof(path), "%s/menu.lst", grub_path);
+		load_menu(path);
 	}
 	
 	free(disk);
