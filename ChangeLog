@@ -20,6 +20,11 @@ Version x:
 	Added gzip support to TAR extractor to replace gzipped modules.
 	
 	Updated addmod.sh to accept multiple modules.
+	
+	Wrote script and make targets for generating ISO images.
+	
+	Rewrote and changed large portions of the GRUB intergration code to fix
+	bugs and improve readability.
 
 Version 2.1.1:
 	Updated config loading code to look for kxloader.cfg if there is no
