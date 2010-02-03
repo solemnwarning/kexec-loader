@@ -1,4 +1,4 @@
-Version x:
+Version 2.2:
 	Added 'floppy' target to automatically build floppy images.
 	
 	Updated mkinitramfs.sh to create an LZMA compressed archive.
