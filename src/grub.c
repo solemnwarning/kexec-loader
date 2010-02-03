@@ -189,9 +189,7 @@ static void load_devmap(char const *path) {
 			continue; \
 		} \
 		\
-		strlcpy(dest, dev, sizeof(dest)); \
-		strlcat(dest, strchr(src, ')')+1, sizeof(dest)); \
-		\
+		snprintf(dest, sizeof(dest), "(%s)%s", dev, strchr(src, ')')+1); \
 		free(dev); \
 	}else{ \
 		strlcpy(dest, src, sizeof(dest)); \
