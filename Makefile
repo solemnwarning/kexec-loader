@@ -101,7 +101,7 @@ cdrom-export: iso-files iso-modules iso-files/isolinux/initrd.img iso-files/isol
 	cp -a iso-files iso-modules kexec-loader-$(VERSION)-cdrom
 	cp -a mkiso.sh addmod.sh kexec-loader-$(VERSION)-cdrom
 	sed -e "s/\$$VERSION/$(VERSION)/g" cdrom-readme.html > kexec-loader-$(VERSION)-cdrom/readme.html
-	tar -cf kexec-loader-$(VERSION)-cdrom.tar kexec-loader-$(VERSION)-cdrom
+	tar -cf cdrom.tar kexec-loader-$(VERSION)-cdrom
 	rm -rf kexec-loader-$(VERSION)-cdrom
 
 iso-modules:
