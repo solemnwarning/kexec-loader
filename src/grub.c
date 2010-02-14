@@ -211,21 +211,13 @@ static void load_devmap(char const *path) {
 	if(topen && !tskip) { \
 		if(!target.root[0]) { \
 			printD("menu.lst:%d: No root device specified", topen); \
-			\
-			tskip = 1; \
-			list_nuke(target.modules); \
-			target.modules = NULL; \
 		} \
-		\
 		if(!target.kernel[0]) { \
 			printD("menu.lst:%d: No kernel specified", topen); \
-			\
-			tskip = 1; \
-			list_nuke(target.modules); \
-			target.modules = NULL; \
 		} \
-		\
-		if(!tskip) { \
+		if(!target.root[0] || !target.kernel[0]) { \
+			list_nuke(target.modules); \
+		}else{ \
 			list_add_copy(&targets, &target, sizeof(target)); \
 		} \
 	}

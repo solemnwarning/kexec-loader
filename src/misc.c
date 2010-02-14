@@ -576,7 +576,6 @@ void list_nuke(void *root) {
 	} \
 	if(!target.root[0] || !target.kernel[0]) { \
 		list_nuke(target.modules); \
-		target.modules = NULL; \
 	}else{ \
 		list_add_copy(&targets, &target, sizeof(target)); \
 	}
