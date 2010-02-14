@@ -65,51 +65,6 @@ typedef struct kl_target {
 	kl_module *modules;
 } kl_target;
 
-#define CHECK_HASARG() \
-	if(!val[0]) { \
-		printD("%s:%u: '%s' requires an argument", fname, lnum, name); \
-		continue; \
-	}
-
-#define CHECK_HASARG_MULTI(s,n) \
-	if(!s) { \
-		printD("%s:%u: '%s' requires %d arguments", fname, lnum, name, (int)n); \
-		continue; \
-	}
-
-#define CHECK_TOPEN() \
-	if(!topen) { \
-		printD("%s:%u: '%s' must be after a 'title'", fname, lnum, name); \
-	} \
-	if(topen <= 0) { \
-		continue; \
-	}
-
-#define CHECK_VPATH() \
-	if(!check_vpath(val)) { \
-		printD("%s:%d: Invalid path specified", fname, lnum); \
-		continue; \
-	}
-
-#define TARGET_FAIL() \
-	topen = 0; \
-	while(target.modules) { \
-		list_del(&target.modules, target.modules); \
-	}
-
-#define ADD_TARGET() \
-	if(topen > 0 && !target.root[0]) { \
-		printD("%s:%d: No root device specified", fname, topen); \
-		TARGET_FAIL(); \
-	} \
-	if(topen > 0 && !target.kernel[0]) { \
-		printD("%s:%d: No kernel specified", fname, topen); \
-		TARGET_FAIL(); \
-	} \
-	if(topen > 0) { \
-		list_add_copy(&targets, &target, sizeof(target)); \
-	}
-
 #define SMALLEST(a, b) ((a) > (b) ? (b) : (a))
 
 extern kl_disk *boot_disk;

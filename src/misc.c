@@ -542,6 +542,45 @@ void list_nuke(void *root) {
 	}
 }
 
+#define CFG_CHECK_ARGS(n) { \
+	char *s = val; \
+	int ac = 0; \
+	\
+	while(ac < n && s[0]) { \
+		s += strcspn(s, "\t "); \
+		s += strspn(s, "\t "); \
+		ac++; \
+	} \
+	if(ac < n) { \
+		if(n == 1) { \
+			printD("%s:%u: '%s' requires an argument", fname, lnum, name); \
+		}else{ \
+			printD("%s:%u: '%s' requires %d arguments", fname, lnum, name, n); \
+		} \
+		continue; \
+	} \
+}
+
+#define CFG_CHECK_TOPEN() \
+	if(!topen) { \
+		printD("%s:%u: '%s' must be within a target block", fname, lnum, name); \
+		continue; \
+	}
+
+#define CFG_ADD_TARGET() \
+	if(!target.root[0]) { \
+		printD("%s:%d: No root device specified", fname, topen); \
+	} \
+	if(!target.kernel[0]) { \
+		printD("%s:%d: No kernel specified", fname, topen); \
+	} \
+	if(!target.root[0] || !target.kernel[0]) { \
+		list_nuke(target.modules); \
+		target.modules = NULL; \
+	}else{ \
+		list_add_copy(&targets, &target, sizeof(target)); \
+	}
+
 /* Load kexec-loader.conf */
 static void load_conf(char const *fname) {
 	FILE *fh = vfs_fopen(fname, "r");
@@ -570,7 +609,7 @@ static void load_conf(char const *fname) {
 		}
 		
 		if(kl_streq(name, "timeout")) {
-			CHECK_HASARG();
+			CFG_CHECK_ARGS(1);
 			
 			if(kl_streq(val, "off")) {
 				timeout = -2;
@@ -581,8 +620,7 @@ static void load_conf(char const *fname) {
 			continue;
 		}
 		if(kl_streq(name, "grub-path")) {
-			CHECK_HASARG();
-			CHECK_VPATH();
+			CFG_CHECK_ARGS(1);
 			
 			if(*val != '(') {
 				printD("%s:%d: No device specified", fname, lnum);
@@ -594,7 +632,7 @@ static void load_conf(char const *fname) {
 		}
 		if(kl_streq(name, "grub-map")) {
 			val2 = next_value(val);
-			CHECK_HASARG_MULTI(val2, 2);
+			CFG_CHECK_ARGS(2);
 			
 			if(!parse_gdev(&gdev, val)) {
 				printD("%s:%d: Invalid GRUB device '%s'", fname, lnum, val);
@@ -608,10 +646,10 @@ static void load_conf(char const *fname) {
 		}
 		
 		if(kl_streq(name, "title")) {
-			CHECK_HASARG();
+			CFG_CHECK_ARGS(1);
 			
 			if(topen) {
-				ADD_TARGET();
+				CFG_ADD_TARGET();
 			}
 			
 			INIT_TARGET(&target);
@@ -621,58 +659,55 @@ static void load_conf(char const *fname) {
 			continue;
 		}
 		if(kl_streq(name, "root")) {
-			CHECK_TOPEN();
-			CHECK_HASARG();
+			CFG_CHECK_TOPEN();
+			CFG_CHECK_ARGS(1);
 			
 			strlcpy(target.root, val, sizeof(target.root));
 			continue;
 		}
 		if(kl_streq(name, "kernel")) {
-			CHECK_TOPEN();
-			CHECK_HASARG();
-			CHECK_VPATH();
+			CFG_CHECK_TOPEN();
+			CFG_CHECK_ARGS(1);
 			
 			strlcpy(target.kernel, val, sizeof(target.kernel));
 			continue;
 		}
 		if(kl_streq(name, "initrd")) {
-			CHECK_TOPEN();
-			CHECK_HASARG();
-			CHECK_VPATH();
+			CFG_CHECK_TOPEN();
+			CFG_CHECK_ARGS(1);
 			
 			strlcpy(target.initrd, val, sizeof(target.initrd));
 			continue;
 		}
 		if(kl_streq(name, "cmdline")) {
-			CHECK_TOPEN();
-			CHECK_HASARG();
+			CFG_CHECK_TOPEN();
+			CFG_CHECK_ARGS(1);
 			
 			strlcpy(target.cmdline, val, sizeof(target.cmdline));
 			continue;
 		}
 		if(kl_streq(name, "append")) {
-			CHECK_TOPEN();
-			CHECK_HASARG();
+			CFG_CHECK_TOPEN();
+			CFG_CHECK_ARGS(1);
 			
 			strlcpy(target.append, val, sizeof(target.append));
 			continue;
 		}
 		if(kl_streq(name, "default")) {
-			CHECK_TOPEN();
+			CFG_CHECK_TOPEN();
 			
 			target.flags |= TARGET_DEFAULT;
 			continue;
 		}
 		if(kl_streq(name, "reset-vga")) {
-			CHECK_TOPEN();
+			CFG_CHECK_TOPEN();
 			
 			target.flags |= TARGET_RESET;
 			continue;
 		}
 		if(kl_streq(name, "module")) {
-			CHECK_TOPEN();
-			CHECK_HASARG();
-			CHECK_VPATH();
+			CFG_CHECK_TOPEN();
+			CFG_CHECK_ARGS(1);
 			
 			INIT_MODULE(&mod);
 			strlcpy(mod.args, next_value(val), sizeof(mod.args));
@@ -682,8 +717,8 @@ static void load_conf(char const *fname) {
 			continue;
 		}
 		if(kl_streq(name, "kmod")) {
-			CHECK_TOPEN();
-			CHECK_HASARG();
+			CFG_CHECK_TOPEN();
+			CFG_CHECK_ARGS(1);
 			
 			INIT_MODULE(&mod);
 			strlcpy(mod.args, next_value(val), sizeof(mod.args));
@@ -700,7 +735,7 @@ static void load_conf(char const *fname) {
 	}
 	
 	if(topen) {
-		ADD_TARGET();
+		CFG_ADD_TARGET();
 	}
 	
 	fclose(fh);
