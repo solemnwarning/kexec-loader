@@ -48,5 +48,6 @@ char const *mount_disk(kl_disk *disk);
 kl_disk *mount_retry(char const *device, char const *name);
 void unmount_all(void);
 char *get_diskid(char const *root, char const *vpath);
+int compare_disk_id(kl_disk *disk, const char *id);
 
 #endif /* !KL_DISK_H */

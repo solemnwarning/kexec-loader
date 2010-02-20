@@ -137,7 +137,7 @@ kl_disk *get_disks(void) {
 /* Search for a disk by disk id */
 kl_disk *find_disk(char const *id) {
 	kl_disk *ptr = get_disks(), *ret = NULL;
-	int match = 0, i;
+	int i;
 	char *fstype = NULL;
 	
 	if(strchr(id, ':')) {
@@ -151,19 +151,7 @@ kl_disk *find_disk(char const *id) {
 	}
 	
 	while(ptr) {
-		if(!ret && kl_strnceq(id, "LABEL=", 6)) {
-			if(ptr->label[0] && kl_strceq(ptr->label, id+6)) {
-				match = 1;
-			}
-		}else if(!ret && kl_strnceq(id, "UUID=", 5)) {
-			if(ptr->uuid[0] && kl_strceq(ptr->uuid, id+5)) {
-				match = 1;
-			}
-		}else if(!ret && kl_streq(ptr->name, id)) {
-			match = 1;
-		}
-		
-		if(!ret && match) {
+		if(!ret && compare_disk_id(ptr, id)) {
 			ret = ptr;
 			ptr = ptr->next;
 		}else{
@@ -308,4 +296,24 @@ char *get_diskid(char const *root, char const *vpath) {
 	}
 	
 	return kl_strndup(disk, disklen);
+}
+
+int compare_disk_id(kl_disk *disk, const char *id) {
+	if(kl_strnceq(id, "LABEL=", 6)) {
+		if(disk->label[0] && kl_strceq(disk->label, id+6)) {
+			return 1;
+		}
+	}
+	
+	if(kl_strnceq(id, "UUID=", 5)) {
+		if(disk->uuid[0] && kl_strceq(disk->uuid, id+5)) {
+			return 1;
+		}
+	}
+	
+	if(kl_streq(disk->name, id)) {
+		return 1;
+	}
+	
+	return 0;
 }
