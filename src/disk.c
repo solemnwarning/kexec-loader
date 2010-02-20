@@ -95,9 +95,15 @@ kl_disk *get_disks(const char *filter) {
 	
 	char line[256], *name, path[256], *fstype = NULL;
 	
-	if(filter && strchr(filter, ':')) {
-		fstype = kl_strndup(filter, strcspn(filter, ":"));
-		filter = strchr(filter, ':')+1;
+	if(filter) {
+		if(strchr(filter, ':')) {
+			fstype = kl_strndup(filter, strcspn(filter, ":"));
+			filter = strchr(filter, ':')+1;
+		}
+		
+		if(kl_strneq(filter, "/dev/", 5)) {
+			filter += 5;
+		}
 	}
 	
 	while(fgets(line, 256, fh)) {
