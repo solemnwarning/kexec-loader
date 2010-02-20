@@ -187,8 +187,8 @@ kl_disk *find_disk(char const *id) {
 /* Attempt to mount a disk
  * Returns NULL on success, otherwise an error message
 */
-char const *mount_disk(kl_disk *disk, char const *mpoint) {
-	char dev[256], dir[256];
+char const *mount_disk(kl_disk *disk) {
+	char dev[256], mpoint[256];
 	struct mounted_fs x, *ptr = mounts;
 	
 	if(!disk->fstype) {
@@ -196,11 +196,7 @@ char const *mount_disk(kl_disk *disk, char const *mpoint) {
 	}
 	
 	snprintf(dev, 256, "/dev/%s", disk->name);
-	snprintf(dir, 256, "/mnt/%s", disk->name);
-	
-	if(!mpoint) {
-		mpoint = dir;
-	}
+	snprintf(mpoint, 256, "/mnt/%s", disk->name);
 	
 	while(ptr) {
 		if(kl_streq(mpoint, ptr->mpoint)) {
@@ -266,7 +262,7 @@ kl_disk *mount_retry(char const *device, char const *name) {
 		
 		printd("Found %s: %s", name, disk->name);
 		
-		char const *errmsg = mount_disk(disk, NULL);
+		char const *errmsg = mount_disk(disk);
 		if(errmsg) {
 			printD("Error mounting %s: %s", disk->name, errmsg);
 			break;

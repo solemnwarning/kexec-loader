@@ -55,7 +55,7 @@ static char *disk_root(char const *name) {
 			return NULL;
 		}
 		
-		char const *m_error = mount_disk(disk, NULL);
+		char const *m_error = mount_disk(disk);
 		if(m_error) {
 			if(kl_streq(m_error, "Unknown filesystem format")) {
 				errno = EBADFS;

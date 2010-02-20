@@ -44,7 +44,7 @@ typedef struct kl_disk {
 
 kl_disk *get_disks(void);
 kl_disk *find_disk(char const *id);
-char const *mount_disk(kl_disk *disk, char const *mpoint);
+char const *mount_disk(kl_disk *disk);
 kl_disk *mount_retry(char const *device, char const *name);
 void unmount_all(void);
 char *get_diskid(char const *root, char const *vpath);
