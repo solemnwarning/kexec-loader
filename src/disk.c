@@ -71,12 +71,14 @@ static void get_dev_size(char *dest, int size, char const *path) {
 	close(fd);
 }
 
-#define FOOBAR(dest, name) \
-	s = blkid_get_tag_value(NULL, name, path); \
+#define BLKID_TAG(dest, name) \
+{ \
+	char *s = blkid_get_tag_value(NULL, name, path); \
 	if(s) { \
 		strlcpy(dest, s, sizeof(dest)); \
 		free(s); \
-	}
+	} \
+}
 
 /* Return a list containing disks in /proc/diskstats */
 kl_disk *get_disks(void) {
@@ -89,7 +91,7 @@ kl_disk *get_disks(void) {
 	kl_disk *list = NULL;
 	kl_disk disk;
 	
-	char line[256], *name, path[256], *s;
+	char line[256], *name, path[256];
 	
 	while(fgets(line, 256, fh)) {
 		INIT_DISK(&disk);
@@ -117,9 +119,9 @@ kl_disk *get_disks(void) {
 		}
 		
 		strlcpy(disk.name, name, sizeof(disk.name));
-		FOOBAR(disk.label, "LABEL");
-		FOOBAR(disk.uuid, "UUID");
-		FOOBAR(disk.fstype, "TYPE");
+		BLKID_TAG(disk.label, "LABEL");
+		BLKID_TAG(disk.uuid, "UUID");
+		BLKID_TAG(disk.fstype, "TYPE");
 		
 		get_dev_size(disk.size, sizeof(disk.size), path);
 		
