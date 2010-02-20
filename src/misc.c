@@ -470,9 +470,10 @@ int kl_streq_end(char const *str, char const *match) {
 struct list { struct list *next; };
 
 /* Add an entry to a list */
-void list_add(void *rptr, void *node) {
+void list_add(void *rptr, void *node_p) {
 	struct list **root = rptr;
 	struct list *ptr = *root;
+	struct list *node = node_p;
 	
 	while(ptr && ptr->next) {
 		ptr = ptr->next;
@@ -483,6 +484,8 @@ void list_add(void *rptr, void *node) {
 	}else{
 		*root = node;
 	}
+	
+	node->next = NULL;
 }
 
 /* Copy a node and add the copy to a list */
