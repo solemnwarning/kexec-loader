@@ -261,6 +261,74 @@ kl_disk *mount_retry(char const *device, char const *name) {
 	return disk;
 }
 
+/* Mount a disk identified by a disk ID
+ * Returns a pointer to the disk in the mounts list on success
+ * Returns NULL and sets errno on failure
+ *
+ * Timeout is in seconds, zero will only try once, negative will try until
+ * interrupted by keyboard input. If timeout is non-zero messages may be
+ * printed to the console.
+*/
+kl_disk *mount_by_id(const char *disk_id, int timeout) {
+	kl_disk *disk = mounts;
+	
+	while(disk) {
+		if(compare_disk_id(mounts, disk_id)) {
+			return disk;
+		}
+		
+		disk = disk->next;
+	}
+	
+	disk = find_disk(disk_id);
+	
+	if(!disk && timeout) {
+		struct pollfd pollfds;
+		pollfds.fd = fileno(stdin);
+		pollfds.events = POLLIN;
+		
+		console_erase(ERASE_LINE);
+		printf("\rWaiting for disk.... (Press any key to abort)");
+		
+		while(!disk && timeout--) {
+			if(poll(&pollfds, 1, 1000)) {
+				console_getchar();
+				break;
+			}
+			
+			disk = find_disk(disk_id);
+		}
+		
+		if(disk) {
+			console_erase(ERASE_LINE);
+			printf("\rWaiting for disk.... Found\n");
+		}else{
+			console_erase(ERASE_LINE);
+			printf("\rWaiting for disk.... Aborted\n");
+		}
+	}
+	
+	if(!disk) {
+		errno = ENODEV;
+		return NULL;
+	}
+	
+	const char *merr = mount_disk(disk);
+	free(disk);
+	
+	if(merr) {
+		if(kl_streq(merr, "Unknown filesystem format")) {
+			errno = EBADFS;
+		}
+		
+		return NULL;
+	}
+	
+	for(disk = mounts; !compare_disk_id(disk, disk_id); disk = disk->next) {}
+	
+	return disk;
+}
+
 /* Unmount all filesystems */
 void unmount_all(void) {
 	kl_disk *ptr = mounts, *dptr;
