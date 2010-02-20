@@ -95,15 +95,9 @@ kl_disk *get_disks(const char *filter) {
 	
 	char line[256], *name, path[256], *fstype = NULL;
 	
-	if(filter) {
-		if(strchr(filter, ':')) {
-			fstype = kl_strndup(filter, strcspn(filter, ":"));
-			filter = strchr(filter, ':')+1;
-		}
-		
-		if(kl_strneq(filter, "/dev/", 5)) {
-			filter += 5;
-		}
+	if(filter && strchr(filter, ':')) {
+		fstype = kl_strndup(filter, strcspn(filter, ":"));
+		filter = strchr(filter, ':')+1;
 	}
 	
 	while(fgets(line, 256, fh)) {
@@ -321,6 +315,10 @@ int compare_disk_id(kl_disk *disk, const char *id) {
 		if(disk->uuid[0] && kl_strceq(disk->uuid, id+5)) {
 			return 1;
 		}
+	}
+	
+	if(kl_strneq(id, "/dev/", 5)) {
+		id += 5;
 	}
 	
 	if(kl_streq(disk->name, id)) {
