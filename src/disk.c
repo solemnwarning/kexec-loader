@@ -35,12 +35,7 @@
 #include "console.h"
 #include "grub.h"
 
-struct mounted_fs {
-	struct mounted_fs *next;
-	char mpoint[256];
-};
-
-static struct mounted_fs *mounts = NULL;
+static kl_disk *mounts = NULL;
 
 /* Get the size of a block device and format it as text
  * Copies "???" to dest on error
@@ -189,7 +184,7 @@ kl_disk *find_disk(char const *id) {
 */
 char const *mount_disk(kl_disk *disk) {
 	char dev[256], mpoint[256];
-	struct mounted_fs x, *ptr = mounts;
+	kl_disk *ptr = mounts;
 	
 	if(!disk->fstype) {
 		return "Unknown filesystem format";
@@ -199,8 +194,8 @@ char const *mount_disk(kl_disk *disk) {
 	snprintf(mpoint, 256, "/mnt/%s", disk->name);
 	
 	while(ptr) {
-		if(kl_streq(mpoint, ptr->mpoint)) {
-			debug("%s is already mounted", mpoint);
+		if(kl_streq(disk->name, ptr->name)) {
+			debug("%s is already mounted", disk->name);
 			return NULL;
 		}
 		
@@ -227,9 +222,7 @@ char const *mount_disk(kl_disk *disk) {
 	}else{
 		debug("Mounted %s at %s", dev, mpoint);
 		
-		x.next = NULL;
-		strlcpy(x.mpoint, mpoint, sizeof(x.mpoint));
-		list_add_copy(&mounts, &x, sizeof(x));
+		list_add_copy(&mounts, disk, sizeof(*disk));
 	}
 	
 	return NULL;
@@ -282,14 +275,17 @@ kl_disk *mount_retry(char const *device, char const *name) {
 
 /* Unmount all filesystems */
 void unmount_all(void) {
-	struct mounted_fs *ptr = mounts, *dptr;
+	kl_disk *ptr = mounts, *dptr;
 	
 	while(ptr) {
-		if(umount(ptr->mpoint)) {
-			debug("Error unmounting %s: %s", ptr->mpoint, strerror(errno));
+		char mpoint[256];
+		snprintf(mpoint, 256, "/mnt/%s", ptr->name);
+		
+		if(umount(mpoint)) {
+			debug("Error unmounting %s: %s", mpoint, strerror(errno));
 			ptr = ptr->next;
 		}else{
-			debug("Unmounted %s", ptr->mpoint);
+			debug("Unmounted %s", mpoint);
 			
 			dptr = ptr;
 			ptr = ptr->next;
