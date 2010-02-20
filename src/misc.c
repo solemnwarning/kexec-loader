@@ -68,6 +68,7 @@ int main(int argc, char **argv) {
 		LINUX_REBOOT_CMD_CAD_OFF, NULL
 	);
 	
+	printd("Loading modules from initramfs...");
 	load_kmod(NULL);
 	
 	if(check_file("/noboot")) {
@@ -91,8 +92,15 @@ int main(int argc, char **argv) {
 			printd("Warning: No configuration file present");
 		}
 		
-		extract_module_tars();
-		load_kmod(NULL);
+		if(boot_disk) {
+			if(vfs_exists("/modules/")) {
+				printd("Extracting modules from boot disk...");
+				extract_module_tars();
+			}
+			
+			printd("Loading remaining modules...");
+			load_kmod(NULL);
+		}
 		
 		grub_load();
 		

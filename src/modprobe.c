@@ -220,7 +220,7 @@ static int modprobe(char const *name, char const *buf, size_t size) {
 		
 		printD("Error loading '%s': %s", name, moderror(errno));
 	}else{
-		printd("Loaded module '%s'", name);
+		debug("Loaded module '%s' (%s)", name, args);
 		return 1;
 	}
 	
@@ -267,10 +267,6 @@ void extract_module_tars(void) {
 	
 	DIR *dh = vfs_opendir("/modules/");
 	if(!dh) {
-		if(errno == ENOENT) {
-			return;
-		}
-		
 		printD("Error opening modules directory: %s", kl_strerror(errno));
 		return;
 	}
