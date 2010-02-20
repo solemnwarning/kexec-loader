@@ -434,7 +434,7 @@ static struct ac_list *ac_search(char *cmd, int offset) {
 		}
 	}
 	if(mode == ac_dev) {
-		kl_disk *disks = get_disks();
+		kl_disk *disks = get_disks(NULL);
 		kl_disk *disk = disks;
 		
 		if(kl_strneq(argx, "UUID=", len) && len < 5) {
@@ -466,7 +466,7 @@ static struct ac_list *ac_search(char *cmd, int offset) {
 	}
 	if(mode == ac_file || mode == ac_dir) {
 		if(*argx == '\0' || (*argx == '(' && !strchr(argx, ')'))) {
-			kl_disk *disks = get_disks();
+			kl_disk *disks = get_disks(NULL);
 			kl_disk *disk = disks;
 			
 			if(kl_strneq(argx, "(UUID=", len) && len < 6) {

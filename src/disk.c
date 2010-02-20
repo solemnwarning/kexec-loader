@@ -72,7 +72,7 @@ static void get_dev_size(char *dest, int size, char const *path) {
 }
 
 #define BLKID_TAG(dest, name) \
-{ \
+if(!dest[0]) { \
 	char *s = blkid_get_tag_value(NULL, name, path); \
 	if(s) { \
 		strlcpy(dest, s, sizeof(dest)); \
@@ -80,8 +80,10 @@ static void get_dev_size(char *dest, int size, char const *path) {
 	} \
 }
 
-/* Return a list containing disks in /proc/diskstats */
-kl_disk *get_disks(void) {
+/* Return a list containing disks in /proc/diskstats
+ * Only returns first disk matching filter if not NULL
+*/
+kl_disk *get_disks(const char *filter) {
 	FILE *fh = fopen("/proc/diskstats", "r");
 	if(!fh) {
 		debug("Error opening /proc/diskstats: %s", strerror(errno));
@@ -91,7 +93,12 @@ kl_disk *get_disks(void) {
 	kl_disk *list = NULL;
 	kl_disk disk;
 	
-	char line[256], *name, path[256];
+	char line[256], *name, path[256], *fstype = NULL;
+	
+	if(filter && strchr(filter, ':')) {
+		fstype = kl_strndup(filter, strcspn(filter, ":"));
+		filter = strchr(filter, ':')+1;
+	}
 	
 	while(fgets(line, 256, fh)) {
 		INIT_DISK(&disk);
@@ -108,6 +115,7 @@ kl_disk *get_disks(void) {
 		name[strcspn(name, "\t ")] = '\0';
 		
 		sprintf(path, "/dev/%s", name);
+		strlcpy(disk.name, name, sizeof(disk.name));
 		
 		if(kl_strneq(name, "ram", 3) || kl_strneq(name, "loop", 4)) {
 			continue;
@@ -118,7 +126,23 @@ kl_disk *get_disks(void) {
 			continue;
 		}
 		
-		strlcpy(disk.name, name, sizeof(disk.name));
+		if(filter) {
+			if(kl_strnceq(filter, "LABEL=", 6)) {
+				BLKID_TAG(disk.label, "LABEL");
+			}
+			if(kl_strnceq(filter, "UUID=", 5)) {
+				BLKID_TAG(disk.uuid, "UUID");
+			}
+			
+			if(!compare_disk_id(&disk, filter)) {
+				continue;
+			}
+		}
+		
+		if(fstype) {
+			strlcpy(disk.fstype, fstype, sizeof(disk.fstype));
+		}
+		
 		BLKID_TAG(disk.label, "LABEL");
 		BLKID_TAG(disk.uuid, "UUID");
 		BLKID_TAG(disk.fstype, "TYPE");
@@ -126,47 +150,20 @@ kl_disk *get_disks(void) {
 		get_dev_size(disk.size, sizeof(disk.size), path);
 		
 		list_add_copy(&list, &disk, sizeof(disk));
+		
+		if(filter) {
+			break;
+		}
 	}
 	
 	if(ferror(fh)) {
 		debug("Error reading /proc/diskstats: %s", strerror(errno));
 	}
 	
+	free(fstype);
+	
 	fclose(fh);
 	return list;
-}
-
-/* Search for a disk by disk id */
-kl_disk *find_disk(char const *id) {
-	kl_disk *ptr = get_disks(), *ret = NULL;
-	int i;
-	char *fstype = NULL;
-	
-	if(strchr(id, ':')) {
-		i = strcspn(id, ":");
-		fstype = kl_strndup(id, i);
-		id += i+1;
-	}
-	
-	if(kl_strneq(id, "/dev/", 5)) {
-		id += 5;
-	}
-	
-	while(ptr) {
-		if(!ret && compare_disk_id(ptr, id)) {
-			ret = ptr;
-			ptr = ptr->next;
-		}else{
-			list_del(&ptr, ptr);
-		}
-	}
-	
-	if(ret && fstype) {
-		strlcpy(ret->fstype, fstype, sizeof(ret->fstype));
-	}
-	
-	free(fstype);
-	return ret;
 }
 
 /* Attempt to mount a disk
@@ -225,7 +222,7 @@ const kl_disk *mount_by_id(const char *disk_id, int timeout) {
 		disk = disk->next;
 	}
 	
-	disk = find_disk(disk_id);
+	disk = get_disks(disk_id);
 	
 	if(!disk && timeout) {
 		struct pollfd pollfds;
@@ -241,7 +238,7 @@ const kl_disk *mount_by_id(const char *disk_id, int timeout) {
 				break;
 			}
 			
-			disk = find_disk(disk_id);
+			disk = get_disks(disk_id);
 		}
 		
 		if(disk) {

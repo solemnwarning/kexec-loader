@@ -42,8 +42,7 @@ typedef struct kl_disk {
 	char size[32];
 } kl_disk;
 
-kl_disk *get_disks(void);
-kl_disk *find_disk(char const *id);
+kl_disk *get_disks(const char *filter);
 int mount_disk(kl_disk *disk);
 const kl_disk *mount_by_id(const char *disk_id, int timeout);
 void unmount_all(void);

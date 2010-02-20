@@ -276,7 +276,7 @@ void list_disks(void) {
 	printf("|   Device |     Size |     Format | %*.*s |\n", lw, lw, "Label");
 	LD_PDIV();
 	
-	kl_disk *ptr = get_disks();
+	kl_disk *ptr = get_disks(NULL);
 	while(ptr) {
 		printf("| %8.8s ", ptr->name);
 		printf("| %8.8s ", ptr->size);
