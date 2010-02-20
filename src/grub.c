@@ -337,7 +337,7 @@ void grub_load(void) {
 	}
 	
 	char *device = get_diskid("", grub_path);
-	kl_disk *disk = mount_retry(device, "GRUB disk");
+	const kl_disk *disk = mount_by_id(device, -1);
 	
 	if(disk) {
 		char path[1024];
@@ -349,7 +349,6 @@ void grub_load(void) {
 		load_menu(path);
 	}
 	
-	free(disk);
 	free(device);
 	return;
 }

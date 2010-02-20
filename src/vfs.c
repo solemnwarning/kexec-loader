@@ -49,22 +49,12 @@ static char *disk_root(char const *name) {
 	if(kl_streq(name, "rootfs")) {
 		root = kl_strdup("/");
 	}else{
-		kl_disk *disk = find_disk(name);
+		const kl_disk *disk = mount_by_id(name, 0);
 		if(!disk) {
-			errno = ENODEV;
 			return NULL;
 		}
 		
-		char const *m_error = mount_disk(disk);
-		if(m_error) {
-			if(kl_streq(m_error, "Unknown filesystem format")) {
-				errno = EBADFS;
-			}
-		}else{
-			root = kl_sprintf("/mnt/%s", disk->name);
-		}
-		
-		free(disk);
+		root = kl_sprintf("/mnt/%s", disk->name);
 	}
 	
 	return root;

@@ -67,7 +67,7 @@ typedef struct kl_target {
 
 #define SMALLEST(a, b) ((a) > (b) ? (b) : (a))
 
-extern kl_disk *boot_disk;
+extern const kl_disk *boot_disk;
 extern int timeout;
 extern char grub_path[];
 extern kl_target *targets;

@@ -39,7 +39,7 @@
 #define KLOG_TTY "/dev/tty2"
 #define DEBUG_TTY "/dev/tty3"
 
-kl_disk *boot_disk = NULL;
+const kl_disk *boot_disk = NULL;
 int timeout = -1;
 char grub_path[1024] = {'\0'};
 kl_target *targets = NULL;
@@ -77,7 +77,7 @@ int main(int argc, char **argv) {
 		
 		char const *kdevice = get_cmdline("root");
 		char const *device = kdevice ? kdevice : "LABEL=kexecloader";
-		boot_disk = mount_retry(device, "boot disk");
+		boot_disk = mount_by_id(device, -1);
 		
 		vfs_set_root(device);
 	}

@@ -216,51 +216,6 @@ char const *mount_disk(kl_disk *disk) {
 	return NULL;
 }
 
-/* Search for a device and mount it once it's found
- * Returns the kl_disk structure on success, or NULL on error/abort
-*/
-kl_disk *mount_retry(char const *device, char const *name) {
-	kl_disk *disk = NULL;
-	int rval = 0;
-	
-	struct pollfd pollset;
-	pollset.fd = fileno(stdin);
-	pollset.events = POLLIN;
-	
-	printd("Searching for %s...", name);
-	printm("Press any key to abort");
-	
-	while(1) {
-		if(poll(&pollset, 1, 1000)) {
-			console_getchar();
-			break;
-		}
-		
-		disk = find_disk(device);
-		if(!disk) {
-			continue;
-		}
-		
-		printd("Found %s: %s", name, disk->name);
-		
-		char const *errmsg = mount_disk(disk);
-		if(errmsg) {
-			printD("Error mounting %s: %s", disk->name, errmsg);
-			break;
-		}
-		
-		rval = 1;
-		break;
-	}
-	
-	if(!rval) {
-		free(disk);
-		disk = NULL;
-	}
-	
-	return disk;
-}
-
 /* Mount a disk identified by a disk ID
  * Returns a pointer to the disk in the mounts list on success
  * Returns NULL and sets errno on failure
@@ -269,11 +224,11 @@ kl_disk *mount_retry(char const *device, char const *name) {
  * interrupted by keyboard input. If timeout is non-zero messages may be
  * printed to the console.
 */
-kl_disk *mount_by_id(const char *disk_id, int timeout) {
+const kl_disk *mount_by_id(const char *disk_id, int timeout) {
 	kl_disk *disk = mounts;
 	
 	while(disk) {
-		if(compare_disk_id(mounts, disk_id)) {
+		if(compare_disk_id(disk, disk_id)) {
 			return disk;
 		}
 		
