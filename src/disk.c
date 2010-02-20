@@ -303,21 +303,6 @@ void unmount_all(void) {
 	}
 }
 
-/* Check the syntax of a vpath
- * Returns 1 if valid, zero otherwise
-*/
-int check_vpath(char const *vpath) {
-	if(*vpath == '(') {
-		if(vpath[1] == ')' || !(vpath = strchr(vpath, ')'))) {
-			return 0;
-		}
-		
-		vpath++;
-	}
-	
-	return 1;
-}
-
 /* Return the device in a vpath, fall back to root if vpath does not contain a
  * device, the return value is a string allocatedon the heap
 */

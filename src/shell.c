@@ -106,10 +106,10 @@ static struct shell_command commands[] = {
 
 #define PATH_COMMAND(name, dest) \
 	if(kl_streq(cmd, name)) { \
-		if(check_vpath(args)) { \
+		if(vfs_exists(args)) { \
 			strlcpy(dest, args, sizeof(dest)); \
 		}else{ \
-			printf("Invalid path '%s'\n", args); \
+			printf("Error: %s\n", kl_strerror(errno)); \
 		} \
 		continue; \
 	}
