@@ -168,14 +168,16 @@ kl_disk *find_disk(char const *id) {
 }
 
 /* Attempt to mount a disk
- * Returns NULL on success, otherwise an error message
+ * Returns 1 on success
+ * Returns 0 and sets errno on failure
 */
-char const *mount_disk(kl_disk *disk) {
+int mount_disk(kl_disk *disk) {
 	char dev[256], mpoint[256];
 	kl_disk *ptr = mounts;
 	
 	if(!disk->fstype) {
-		return "Unknown filesystem format";
+		errno = EBADFS;
+		return 0;
 	}
 	
 	snprintf(dev, 256, "/dev/%s", disk->name);
@@ -184,7 +186,7 @@ char const *mount_disk(kl_disk *disk) {
 	while(ptr) {
 		if(kl_streq(disk->name, ptr->name)) {
 			debug("%s is already mounted", disk->name);
-			return NULL;
+			return 1;
 		}
 		
 		ptr = ptr->next;
@@ -192,28 +194,14 @@ char const *mount_disk(kl_disk *disk) {
 	
 	mkdir(mpoint, 0700);
 	
-	if(mount(dev, mpoint, disk->fstype, MS_RDONLY, NULL)) {
-		switch(errno) {
-			case EBUSY:
-				/* The device is already mounted */
-				break;
-				
-			case EINVAL:
-				return "Invalid argument (Invalid superblock?)";
-				
-			case ENODEV:
-				return "No such device (Missing module?)";
-				
-			default:
-				return strerror(errno);
-		}
-	}else{
-		debug("Mounted %s at %s", dev, mpoint);
-		
-		list_add_copy(&mounts, disk, sizeof(*disk));
+	if(mount(dev, mpoint, disk->fstype, MS_RDONLY, NULL) && errno != EBUSY) {
+		return 0;
 	}
 	
-	return NULL;
+	debug("Mounted %s at %s", dev, mpoint);
+	list_add_copy(&mounts, disk, sizeof(*disk));
+	
+	return 1;
 }
 
 /* Mount a disk identified by a disk ID
@@ -268,14 +256,10 @@ const kl_disk *mount_by_id(const char *disk_id, int timeout) {
 		return NULL;
 	}
 	
-	const char *merr = mount_disk(disk);
+	int ms = mount_disk(disk);
 	free(disk);
 	
-	if(merr) {
-		if(kl_streq(merr, "Unknown filesystem format")) {
-			errno = EBADFS;
-		}
-		
+	if(!ms) {
 		return NULL;
 	}
 	
