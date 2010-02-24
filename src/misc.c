@@ -73,7 +73,7 @@ int main(int argc, char **argv) {
 	
 	if(check_file("/noboot")) {
 		debug("Found /noboot on initramfs, not searching for boot disk");
-		vfs_set_root("debug");
+		vfs_set_root("rootfs");
 	}else{
 		
 		char const *kdevice = get_cmdline("root");
