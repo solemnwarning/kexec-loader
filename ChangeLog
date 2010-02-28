@@ -22,6 +22,10 @@ Version 2.2.1:
 	if a cross compiler is used.
 	
 	Updated to kexec-tools 2.0.1.
+	
+	Added message to warn when no targets are defined.
+	
+	Updated PATH_COMMAND() macro to allow unsetting paths.
 
 Version 2.2:
 	Added 'floppy' target to automatically build floppy images.
