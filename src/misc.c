@@ -113,6 +113,10 @@ int main(int argc, char **argv) {
 		if(targets) {
 			menu_main();
 		}else{
+			printd("There are no targets defined, dropping to shell");
+			printd("Configure one or more targets to enable the menu");
+			putchar('\n');
+			
 			shell_main();
 		}
 	}
