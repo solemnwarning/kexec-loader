@@ -44,8 +44,8 @@ ifdef HOST
 	CC := $(HOST)-gcc
 	LD := $(HOST)-ld
 	
-	KT_CONFIGURE += --host=$(HOST)
-	E2FS_CONFIGURE += --host=$(HOST) --with-cc=$(CC) --with-linker=$(LD)
+	KT_CONFIGURE += --host=$(HOST) --build=`./config/config.guess`
+	E2FS_CONFIGURE += --host=$(HOST) --build=`./config/config.guess` --with-cc=$(CC) --with-linker=$(LD)
 endif
 
 OBJS := src/misc.o src/disk.o src/console.o src/menu.o src/modprobe.o \
