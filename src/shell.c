@@ -106,7 +106,7 @@ static struct shell_command commands[] = {
 
 #define PATH_COMMAND(name, dest) \
 	if(kl_streq(cmd, name)) { \
-		if(vfs_exists(args)) { \
+		if(!args[0] || vfs_exists(args)) { \
 			strlcpy(dest, args, sizeof(dest)); \
 		}else{ \
 			printf("Error: %s\n", kl_strerror(errno)); \
