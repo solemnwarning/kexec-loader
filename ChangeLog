@@ -1,3 +1,28 @@
+Version 2.2.1:
+	Lots of code cleanup.
+	
+	Updated list_add() to set the 'next' pointer of the new node to NULL as
+	not setting it to NULL could cause segfaults.
+	
+	Moved disk comparison code from find_disk() to compare_disk_id().
+	
+	Wrote mount_by_id() function to replace mount_retry() and direct
+	mount_disk() calls.
+	
+	Added filter argument to get_disks() and removed find_disk().
+	
+	Changed boot messages to be less verbose, verbose information is still
+	sent to debug console if needed.
+	
+	Set VFS root to "rootfs" instead of "debug" it /noboot exists.
+	
+	Rewrote tarmods.pl script.
+	
+	Updated makefile to explicitly set --build to the result of config.guess
+	if a cross compiler is used.
+	
+	Updated to kexec-tools 2.0.1.
+
 Version 2.2:
 	Added 'floppy' target to automatically build floppy images.
 	
