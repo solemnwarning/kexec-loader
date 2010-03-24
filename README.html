@@ -211,10 +211,13 @@ The <b>find</b> command searches directories for files that match a pattern, the
 <h2><a name="s3">3. Reference</a></h2>
 <h3><a name="s3s1">3.1. Configuration Reference</a></h3>
 <p>
-The configuration file must be named kexec-loader.conf or kxloader.cfg, kexec-loader.conf will be checked for first. The file may be in UNIX or DOS format. Each line may contain a single directive, where the name and value are seperated by spaces/tabs. Lines beginning with a hash (#) symbol are treated as comments.
+The configuration file must be named kexec-loader.conf or kxloader.cfg, kexec-loader.conf will be checked for first. The file may be in UNIX or DOS format. Each line may contain a single directive, where the name and value(s) are seperated by spaces/tabs. Lines beginning with a hash (#) symbol are treated as comments.
+</p>
+<p>
+All valid configuration directives are listed below. Parameters are shown in &lt;angled brackets&gt; are required for that directive, ones in [square brackets] are optional.
 </p>
 
-<p>The following directives are supported:</p>
+<p>The following directives are global:</p>
 <ul>
 	<li><b>timeout &lt;off|integer&gt;</b><br />
 	Number of seconds to wait at the menu screen before booting the default target, the first target will be booted if none are marked as default. The default is "off" which will make the menu wait forever.
@@ -272,9 +275,6 @@ The configuration file must be named kexec-loader.conf or kxloader.cfg, kexec-lo
 	Reset the VGA adaptor before starting the kernel, may be useful if you get garbled or no output on bootup.
 	</li>
 </ul>
-<p>
-Where parameters are shown in &lt;angled brackets&gt;, they are required for that directive. Ones in [square brackets] are optional.
-</p>
 
 <h3><a name="s3s2">3.2. Shell Reference</a></h3>
 <p>
