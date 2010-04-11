@@ -88,6 +88,13 @@ Once you have the build environment setup you can run 'make' to build statically
 <p>
 The rootfs filesystem containing kexec-loader and other files such as device nodes is extracted from an initramfs archive during bootup, it is usually named initrd.img to comply with 8.3 filename restrictions and common convention, however it is not an initrd which serves a similar purpose, but is differently implemented. There is an mkinitramfs.sh script in the kexec-loader source distribution which can be used to build one once the binaries have been compiled.
 </p>
+<h3>Using kexec-loader without a boot disk</h3>
+<p>
+If you wish to use kexec-loader without a dedicated boot disk (i.e when using PXE), you should add any files normally loaded from the boot disk (kexec-loader.conf, keymap.txt, etc) to the root of the initramfs alongside an empty file called "noboot". The presence of the noboot file instructs kexec-loader that there is no boot disk and all files should be loaded from the initramfs instead.
+</p>
+<p>
+Note: Emulated disks (BIOS INT13) cannot be used with kexec-loader as Linux does not use BIOS calls to access drives.
+</p>
 <h3>Building a floppy image</h3>
 <p>
 Floppy images containing kexec-loader can be built using the 'make floppy' command, you will need to provide a kernel in the KERNEL environment variable and optionally the .config file in the KCONFIG variable. Such kernels should include vfat and floppy support at the very least, if built as a module these must be included in the initramfs using the addmod.sh script.
