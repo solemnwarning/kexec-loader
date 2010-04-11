@@ -75,12 +75,17 @@ int main(int argc, char **argv) {
 		debug("Found /noboot on initramfs, not searching for boot disk");
 		vfs_set_root("rootfs");
 	}else{
-		
 		char const *kdevice = get_cmdline("root");
 		char const *device = kdevice ? kdevice : "LABEL=kexecloader";
 		boot_disk = mount_by_id(device, -1);
 		
 		vfs_set_root(device);
+		
+		const char *jail = get_cmdline("rootdir");
+		
+		if(jail) {
+			vfs_set_jail(jail);
+		}
 	}
 	
 	if(boot_disk || check_file("/noboot")) {
@@ -108,6 +113,8 @@ int main(int argc, char **argv) {
 			load_keymap("/keymap.txt");
 		}
 	}
+	
+	vfs_set_jail(NULL);
 	
 	while(1) {
 		if(targets) {
