@@ -26,6 +26,7 @@
 
 char *vfs_translate_path(char const *path_in);
 void vfs_set_root(char const *root);
+void vfs_set_jail(const char *jail);
 int vfs_open(char const *filename, int flags, ...);
 FILE *vfs_fopen(char const *filename, char const *mode);
 DIR *vfs_opendir(char const *filename);

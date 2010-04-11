@@ -42,6 +42,7 @@
 #include "vfs.h"
 
 static char *vfs_root = NULL;
+static char *vfs_jail = NULL;
 
 static char *disk_root(char const *name) {
 	char *root = NULL;
@@ -58,6 +59,31 @@ static char *disk_root(char const *name) {
 	}
 	
 	return root;
+}
+
+static void append_path(char *path, const char *path_in) {
+	int path_nodes = 0;
+	
+	while(*path_in) {
+		int len = strcspn(path_in, "/");
+		char *node = kl_strndup(path_in, len);
+		path_in += len;
+		path_in += strspn(path_in, "/");
+		
+		if(len) {
+			if(!kl_streq(node, "..")) {
+				strcat(path, "/");
+				strcat(path, node);
+				
+				path_nodes++;
+			}else if(path_nodes) {
+				strrchr(path, '/')[0] = '\0';
+				path_nodes--;
+			}
+		}
+		
+		free(node);
+	}
 }
 
 /* Translate a VFS path to a real path
@@ -97,31 +123,15 @@ char *vfs_translate_path(char const *path_in) {
 	}
 	
 	char *path = kl_malloc(strlen(disk_r) + strlen(path_in) + 2);
-	int path_nodes = 0;
 	
 	strcpy(path, disk_r);
 	free(disk_r);
 	
-	while(*path_in) {
-		int len = strcspn(path_in, "/");
-		char *node = kl_strndup(path_in, len);
-		path_in += len;
-		path_in += strspn(path_in, "/");
-		
-		if(len) {
-			if(!kl_streq(node, "..")) {
-				strcat(path, "/");
-				strcat(path, node);
-				
-				path_nodes++;
-			}else if(path_nodes) {
-				strrchr(path, '/')[0] = '\0';
-				path_nodes--;
-			}
-		}
-		
-		free(node);
+	if(vfs_jail) {
+		append_path(path, vfs_jail);
 	}
+	
+	append_path(path, path_in);
 	
 	return path;
 }
@@ -134,6 +144,14 @@ char *vfs_translate_path(char const *path_in) {
 void vfs_set_root(char const *root) {
 	free(vfs_root);
 	vfs_root = root ? kl_strdup(root) : NULL;
+}
+
+/* Sets the VFS chroot jail
+ * Same semantics as vfs_set_root()
+*/
+void vfs_set_jail(const char *jail) {
+	free(vfs_jail);
+	vfs_jail = jail ? kl_strdup(jail) : NULL;
 }
 
 int vfs_open(char const *filename, int flags, ...) {
