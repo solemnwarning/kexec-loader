@@ -36,6 +36,7 @@ cprog find
 cprog cpio
 cprog rm
 cprog lzma
+cprog perl
 
 if [ -z "$1" ]; then
 	echo "Usage: $0 <outfile.cpio.lzma>" 1>&2
@@ -51,6 +52,7 @@ mkdir -p -m 0755 initramfs.tmp/{dev,mnt,proc,modules} || exit 1
 
 install -m 0755 kexec-loader.static initramfs.tmp/init || exit 1
 strip -s initramfs.tmp/init || exit 1
+objdump -t kexec-loader.static --section=.text | perl -e 'while(<STDIN>) { chomp($_); my ($addr, undef, undef, undef, undef, $name) = split(/\s+/, $_, 6); print("$addr\t$name\n") if($name ne ""); }' > initramfs.tmp/symbol_table
 
 mknod -m 0600 initramfs.tmp/dev/console c 5 1 || exit 1
 mknod -m 0600 initramfs.tmp/dev/tty1 c 4 1 || exit 1

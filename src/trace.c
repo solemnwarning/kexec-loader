@@ -35,6 +35,35 @@ typedef struct stack_frame {
 	void *addr;
 } stack_frame_t;
 
+static const char *lookup_sym(void *addr) {
+	static char ret_sym[256] = "???";
+	
+	FILE *fh = fopen("/symbol_table", "r");
+	if(!fh) {
+		return strerror(errno);
+	}
+	
+	char buf[256];
+	void *cptr = NULL, *ptr;
+	
+	while(fgets(buf, 256, fh)) {
+		ptr = (void*)strtoul(buf, NULL, 16);
+		
+		if(addr >= ptr && ptr > cptr) {
+			char *s = buf+strspn(buf, "1234567890ABCDEFabcdef");
+			strcpy(ret_sym, s+strspn(s, "\t"));
+			ret_sym[strcspn(ret_sym, "\n")] = '\0';
+			cptr = ptr;
+		}
+	}
+	
+	fclose(fh);
+	
+	return ret_sym;
+}
+
+#define PRINT_FRAME(p) printd("#%d\t%p\t(%s)", i++, p, lookup_sym(p))
+
 static void stacktrace(ucontext_t *ctx) {
 	stack_frame_t *frame = (stack_frame_t*)ctx->uc_mcontext.gregs[REG_EBP];
 	int i = 0;
@@ -54,8 +83,10 @@ static void stacktrace(ucontext_t *ctx) {
 	printm("");
 	printd("Stack trace:");
 	
+	PRINT_FRAME((void*)ctx->uc_mcontext.gregs[REG_EIP]);
+	
 	while(frame && frame->addr) {
-		printd("#%d\t%p", i++, frame->addr);
+		PRINT_FRAME(frame->addr);
 		frame = frame->next;
 	}
 	
