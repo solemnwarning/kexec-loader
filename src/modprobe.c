@@ -249,7 +249,7 @@ static const char *moderror(int err) {
  * NOTE: Only call during init (when VFS root is set to boot disk)
 */
 int load_kmod(char const *module) {
-	if(modprobe_dir("(rootfs)/modules/", module)) {
+	if(modprobe_dir("(nojail,rootfs)/modules/", module)) {
 		return 1;
 	}
 	if(boot_disk && vfs_exists("/modules/") && modprobe_dir("/modules/", module)) {

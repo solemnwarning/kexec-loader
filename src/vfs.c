@@ -94,6 +94,7 @@ static void append_path(char *path, const char *path_in) {
 char *vfs_translate_path(char const *path_in) {
 	char const *disk = vfs_root;
 	char disk_buf[32];
+	int disable_chroot = 0;
 	
 	if(path_in[0] == '(') {
 		if(!strchr(path_in, ')')) {
@@ -106,6 +107,19 @@ char *vfs_translate_path(char const *path_in) {
 		disk = disk_buf;
 		
 		path_in = strchr(path_in, ')')+1;
+	}
+	
+	if(kl_strneq(disk, "nojail,", 7)) {
+		if(disk != disk_buf) {
+			strlcpy(disk_buf, disk, sizeof(disk_buf));
+			disk = disk_buf;
+		}
+		
+		int len = strlen(disk)-7;
+		memmove(disk_buf, disk_buf+7, len);
+		disk_buf[len] = '\0';
+		
+		disable_chroot = 1;
 	}
 	
 	if(!disk || *disk == '\0') {
@@ -127,7 +141,7 @@ char *vfs_translate_path(char const *path_in) {
 	strcpy(path, disk_r);
 	free(disk_r);
 	
-	if(vfs_jail) {
+	if(vfs_jail && !disable_chroot) {
 		append_path(path, vfs_jail);
 	}
 	
