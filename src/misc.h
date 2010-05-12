@@ -109,5 +109,6 @@ void shell_main(void);
 void load_keymap(char const *file);
 int extract_tar(char const *name, char const *dest);
 int is_tar_extension(char const *name);
+void enable_trace(void);
 
 #endif /* !KL_MISC_H */

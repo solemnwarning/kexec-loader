@@ -54,6 +54,8 @@ int main(int argc, char **argv) {
 		die("Error mounting /proc: %s", strerror(errno));
 	}
 	
+	enable_trace();
+	
 	redirect_klog();
 	
 	console_init();

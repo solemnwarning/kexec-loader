@@ -31,7 +31,7 @@ E2FS_CONFIGURE :=
 
 CC := gcc
 LD := ld
-CFLAGS := -Wall -DVERSION=\"$(VERSION)\"
+CFLAGS := -Wall -DVERSION=\"$(VERSION)\" -O0
 INCLUDES := -Isrc/e2fsprogs-$(E2FS_VER)/lib/
 LIBS := src/kexec.a src/libblkid.a src/libuuid.a -lz -llzmadec
 
@@ -49,7 +49,7 @@ endif
 
 OBJS := src/misc.o src/disk.o src/console.o src/menu.o src/modprobe.o \
 	src/boot.o src/grub.o src/shell.o src/globcmp.o src/keymap.o src/tar.o \
-	src/vfs.o
+	src/vfs.o src/trace.o
 
 all: kexec-loader kexec-loader.static
 
