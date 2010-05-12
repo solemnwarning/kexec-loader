@@ -115,10 +115,7 @@ char *vfs_translate_path(char const *path_in) {
 			disk = disk_buf;
 		}
 		
-		int len = strlen(disk)-7;
-		memmove(disk_buf, disk_buf+7, len);
-		disk_buf[len] = '\0';
-		
+		disk += 7;
 		disable_chroot = 1;
 	}
 	
