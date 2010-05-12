@@ -238,7 +238,7 @@ char const *get_cmdline(char const *name) {
 				if(r[len] == '=') {
 					r += len+1;
 					break;
-				}else if(r[len] == ' ' || r[len] == '\0') {
+				}else if(strchr("\n ", r[len]) || r[len] == '\0') {
 					r += len;
 					break;
 				}
@@ -249,7 +249,7 @@ char const *get_cmdline(char const *name) {
 		
 		if(r) {
 			strlcpy(val, r, sizeof(val));
-			val[strcspn(val, " ")] = '\0';
+			val[strcspn(val, " \n")] = '\0';
 			
 			r = val;
 		}
