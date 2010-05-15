@@ -1,3 +1,10 @@
+Version 2.2.2:
+	Added chroot jail support to the VFS layer and a rootdir kernel argument
+	to override the root directory path on the boot disk.
+	
+	Added stack trace with symbol lookup and register dump upon segfault to
+	make debugging crashes less insanity-inducing.
+
 Version 2.2.1:
 	Lots of code cleanup.
 	

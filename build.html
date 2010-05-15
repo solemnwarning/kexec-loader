@@ -103,5 +103,9 @@ Floppy images containing kexec-loader can be built using the 'make floppy' comma
 <p>
 Support exists for running kexec-loader from a CD, however it is recommended to use a floppy image if possible as you will need to rebuild the ISO image and burn a new CD if any changes are made to the configuration/modules/etc. If you still wish to build an ISO image you can use the 'make cdrom' command which uses KERNEL/KCONFIG in the same way as the floppy target. When you first run it, a directory named <i>iso-files</i> will be created, containing the file tree of the CD and an <i>iso-modules</i> directory, to which modules can be added in order to include them in the initramfs. If you make any changes to these directories you can run 'make cdrom' again to update the ISO.
 </p>
+<h3>Changing the root directory</h3>
+<p>
+The root directory (where kexec-loader.conf, modules, etc are placed) can be changed using the rootdir kernel argument. For example if rootdir=/boot/kexec is passed to the kexec-loader kernel, the configuration, modules and other files will be loaded from the /boot/kexec/ directory instead of / on the boot disk.
+</p>
 </body>
 </html>
