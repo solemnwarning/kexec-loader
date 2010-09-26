@@ -22,7 +22,7 @@ VERSION := v2.2.2
 
 # kexec-tools
 KT_VER := 2.0.1
-KT_URL := http://www.kernel.org/pub/linux/kernel/people/horms/kexec-tools/kexec-tools-$(KT_VER).tar.gz
+KT_URL := http://www.kernel.org/pub/linux/kernel/people/horms/kexec/kexec-tools-$(KT_VER).tar.gz
 KT_CONFIGURE :=
 
 # e2fsprogs
