@@ -332,21 +332,17 @@ static void load_menu(char const *path) {
 }
 
 /* Load GRUB device.map and menu.lst */
-void grub_load(void) {
-	if(!grub_path[0]) {
-		return;
-	}
-	
-	char *device = get_diskid("", grub_path);
+void grub_load(const char *grub_root) {
+	char *device = get_diskid("", grub_root);
 	const kl_disk *disk = mount_by_id(device, -1);
 	
 	if(disk) {
 		char path[1024];
 		
-		snprintf(path, sizeof(path), "%s/device.map", grub_path);
+		snprintf(path, sizeof(path), "%s/device.map", grub_root);
 		load_devmap(path);
 		
-		snprintf(path, sizeof(path), "%s/menu.lst", grub_path);
+		snprintf(path, sizeof(path), "%s/menu.lst", grub_root);
 		load_menu(path);
 	}
 	
@@ -377,17 +373,15 @@ void grub_detect(void) {
 			char *path2 = kl_sprintf("(%s)/grub/", disk->name);
 			
 			if(vfs_exists(path1)) {
-				strlcpy(grub_path, path1, 1024);
 				printd("Found GRUB installation at %s", path1);
 				run = 0;
 				
-				grub_load();
+				grub_load(path1);
 			}else if(vfs_exists(path2)) {
-				strlcpy(grub_path, path2, 1024);
 				printd("Found GRUB installation at %s", path2);
 				run = 0;
 				
-				grub_load();
+				grub_load(path2);
 			}
 			
 			free(path1);
