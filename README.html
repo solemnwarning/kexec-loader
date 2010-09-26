@@ -130,6 +130,12 @@ If you have a GRUB installation, kexec-loader can load its configuration. To use
 grub-path (hda1)/boot/grub
 </p>
 <p>
+If there is only one GRUB installation on the system you can use autodetection rather than manually entering the GRUB directory, if autodetection is enabled the first GRUB installation found will be used. This cannot be used if grub-path is defined.
+</p>
+<p class="code">
+grub-autodetect on
+</p>
+<p>
 On startup kexec-loader will read the list of GRUB devices from devices.map, it will use these to convert the BIOS disk numbers in menu.lst to Linux device names. All bootable entries in menu.lst will then be loaded and added to the boot menu. It will also load the default and timeout options from menu.lst if they are not specified in kexec-loader.conf.
 </p>
 <p>
@@ -225,6 +231,10 @@ All valid configuration directives are listed below. Parameters are shown in &lt
 	
 	<li><b>grub-path &lt;path&gt;</b><br />
 	Load device.map and menu.lst from a GRUB installation at this directory. You must specify a device.
+	</li>
+	
+	<li><b>grub-autodetect &lt;on|off&gt;</b><br />
+	Enables or disables GRUB autodetection, the default setting is off. Autodetection cannot be used if grub-path is set.
 	</li>
 	
 	<li><b>grub-map &lt;GRUB device&gt; &lt;device&gt;</b><br />
