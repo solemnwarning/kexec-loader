@@ -110,16 +110,16 @@ int main(int argc, char **argv) {
 			load_kmod(NULL);
 		}
 		
-		if(grub_path) {
-			grub_load(grub_path);
-		}
-		
 		if(vfs_exists("/keymap.txt")) {
 			load_keymap("/keymap.txt");
 		}
 	}
 	
 	vfs_set_jail(NULL);
+	
+	if(grub_path) {
+		grub_load(grub_path);
+	}
 	
 	if(grub_autodetect) {
 		if(grub_path) {
