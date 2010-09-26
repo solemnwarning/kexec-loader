@@ -17,7 +17,8 @@
 
 # This should be "vN.N" releases
 #
-VERSION=r$(shell svn info | grep 'Revision:' | sed -e 's/Revision: //')
+# VERSION=r$(shell svn info | grep 'Revision:' | sed -e 's/Revision: //')
+VERSION := v2.2.2
 
 # kexec-tools
 KT_VER := 2.0.1
