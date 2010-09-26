@@ -69,7 +69,7 @@ typedef struct kl_target {
 
 extern const kl_disk *boot_disk;
 extern int timeout;
-extern char grub_path[];
+extern char *grub_path;
 extern kl_target *targets;
 extern kl_module *kmods;
 extern int grub_autodetect;

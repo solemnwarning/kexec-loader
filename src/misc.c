@@ -41,7 +41,7 @@
 
 const kl_disk *boot_disk = NULL;
 int timeout = -1;
-char grub_path[1024] = {'\0'};
+char *grub_path = NULL;
 kl_target *targets = NULL;
 kl_module *kmods = NULL;
 int grub_autodetect = 0;
@@ -110,7 +110,7 @@ int main(int argc, char **argv) {
 			load_kmod(NULL);
 		}
 		
-		if(grub_path[0]) {
+		if(grub_path) {
 			grub_load(grub_path);
 		}
 		
@@ -122,7 +122,7 @@ int main(int argc, char **argv) {
 	vfs_set_jail(NULL);
 	
 	if(grub_autodetect) {
-		if(grub_path[0]) {
+		if(grub_path) {
 			printd("grub-path is set, ignoring grub-autodetect");
 		}else{
 			grub_detect();
@@ -661,7 +661,9 @@ static void load_conf(char const *fname) {
 				continue;
 			}
 			
-			strlcpy(grub_path, val, sizeof(grub_path));
+			free(grub_path);
+			grub_path = kl_strdup(val);
+			
 			continue;
 		}
 		if(kl_streq(name, "grub-map")) {
