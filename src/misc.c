@@ -44,6 +44,7 @@ int timeout = -1;
 char grub_path[1024] = {'\0'};
 kl_target *targets = NULL;
 kl_module *kmods = NULL;
+int grub_autodetect = 0;
 
 static void redirect_klog(void);
 static void load_conf(char const *filename);
@@ -117,6 +118,14 @@ int main(int argc, char **argv) {
 	}
 	
 	vfs_set_jail(NULL);
+	
+	if(grub_autodetect) {
+		if(grub_path[0]) {
+			printd("grub-path is set, ignoring grub-autodetect");
+		}else{
+			grub_detect();
+		}
+	}
 	
 	while(1) {
 		if(targets) {
@@ -664,6 +673,19 @@ static void load_conf(char const *fname) {
 			
 			strlcpy(gdev.device, val2, sizeof(gdev.device));
 			list_add_copy(&grub_devmap, &gdev, sizeof(gdev));
+			
+			continue;
+		}
+		if(kl_streq(name, "grub-autodetect")) {
+			CFG_CHECK_ARGS(1);
+			
+			if(kl_strceq(val, "yes")) {
+				grub_autodetect = 1;
+			}else if(kl_strceq(val, "no")) {
+				grub_autodetect = 0;
+			}else{
+				printD("%s:%d: Expected 'yes' or 'no' after grub-autodetect", fname, lnum);
+			}
 			
 			continue;
 		}

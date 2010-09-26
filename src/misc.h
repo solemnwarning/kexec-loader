@@ -72,6 +72,7 @@ extern int timeout;
 extern char grub_path[];
 extern kl_target *targets;
 extern kl_module *kmods;
+extern int grub_autodetect;
 
 void debug(char const *fmt, ...);
 void die(char const *fmt, ...);

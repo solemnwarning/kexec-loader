@@ -4,6 +4,8 @@ Version 2.2.2:
 	
 	Added stack trace with symbol lookup and register dump upon segfault to
 	make debugging crashes less insanity-inducing.
+	
+	Added GRUB autodetection support.
 
 Version 2.2.1:
 	Lots of code cleanup.

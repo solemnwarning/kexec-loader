@@ -43,5 +43,6 @@ extern kl_gdev *grub_devmap;
 int parse_gdev(kl_gdev *dest, char const *src);
 char *lookup_gdev(char const *dev);
 void grub_load(void);
+void grub_detect(void);
 
 #endif /* !KL_GRUB_H */

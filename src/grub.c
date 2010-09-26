@@ -21,6 +21,7 @@
 #include <ctype.h>
 #include <string.h>
 #include <errno.h>
+#include <poll.h>
 
 #include "misc.h"
 #include "grub.h"
@@ -351,4 +352,48 @@ void grub_load(void) {
 	
 	free(device);
 	return;
+}
+
+void grub_detect(void) {
+	printd("Searching for GRUB installation... (Press any key to abort)");
+	int run = 1;
+	
+	while(run) {
+		struct pollfd pollfds;
+		pollfds.fd = fileno(stdin);
+		pollfds.events = POLLIN;
+		
+		if(poll(&pollfds, 1, 1000)) {
+			console_getchar();
+			printd("GRUB autodetection aborted by keypress");
+			
+			return;
+		}
+		
+		kl_disk *disks = get_disks(NULL), *disk;
+		
+		for(disk = disks; disk && run;) {
+			char *path1 = kl_sprintf("(%s)/boot/grub/", disk->name);
+			char *path2 = kl_sprintf("(%s)/grub/", disk->name);
+			
+			if(vfs_exists(path1)) {
+				strlcpy(grub_path, path1, 1024);
+				printd("Found GRUB installation at %s", path1);
+				run = 0;
+				
+				grub_load();
+			}else if(vfs_exists(path2)) {
+				strlcpy(grub_path, path2, 1024);
+				printd("Found GRUB installation at %s", path2);
+				run = 0;
+				
+				grub_load();
+			}
+			
+			free(path1);
+			free(path2);
+			
+			disk = disk->next;
+		}
+	}
 }
