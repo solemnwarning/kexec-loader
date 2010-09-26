@@ -683,12 +683,12 @@ static void load_conf(char const *fname) {
 		if(kl_streq(name, "grub-autodetect")) {
 			CFG_CHECK_ARGS(1);
 			
-			if(kl_strceq(val, "yes")) {
+			if(kl_strceq(val, "on")) {
 				grub_autodetect = 1;
-			}else if(kl_strceq(val, "no")) {
+			}else if(kl_strceq(val, "off")) {
 				grub_autodetect = 0;
 			}else{
-				printD("%s:%d: Expected 'yes' or 'no' after grub-autodetect", fname, lnum);
+				printD("%s:%d: Expected 'on' or 'off' after grub-autodetect", fname, lnum);
 			}
 			
 			continue;
