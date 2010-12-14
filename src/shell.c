@@ -650,7 +650,7 @@ static void cmd_ls(char *cmd, char *args) {
 static void cmd_find(char *cmd, char *args) {
 	char *dir = next_value(args);
 	
-	if(!dir) {
+	if(!args[0] || !dir[0]) {
 		printf("Usage: find <filename> <directory>\n");
 		return;
 	}

@@ -109,14 +109,14 @@ char *vfs_translate_path(char const *path_in) {
 		path_in = strchr(path_in, ')')+1;
 	}
 	
-	if(kl_strneq(disk, "nojail,", 7)) {
-		disk += 7;
-		jail_len = 0;
-	}
-	
 	if(!disk || *disk == '\0') {
 		errno = ENDISK;
 		return NULL;
+	}
+	
+	if(kl_strneq(disk, "nojail,", 7)) {
+		disk += 7;
+		jail_len = 0;
 	}
 	
 	if(kl_streq(disk, "debug")) {
