@@ -129,7 +129,7 @@ void shell_main(void) {
 	vfs_set_root(NULL);
 	
 	uname(&kinfo);
-	printf("kexec-loader " VERSION ", Copyright (C) 2007-2010 Daniel Collins\n");
+	printf("kexec-loader " VERSION ", Copyright (C) 2007-2011 Daniel Collins\n");
 	printf("Linux kernel version: %s\n", kinfo.release);
 	printf("Type 'help' for a list of commands\n\n");
 	

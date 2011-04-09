@@ -166,7 +166,7 @@ static void draw_static(void) {
 	char version[64];
 	snprintf(version, 64, "kexec-loader " VERSION ", Linux %s", kinfo.release);
 	
-	char *copyright = "Copyright (C) 2007-2010 Daniel Collins";
+	char *copyright = "Copyright (C) 2007-2011 Daniel Collins";
 	int clen = strlen(copyright), i;
 	
 	console_clear();
