@@ -1,5 +1,5 @@
 /* kexec-loader - Shell code
- * Copyright (C) 2007-2010 Daniel Collins <solemnwarning@solemnwarning.net>
+ * Copyright (C) 2007-2011 Daniel Collins <solemnwarning@solemnwarning.net>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -28,6 +28,7 @@
 #include <dirent.h>
 #include <time.h>
 #include <sys/utsname.h>
+#include <limits.h>
 
 #include "console.h"
 #include "misc.h"
@@ -285,37 +286,54 @@ static char *read_cmd(char **history) {
 			replace_input(cmdbuf, 0);
 		}
 		if(c == '\t') {
-			struct ac_list *ac_list = ac_search(cmdbuf, offset);
-			struct ac_list *ac_ptr = ac_list;
+			struct ac_list *ac_list = ac_search(cmdbuf, offset), *ac_ptr;
+			int app_chars = INT_MAX;
 			
-			if(ac_ptr && !ac_ptr->next) {
-				i = strlen(ac_ptr->append);
+			for(ac_ptr = ac_list; ac_ptr && ac_ptr->next; ac_ptr = ac_ptr->next) {
+				int m = kl_str_match_len(ac_ptr->append, ac_ptr->next->append);
+				app_chars = SMALLEST(m, app_chars);
+			}
+			
+			if(!ac_list) {
+				app_chars = 0;
+			}else if(!ac_list->next) {
+				app_chars = strlen(ac_list->append);
+			}
+			
+			if(app_chars) {
+				char t = ac_list->append[app_chars];
+				ac_list->append[app_chars] = '\0';
 				
-				char *tmp = kl_strdup(cmdbuf+offset);
-				strlcpy(cmdbuf+offset, ac_ptr->append, CMDBUF_SIZE-offset);
-				strlcat(cmdbuf, tmp, CMDBUF_SIZE);
-				free(tmp);
+				kl_strins(cmdbuf, ac_list->append, offset, CMDBUF_SIZE);
+				
+				ac_list->append[app_chars] = t;
 				
 				cmdlen = strlen(cmdbuf);
-				replace_input(cmdbuf, offset);
 				
-				if(offset+i+1 > CMDBUF_SIZE) {
-					set_cursor(offset = cmdlen);
-				}else{
-					set_cursor(offset += i);
+				if(!ac_list->next) {
+					/* Redraw the input from offset if there
+					 * is only one autocomplete result.
+					*/
+					
+					replace_input(cmdbuf, offset);
 				}
-			}else if(ac_ptr) {
+				
+				offset = SMALLEST(offset+app_chars, cmdlen);
+			}
+			
+			if(ac_list && ac_list->next) {
 				putchar('\n');
 				
-				while(ac_ptr) {
+				for(ac_ptr = ac_list; ac_ptr; ac_ptr = ac_ptr->next) {
 					printf("%s\n", ac_ptr->display);
-					ac_ptr = ac_ptr->next;
 				}
 				
 				printf("> ");
 				console_getpos(&scol, &srow);
 				replace_input(cmdbuf, 0);
 			}
+			
+			set_cursor(offset);
 			
 			list_nuke(ac_list);
 			continue;
@@ -584,7 +602,7 @@ static void ac_path(struct ac_list **list, char const *argx, enum ac_mode mode) 
 		}
 		
 		char *s2 = (S_ISDIR(info.st_mode) ? "/" : "");
-		ac_add(list, node->d_name+alen, s2, node->d_name+alen, s2);
+		ac_add(list, node->d_name+alen, s2, node->d_name, s2);
 	}
 	
 	closedir(dir);

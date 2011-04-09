@@ -1,5 +1,5 @@
 /* kexec-loader - Misc. stuff
- * Copyright (C) 2007-2009 Daniel Collins <solemnwarning@solemnwarning.net>
+ * Copyright (C) 2007-2011 Daniel Collins <solemnwarning@solemnwarning.net>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -93,6 +93,7 @@ int kl_strnceq(char const *s1, char const *s2, int max);
 int kl_strins(char *dest, char const *src, int offset, int size);
 char const *kl_strerror(int errnum);
 int kl_streq_end(char const *str, char const *match);
+int kl_str_match_len(const char *s1, const char *s2);
 
 void list_add(void *rptr, void *node_p);
 void list_add_copy(void *rptr, void *node, int size);

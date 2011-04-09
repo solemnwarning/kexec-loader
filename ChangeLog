@@ -6,6 +6,9 @@ Version 2.2.2:
 	make debugging crashes less insanity-inducing.
 	
 	Added GRUB autodetection support.
+	
+	Updated filename autocompletion: partial names are appended where
+	possible and complete ones are displayed.
 
 Version 2.2.1:
 	Lots of code cleanup.

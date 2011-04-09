@@ -1,5 +1,5 @@
 /* kexec-loader - Misc. functions
- * Copyright (C) 2007-2009 Daniel Collins <solemnwarning@solemnwarning.net>
+ * Copyright (C) 2007-2011 Daniel Collins <solemnwarning@solemnwarning.net>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -497,6 +497,17 @@ int kl_streq_end(char const *str, char const *match) {
 	}
 	
 	return kl_streq(str + (slen-mlen), match);
+}
+
+/* Return the number of matching bytes in a string */
+int kl_str_match_len(const char *s1, const char *s2) {
+	int r = 0;
+	
+	while(s1[r] == s2[r] && s1[r]) {
+		r++;
+	}
+	
+	return r;
 }
 
 struct list { struct list *next; };
