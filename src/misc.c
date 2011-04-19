@@ -231,7 +231,12 @@ void die(char const *fmt, ...) {
 	}
 }
 
-/* Search the kernel command line for an option */
+/* Search the kernel command line for an option
+ *
+ * Returns the value if the argument was found (may be empty) or NULL otherwise.
+ * The value is stored in a static buffer, copy it elsewhere before calling
+ * get_cmdline() again if you don't want it to be overwritten!
+*/
 char const *get_cmdline(char const *name) {
 	FILE *fh = fopen("/proc/cmdline", "r");
 	if(!fh) {
