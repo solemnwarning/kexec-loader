@@ -129,6 +129,27 @@ int main(int argc, char **argv) {
 		}
 	}
 	
+	const char *bt = get_cmdline("boot_target");
+	
+	if(bt) {
+		printd("boot_target supplied, trying to boot '%s'", bt);
+		
+		kl_target *target = targets;
+		
+		while(target) {
+			if(kl_streq(target->title, bt)) {
+				boot_target(target);
+				break;
+			}
+			
+			target = target->next;
+		}
+		
+		if(!target) {
+			printD("No target with title '%s' present.", bt);
+		}
+	}
+	
 	while(1) {
 		if(targets) {
 			menu_main();
