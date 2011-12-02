@@ -44,7 +44,7 @@ int timeout = -1;
 char *grub_path = NULL;
 kl_target *targets = NULL;
 kl_module *kmods = NULL;
-int grub_autodetect = 0;
+int grub_autodetect = 1;	/* 0 if disabled, 1 if unset, 2 if enabled */
 
 static void redirect_klog(void);
 static void load_conf(char const *filename);
@@ -121,7 +121,7 @@ int main(int argc, char **argv) {
 		grub_load(grub_path);
 	}
 	
-	if(grub_autodetect) {
+	if(grub_autodetect == 2 || (!targets && grub_autodetect)) {
 		if(grub_path) {
 			printd("grub-path is set, ignoring grub-autodetect");
 		}else{
@@ -721,7 +721,7 @@ static void load_conf(char const *fname) {
 			CFG_CHECK_ARGS(1);
 			
 			if(kl_strceq(val, "on")) {
-				grub_autodetect = 1;
+				grub_autodetect = 2;
 			}else if(kl_strceq(val, "off")) {
 				grub_autodetect = 0;
 			}else{

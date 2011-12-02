@@ -369,6 +369,9 @@ static void load_grub2_cfg(const char *filename) {
 	char buf[1024], *l_start;
 	int lnum = 0, entry_start = 0, skip_entry = 0;
 	
+	char default_title_buf[256], *default_title = NULL;
+	int default_index = -1, cur_index = 0;
+	
 	kl_target target;
 	
 	INIT_TARGET(&target);
@@ -399,6 +402,10 @@ static void load_grub2_cfg(const char *filename) {
 			}
 			
 			strlcpy(target.title, title, sizeof(target.title));
+			
+			if(cur_index++ == default_index || (default_title && kl_streq(default_title, title))) {
+				target.flags = TARGET_DEFAULT;
+			}
 			
 			entry_start = lnum;
 			skip_entry = 0;
@@ -434,6 +441,26 @@ static void load_grub2_cfg(const char *filename) {
 			
 			if(kl_streq(env_name, "root")) {
 				strlcpy(target.root, env_val, sizeof(target.root));
+			}else if(kl_streq(env_name, "default")) {
+				if(env_val[strspn(env_val, "1234567890")] == '\0') {
+					/* Value is an integer */
+					
+					default_index = atoi(env_val);
+					default_title = NULL;
+				}else{
+					default_index = -1;
+					default_title = NULL;
+					
+					if(strchr(env_val, '>')) {
+						printD("grub.cfg:%d 'default' using title of submenu item not supported", lnum);
+						continue;
+					}
+					
+					strlcpy(default_title_buf, env_val, sizeof(default_title_buf));
+					default_title = default_title_buf;
+				}
+			}else if(kl_streq(env_name, "timeout") && timeout == -1) {
+				timeout = atoi(env_val);
 			}
 		}else if(kl_streq(cmd, "linux") || kl_streq(cmd, "linux16")) {
 			char *kernel = args, *k_args;
