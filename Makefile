@@ -146,4 +146,4 @@ src/libblkid.a:
 	./configure $(E2FS_CONFIGURE)
 	$(MAKE) -C src/e2fsprogs-$(E2FS_VER)/lib/blkid/
 	$(MAKE) -C src/e2fsprogs-$(E2FS_VER)/lib/uuid/
-	cp src/e2fsprogs-$(E2FS_VER)/lib/lib{blkid,uuid}.a src
+	cp src/e2fsprogs-$(E2FS_VER)/lib/libblkid.a src/e2fsprogs-$(E2FS_VER)/lib/libuuid.a src/

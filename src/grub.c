@@ -36,7 +36,11 @@ kl_gdev *grub_devmap = NULL;
 		x[0] = *src; \
 		x[1] = '\0'; \
 		src++; \
-	}else if(isdigit(*src)) { \
+	}else if(isdigit(*src) || (strncmp(src, "msdos", 5) == 0 && isdigit(src[5]))) { \
+		if(!isdigit(*src)) { \
+			src += 5; \
+		} \
+		\
 		int i = 0; \
 		\
 		for(; isdigit(*src); src++) { \
@@ -331,6 +335,208 @@ static void load_menu(char const *path) {
 	fclose(fh);
 }
 
+static int grub2_val(char **cur, char **next, int lnum) {
+	if(**cur == '\'' || **cur == '\"') {
+		if(!(*next = strchr((*cur) + 1, **cur))) {
+			printD("grub.cfg:%d missing terminating '%c'", lnum, **cur);
+			return 0;
+		}
+		
+		(*cur)++;
+		
+		
+	}else{
+		*next = *cur + strcspn(*cur, "\t =");
+	}
+	
+	if(**next) {
+		**next = '\0';
+		
+		(*next)++;
+		*next += strspn(*next, "\t =");
+	}
+	
+	return 1;
+}
+
+static void load_grub2_cfg(const char *filename) {
+	FILE *fh = vfs_fopen(filename, "r");
+	if(!fh) {
+		printD("Error opening grub.cfg: %s", kl_strerror(errno));
+		return;
+	}
+	
+	char buf[1024], *l_start;
+	int lnum = 0, entry_start = 0, skip_entry = 0;
+	
+	kl_target target;
+	
+	INIT_TARGET(&target);
+	
+	while(fgets(buf, sizeof(buf), fh)) {
+		lnum++;
+		
+		l_start = buf + strspn(buf, "\r\n\t ");
+		l_start[strcspn(l_start, "\r\n")] = '\0';
+		
+		if(l_start[0] == '#' || l_start[0] == '\0') {
+			continue;
+		}
+		
+		char *cmd = l_start;
+		char *args = cmd + strcspn(cmd, "\t ");
+		
+		if(args[0]) {
+			*(args++) = '\0';
+			args += strspn(args, "\t ");
+		}
+		
+		if(kl_streq(cmd, "menuentry")) {
+			char *title = args, *s;
+			
+			if(!grub2_val(&title, &s, lnum)) {
+				goto END;
+			}
+			
+			strlcpy(target.title, title, sizeof(target.title));
+			
+			entry_start = lnum;
+			skip_entry = 0;
+		}else if(kl_streq(cmd, "}") && entry_start) {
+			if(!skip_entry) {
+				if(!target.root[0]) {
+					printD("grub.cfg:%d: No root device specified", entry_start);
+				}
+				
+				if(!target.kernel[0]) {
+					printD("grub.cfg:%d: No kernel specified", entry_start);
+				}
+				
+				if(!target.root[0] || !target.kernel[0]) {
+					list_nuke(target.modules);
+				}else{
+					list_add_copy(&targets, &target, sizeof(target));
+				}
+			}
+			
+			INIT_TARGET(&target);
+			
+			entry_start = 0;
+		}else if(kl_streq(cmd, "chainloader")) {
+			printd("chainloader at grub.cfg:%d, ignoring entry", lnum);
+			skip_entry = 1;
+		}else if(kl_streq(cmd, "set")) {
+			char *env_name = args, *env_val, *s;
+			
+			if(!grub2_val(&env_name, &env_val, lnum) || !grub2_val(&env_val, &s, lnum)) {
+				goto END;
+			}
+			
+			if(kl_streq(env_name, "root")) {
+				strlcpy(target.root, env_val, sizeof(target.root));
+			}
+		}else if(kl_streq(cmd, "linux") || kl_streq(cmd, "linux16")) {
+			char *kernel = args, *k_args;
+			
+			if(!grub2_val(&kernel, &k_args, lnum)) {
+				goto END;
+			}
+			
+			strlcpy(target.kernel, kernel, sizeof(target.kernel));
+			strlcpy(target.append, k_args, sizeof(target.append));
+		}else if(kl_streq(cmd, "initrd") || kl_streq(cmd, "initrd16")) {
+			char *initrd = args, *s;
+			
+			if(!grub2_val(&initrd, &s, lnum)) {
+				goto END;
+			}
+			
+			strlcpy(target.initrd, initrd, sizeof(target.initrd));
+		}else if(kl_streq(cmd, "search") || kl_streq(cmd, "search.file") || kl_streq(cmd, "search.fs_label") || kl_streq(cmd, "search.fs_uuid")) {
+			enum {
+				s_unknown = 0,
+				s_file,
+				s_fs_label,
+				s_fs_uuid
+			} search_by = s_unknown;
+			
+			if(kl_streq(cmd, "search.file")) {
+				search_by = s_file;
+			}else if(kl_streq(cmd, "search.fs_label")) {
+				search_by = s_fs_label;
+			}else if(kl_streq(cmd, "search.fs_uuid")) {
+				search_by = s_fs_uuid;
+			}
+			
+			int set_root = 0, l_set = 0;
+			
+			while(*args) {
+				int len = strcspn(args, "\t ");
+				
+				/* TODO: Handle ' and " (?) */
+				
+				char *next = args + len;
+				next += strspn(next, "\t ");
+				
+				int is_last = (next[0] == '\0');
+				
+				if(strncmp(args, "-f", len) == 0 || strncmp(args, "--file", len) == 0) {
+					search_by = s_file;
+				}else if(strncmp(args, "-l", len) == 0 || strncmp(args, "--label", len) == 0) {
+					search_by = s_fs_label;
+				}else if(strncmp(args, "-u", len) == 0 || strncmp(args, "--fs-uuid", len) == 0) {
+					search_by = s_fs_uuid;
+				}else if(strncmp(args, "--set", len) == 0) {
+					l_set = 1;
+				}else if(l_set) {
+					if(is_last) {
+						set_root = 1;
+						l_set = 0;
+						
+						continue;
+					}else if(strncmp(args, "root", len)) {
+						break;
+					}
+				}else if(is_last) {
+					break;
+				}
+				
+				args = next;
+			}
+			
+			if(set_root) {
+				switch(search_by) {
+					case s_unknown:
+						printD("grub.cfg:%d: Unknown search type", lnum);
+						break;
+						
+					case s_file:
+						printD("grub.cfg:%d: search with --file unsupported", lnum);
+						break;
+						
+					case s_fs_label:
+						snprintf(target.root, sizeof(target.root), "LABEL=%s", args);
+						break;
+						
+					case s_fs_uuid:
+						snprintf(target.root, sizeof(target.root), "UUID=%s", args);
+						break;
+						
+					default:
+						break;
+				}
+			}
+		}
+	}
+	
+	if(ferror(fh)) {
+		printD("Error reading grub.cfg: %s", kl_strerror(errno));
+	}
+	
+	END:
+	fclose(fh);
+}
+
 /* Load GRUB device.map and menu.lst */
 void grub_load(const char *grub_root) {
 	char *device = get_diskid("", grub_root);
@@ -340,10 +546,22 @@ void grub_load(const char *grub_root) {
 		char path[1024];
 		
 		snprintf(path, sizeof(path), "%s/device.map", grub_root);
-		load_devmap(path);
 		
-		snprintf(path, sizeof(path), "%s/menu.lst", grub_root);
-		load_menu(path);
+		if(vfs_exists(path)) {
+			load_devmap(path);
+		}
+		
+		snprintf(path, sizeof(path), "%s/grub.cfg", grub_root);
+		
+		if(vfs_exists(path)) {
+			load_grub2_cfg(path);
+		}else{
+			snprintf(path, sizeof(path), "%s/menu.lst", grub_root);
+			
+			if(vfs_exists(path)) {
+				load_menu(path);
+			}
+		}
 	}
 	
 	free(device);
