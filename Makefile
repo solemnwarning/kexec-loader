@@ -20,8 +20,8 @@
 VERSION=r$(shell svn info | grep 'Revision:' | sed -e 's/Revision: //')
 
 # kexec-tools
-KT_VER := 2.0.1
-KT_URL := http://www.kernel.org/pub/linux/kernel/people/horms/kexec/kexec-tools-$(KT_VER).tar.gz
+KT_VER := 2.0.2
+KT_URL := http://horms.net/projects/kexec/kexec-tools/kexec-tools-$(KT_VER).tar.gz
 KT_CONFIGURE :=
 
 # e2fsprogs
@@ -135,7 +135,7 @@ src/kexec.a:
 	wget -nc $(KT_URL)
 	tar -C src -xzf kexec-tools-$(KT_VER).tar.gz
 	cd src/kexec-tools-$(KT_VER)/ && \
-	patch -Np1 -i ../../patches/kexec-tools-2.0.1.diff && \
+	patch -Np1 -i ../../patches/kexec-tools-$(KT_VER).diff && \
 	./configure $(KT_CONFIGURE)
 	$(MAKE) -C src/kexec-tools-$(KT_VER)/
 

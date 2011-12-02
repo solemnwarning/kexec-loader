@@ -1,0 +1,82 @@
+diff -ru kexec-tools-2.0.2.orig//kexec/kexec.c kexec-tools-2.0.2//kexec/kexec.c
+--- kexec-tools-2.0.2.orig//kexec/kexec.c	2010-07-29 05:19:59.000000000 +0100
++++ kexec-tools-2.0.2//kexec/kexec.c	2011-12-02 09:49:11.000000000 +0000
+@@ -51,17 +51,6 @@
+ unsigned long long mem_max = ULONG_MAX;
+ unsigned long kexec_flags = 0;
+ 
+-void die(char *fmt, ...)
+-{
+-	va_list args;
+-	va_start(args, fmt);
+-	vfprintf(stderr, fmt, args);
+-	va_end(args);
+-	fflush(stdout);
+-	fflush(stderr);
+-	exit(1);
+-}
+-
+ char *xstrdup(const char *str)
+ {
+ 	char *new = strdup(str);
+@@ -1040,7 +1029,7 @@
+ }
+ 
+ 
+-int main(int argc, char *argv[])
++int kexec_main(int argc, char *argv[])
+ {
+ 	int do_load = 1;
+ 	int do_exec = 0;
+diff -ru kexec-tools-2.0.2.orig//kexec/Makefile kexec-tools-2.0.2//kexec/Makefile
+--- kexec-tools-2.0.2.orig//kexec/Makefile	2010-07-29 05:19:59.000000000 +0100
++++ kexec-tools-2.0.2//kexec/Makefile	2011-12-02 09:48:01.000000000 +0000
+@@ -70,14 +70,14 @@
+ clean += $(KEXEC_OBJS) $(KEXEC_DEPS) $(KEXEC_GENERATED_SRCS) \
+ 	 $(KEXEC) $(KEXEC_MANPAGE)
+ 
+-KEXEC = $(SBINDIR)/kexec
++KEXEC = ../kexec.a
+ KEXEC_MANPAGE = $(MANDIR)/man8/kexec.8
+ 
+ -include $(KEXEC_DEPS)
+ 
+ $(KEXEC): $(KEXEC_OBJS) $(UTIL_LIB)
+-	@$(MKDIR) -p $(@D)
+-	$(LINK.o) -o $@ $^ $(LIBS)
++	cp $(UTIL_LIB) ../kexec.a
++	ar -r $(KEXEC) $(KEXEC_OBJS)
+ 
+ $(KEXEC): CPPFLAGS+=-I$(srcdir)/kexec/arch/$(ARCH)/include
+ 
+Only in kexec-tools-2.0.2//kexec: Makefile.orig
+diff -ru kexec-tools-2.0.2.orig//Makefile.in kexec-tools-2.0.2//Makefile.in
+--- kexec-tools-2.0.2.orig//Makefile.in	2010-07-29 05:19:59.000000000 +0100
++++ kexec-tools-2.0.2//Makefile.in	2011-12-02 09:48:01.000000000 +0000
+@@ -110,7 +110,7 @@
+ BINARIES_x86_64:=$(SBINDIR)/kexec $(PKGLIBDIR)/kexec_test
+ BINARIES:=$(SBINDIR)/kexec $(SBINDIR)/kdump $(BINARIES_$(ARCH))
+ 
+-TARGETS:=$(BINARIES) $(MAN_PAGES)
++TARGETS:=../kexec.a
+ 
+ all: $(TARGETS)
+ 
+@@ -161,16 +161,6 @@
+ #
+ include $(srcdir)/kexec/Makefile
+ 
+-
+-# kdump (read a crashdump from memory)
+-#
+-include $(srcdir)/kdump/Makefile
+-
+-#
+-# kexec_test (test program)
+-#
+-include $(srcdir)/kexec_test/Makefile
+-
+ SPEC=$(PACKAGE_NAME).spec
+ GENERATED_SRCS:= $(SPEC)
+ TARBALL=$(PACKAGE_NAME)-$(PACKAGE_VERSION).tar
+Only in kexec-tools-2.0.2/: Makefile.in.orig
