@@ -515,16 +515,12 @@ static void load_grub2_cfg(const char *filename) {
 					search_by = s_fs_uuid;
 				}else if(strncmp(args, "--set", len) == 0) {
 					l_set = 1;
-				}else if(l_set) {
-					if(is_last) {
-						set_root = 1;
-						l_set = 0;
-						
-						continue;
-					}else if(strncmp(args, "root", len)) {
-						break;
-					}
-				}else if(is_last) {
+				}else if(l_set && (is_last || strncmp(args, "root", len) == 0)) {
+					set_root = 1;
+					l_set = 0;
+				}
+				
+				if(is_last) {
 					break;
 				}
 				
