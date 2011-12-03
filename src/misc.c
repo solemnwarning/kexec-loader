@@ -119,25 +119,40 @@ int main(int argc, char **argv) {
 	
 	if(grub_path) {
 		grub_load(grub_path);
-	}
-	
-	if(grub_autodetect == 2 || (!targets && grub_autodetect)) {
-		if(grub_path) {
+		
+		if(grub_autodetect == 2) {
 			printd("grub-path is set, ignoring grub-autodetect");
-		}else{
-			grub_detect();
 		}
+	}else if(grub_autodetect == 2 || (!targets && grub_autodetect)) {
+		grub_detect();
 	}
 	
-	const char *bt = get_cmdline("boot_target");
+	/* Attempt to boot target if boot_index or boot_target was passed on the
+	 * kernel command line (boot_index takes priority over boot_target).
+	*/
 	
-	if(bt) {
-		printd("boot_target supplied, trying to boot '%s'", bt);
+	int boot_index = -1;
+	const char *boot_arg = get_cmdline("boot_index");
+	
+	if(boot_arg) {
+		boot_index = atoi(boot_arg);
+		boot_arg = NULL;
+	}else{
+		boot_arg = get_cmdline("boot_target");
+	}
+	
+	if(boot_index >= 0 || boot_arg) {
+		if(boot_index >= 0) {
+			printd("boot_index supplied, trying to boot %d", boot_index);
+		}else{
+			printd("boot_target supplied, trying to boot '%s'", boot_arg);
+		}
 		
 		kl_target *target = targets;
+		int index = 0;
 		
 		while(target) {
-			if(kl_streq(target->title, bt)) {
+			if(index++ == boot_index || (boot_arg && kl_streq(target->title, boot_arg))) {
 				boot_target(target);
 				break;
 			}
@@ -146,7 +161,7 @@ int main(int argc, char **argv) {
 		}
 		
 		if(!target) {
-			printD("No target with title '%s' present.", bt);
+			printD("Requested boot target not found");
 		}
 	}
 	

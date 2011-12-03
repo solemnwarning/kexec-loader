@@ -583,6 +583,8 @@ void grub_load(const char *grub_root) {
 			
 			if(vfs_exists(path)) {
 				load_menu(path);
+			}else{
+				printD("Neither grub.cfg or menu.lst found in GRUB directory");
 			}
 		}
 	}

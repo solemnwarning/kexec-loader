@@ -325,8 +325,12 @@ The kexec-loader shell is designed to closely mimic a traditional UNIX shell, ex
 The following options can be passed to kexec-loader via the kernel command line.
 </p>
 <ul>
+	<li><b>boot_index</b><br />
+	Automatically boot a target by it's index number (starting at 0).
+	</li>
+	
 	<li><b>boot_target</b><br />
-	Automatically boot a target by it's title.
+	Automatically boot a target by it's title. This is ignored if boot_index is also supplied.
 	</li>
 	
 	<li><b>root</b><br />
