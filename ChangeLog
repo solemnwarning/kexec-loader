@@ -1,9 +1,15 @@
-Version 2.2.3:
-	Bug fixes: Crashes caused by calling vfs_translate_path() with no disk
-	set or using 'find' with too few args.
+Version 2.3:
+	Fixed crashing caused by calling vfs_translate_path() with no disk set
+	or passing too few arguments to 'find' command.
 	
 	Updated filename autocompletion: partial names are appended where
 	possible and complete ones are displayed.
+	
+	Added boot_index and boot_target command line options.
+	
+	Added GRUB 2 configuration support.
+	
+	Updated to kexec-tools 2.0.2.
 
 Version 2.2.2:
 	Added chroot jail support to the VFS layer and a rootdir kernel argument
