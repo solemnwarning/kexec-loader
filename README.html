@@ -8,23 +8,29 @@
 body {
 	font-family: Arial, Helvetica, sans-serif;
 }
+
 h1, h1 a:hover {
 	font-size: xx-large;
 	color: #0099FF;
 }
+
 h2, h2 a:hover {
 	color: #0066FF;
 }
+
 h3, h3 a:hover {
 	color: #0033CC;
 }
+
 a:link, a:visited {
 	text-decoration: none;
 	color: blue;
 }
+
 a:hover {
 	color: red;
 }
+
 .code {
 	background-color: #E5E5E5;
 	border: 1px solid #000000;
@@ -38,14 +44,14 @@ a:hover {
 <body>
 <h1>kexec-loader manual</h1>
 <p>Version: 2.2.1</p>
-<p>Copyright &copy; 2007-2010 Daniel Collins<br />Copyright &copy; 2008-2009 Philip Kent</p>
+<p>Copyright &copy; 2007-2011 Daniel Collins<br />Copyright &copy; 2008-2009 Philip Kent</p>
 <ul>
 	<li><a href="#s1">1. Introduction</a></li>
 	<li><a href="#s2">2. Usage</a>
 	<ul>
 		<li><a href="#s2s1">2.1. Basic Configuration</a></li>
-		<li><a href="#s2s2">2.2. GRUB Integration</a></li>
-		<li><a href="#s2s3">2.3. Kernel Modules</a></li>
+		<li><a href="#s2s2">2.2. Kernel Modules</a></li>
+		<li><a href="#s2s3">2.3. GRUB Configuration</a></li>
 		<li><a href="#s2s4">2.4. Changing the keymap</a></li>
 		<li><a href="#s2s5">2.5. Shell</a></li>
 	</ul>
@@ -54,6 +60,7 @@ a:hover {
 	<ul>
 		<li><a href="#s3s1">3.1. Configuration Reference</a></li>
 		<li><a href="#s3s2">3.2. Shell Reference</a></li>
+		<li><a href="#s3s3">3.3. Kernel Command Line Options</a></li>
 	</ul>
 	</li>
 	<li><a href="#s4">4. Support</a>
@@ -66,7 +73,7 @@ a:hover {
 
 <h2><a name="s1">1. Introduction</a></h2>
 <p>
-kexec-loader is a Linux based bootloader that allows you to boot Linux and multiboot systems from storage devices your BIOS does not support, such as USB drives and PCI expansion cards. It fits on a 1.44MB floppy, supports most block devices supported by Linux and is easy to use. kexec-loader supports reading GRUB configuration files, this allows kexec-loader to be used as a drop-in replacement for GRUB by merely setting the GRUB installation path.
+kexec-loader is a Linux based bootloader that allows you to boot Linux and multiboot systems from storage devices your BIOS does not support, such as USB drives and PCI expansion cards. It fits on a 1.44MB floppy, supports most block devices supported by Linux and is easy to use. kexec-loader supports reading GRUB configuration files, this allows kexec-loader to be used as a drop-in replacement for GRUB.
 </p>
 <p>
 If you need to build or modify kexec-loader for some reason please see the build.html file in the source archive, this details how to compile kexec-loader and build disk images.
@@ -75,10 +82,7 @@ If you need to build or modify kexec-loader for some reason please see the build
 <h2><a name="s2">2. Usage</a></h2>
 <h3><a name="s2s1">2.1. Basic Configuration</a></h3>
 <p>
-On startup kexec-loader looks for a configuration file named kexec-loader.conf in the root directory of the boot disk. If it does not exist it will attempt to load kxloader.cfg instead, this is to allow writing a configuration file on systems that only support 8.3 filenames such as DOS.
-</p>
-<p>
-The configuration file below shows how to boot a simple Linux system with two kernel versions installed. Each target beginning with a title line will be displayed on the boot menu. If no key is pressed within 10 seconds the second entry will be booted automatically. If there are no targets with a default line the first one will be booted.
+By default, kexec-loader will attempt to find a GRUB installation and copy any compatible boot targets from it. This will work for most Linux systems, but you can manually specify boot targets in kexec-loader.conf instead if desired. Doing so will disable the GRUB autodetection unless grub-autodetect is explicitly set to 'on'.
 </p>
 <p class="code">
 timeout 10<br />
@@ -97,81 +101,52 @@ initrd /boot/initrd.img-2.6.21<br />
 default
 </p>
 <p>
-The next example does the same thing, but demonstrates how to specify a disk as part of the filename, this can be used to load files from disks other than the one specified on the root line. Directives that take a path and are not part of a target definition must specify the disk.
+It is also possible to reference files not on the root disk or filesystems by their volume label or UUID, as shown below.
 </p>
 <p class="code">
-timeout 10<br />
-<br />
-title Generic Linux System (Kernel 2.6.20)<br />
-root hda1<br />
-kernel /boot/vmlinuz-2.6.20<br />
-cmdline root=/dev/hda1 ro<br />
-initrd <b>(hda1)</b>/boot/initrd.img-2.6.20<br />
-<br />
-title Generic Linux System (Kernel 2.6.21)<br />
-root hda1<br />
-kernel /boot/vmlinuz-2.6.21<br />
-cmdline root=/dev/hda1 ro<br />
-initrd <b>(hda1)</b>/boot/initrd.img-2.6.21<br />
-default
+root <b>UUID=75ac0d6c-5dc0-402f-9f0f-9ab313816439</b><br />
+initrd <b>(LABEL=otherdisk)</b>/boot/initrd.img-2.6.21
 </p>
+
+<h3><a name="s2s2">2.2. Kernel Modules</a></h3>
 <p>
-It is also possible to reference a disk by its volume label or UUID, this may be useful in cases where the device name may change, for example a USB drive which is used on multiple machines. The following example shows how to use both, you can also use the LABEL/UUID syntax in filenames.
+If you are using an official kernel you will probably need to load additional modules for your system. The appropriate kernel modules can be downloaded from the same page the disk image came from. To install modules, simply copy them to the 'modules' directory on the kexec-loader boot disk, if the module is needed to access the boot disk use <a href="http://www.solemnwarning.net/kexec-loader/downloads/addmod.sh">addmod.sh</a> to insert it into the initramfs (initrd.img).
 </p>
-<p class="code">
-root LABEL=disklabel<br />
-root UUID=75ac0d6c-5dc0-402f-9f0f-9ab313816439
-</p>
-<h3><a name="s2s2">2.2. GRUB Integration</a></h3>
+
 <p>
-If you have a GRUB installation, kexec-loader can load its configuration. To use it you simply need to set the path of your GRUB install directory (containing menu.lst and device.map) in kexec-loader.conf:
-</p>
-<p class="code">
-grub-path (hda1)/boot/grub
-</p>
-<p>
-If there is only one GRUB installation on the system you can use autodetection rather than manually entering the GRUB directory, if autodetection is enabled the first GRUB installation found will be used. This cannot be used if grub-path is defined.
-</p>
-<p class="code">
-grub-autodetect on
-</p>
-<p>
-On startup kexec-loader will read the list of GRUB devices from devices.map, it will use these to convert the BIOS disk numbers in menu.lst to Linux device names. All bootable entries in menu.lst will then be loaded and added to the boot menu. It will also load the default and timeout options from menu.lst if they are not specified in kexec-loader.conf.
-</p>
-<p>
-If you want to override the device mappings in device.map, for example if GRUB is installed to a USB drive which is used on multiple machines, you can use the <b>grub-map</b> directive in kexec-loader.conf to specify new mappings. There are two types of device mappings possible, which are shown below.
-</p>
-<p class="code">
-grub-map hd0 sda<br />
-grub-map hd1,0 sda2
-</p>
-<p>
-The first line maps the first BIOS disk (hd0) to Linux disk sda. The second line maps the first partition of the second BIOS disk (hd1,0) to the second partition on Linux disk sda. When mapping single partitions you can use the UUID/LABEL syntax as shown below.
-</p>
-<p class="code">
-grub-map hd0,0 LABEL=boot<br />
-grub-map hd0,2 LABEL=root
-</p>
-<h3><a name="s2s3">2.3. Kernel Modules</a></h3>
-<p>
-If you are running a modular kernel (All official builds use a modular kernel) you can load modules to support hardware, filesystems and encodings not supported by the base kernel. To install a module copy it to the modules directory on the boot disk, if the module is required to access the boot disk you can create a directory called modules in the initramfs and copy it there. One or more modules may be packaged in a tar file, or an LZMA compressed tar file with the .tlz extension.
-</p>
-<p>
-If you need to add modules to the initramfs, there is a bash script available which will decompress, extract and copy the modules to the initramfs. Modules are decompressed and extracted before being added to the initramfs to maximise the compression of the initramfs file. The script is named addmod.sh and is available in the kexec-loader source archive, it can also be downloaded here: <a href="http://www.solemnwarning.net/kexec-loader/downloads/addmod.sh">addmod.sh</a>.
-</p>
-<p>
-Some modules or hardware combinations may require arguments to be passed to the module, this is usually for ISA and non-PnP hardware. If you have such hardware you can specify arguments to be passed in kexec-loader.conf, these will only be used for modules loaded after kexec-loader.conf.
+Some kernel modules (mainly for old, non-PnP hardware) may need to be passed additional arguments at load time, these can be specified in kexec-loader.conf like so:
 </p>
 <p class="code">
 kmod module-name arg1 arg2=value arg3 ...
 </p>
 
+<p>
+If you are building your own modular kernel, multiple modules may be combined inside tar archives (optionally compressed with LZMA or gzip). This technique is used for the official modules to combine related/dependant modules and save space.
+</p>
+
+<h3><a name="s2s3">2.3. GRUB Configuration</a></h3>
+<p>
+In most cases, the system's GRUB configuration can be detected automatically, but if you want to manually specify the path of the GRUB folder (i.e where multiple GRUB installations may be found), you can use grub-path in kexec-loader.conf:
+</p>
+<p class="code">
+grub-path (hda1)/boot/grub
+</p>
+
+<p>
+You may also need to manually map GRUB devices to filesystems, this is only required when the disk numbering is guessed wrong or BSD disklabels are in use. You can map entire disks or single filesystems using the grub-map directive:
+</p>
+<p class="code">
+grub-map hd0 sda<br />
+grub-map hd0,1 LABEL=root<br />
+<br />
+# BSD disklabels are not currently detected automatically<br />
+#<br />
+grub-map hd0,a sda8<br />
+</p>
+
 <h3><a name="s2s4">2.4. Changing the keymap</a></h3>
 <p>
-If the file keymap.txt exists on the boot floppy, it will be loaded as the keymap. The official kexec-loader disks do not include a keymap.txt file, so the US kernel keymap will be used.
-</p>
-<p>
-New keymap.txt files can be downloaded <a href="http://www.solemnwarning.net/kexec-loader/keymaps/">here</a>, remember to rename them before use. If your keymap isn't available here, you can use the conv-keymap.pl script from the source download to generate one from a Linux console keymap. (normally found in /usr/share/keymaps)
+Linux's built-in US keymap will be used by default, which is also acceptable for some other keyboards since only the basic keys are used. If your keyboard needs a special keymap, download it from <a href="http://www.solemnwarning.net/kexec-loader/keymaps/">here</a> and save it to the boot disk as keymap.txt.
 </p>
 
 <h3><a name="s2s5">2.5. Shell</a></h3>
@@ -230,15 +205,15 @@ All valid configuration directives are listed below. Parameters are shown in &lt
 	</li>
 	
 	<li><b>grub-path &lt;path&gt;</b><br />
-	Load device.map and menu.lst from a GRUB installation at this directory. You must specify a device.
+	Load device.map and grub.cfg/menu.lst from a GRUB installation at this directory. You must specify a device.
 	</li>
 	
 	<li><b>grub-autodetect &lt;on|off&gt;</b><br />
-	Enables or disables GRUB autodetection, the default setting is off. Autodetection cannot be used if grub-path is set.
+	Enables or disables GRUB autodetection. Autodetection will be enabled by default if no boot targets are specified in kexec-loader.conf.
 	</li>
 	
 	<li><b>grub-map &lt;GRUB device&gt; &lt;device&gt;</b><br />
-	Map a GRUB device, hd0 => sda will map the disk hd0 to sda whereas hd0,a => sda5 will map BSD partition a on hd0 to sda5, kexec-loader does not support BSD disklabels so you will need to map any BSD partitions you intend to boot. Mappings in kexec-loader.conf will overrule those in device.map.
+	Map a GRUB device name. Whole disks or partitions may be mapped, filesystem UUIDs and labels are allowed when mapping partitions. BSD disklabels must be mapped in order to be used from the GRUB configuration.
 	</li>
 	
 	<li><b>kmod &lt;module&gt; &lt;args&gt;</b><br />
@@ -342,6 +317,28 @@ The kexec-loader shell is designed to closely mimic a traditional UNIX shell, ex
 	
 	<li><b>exit</b>
 	<br />Leave the shell and go back to the menu.
+	</li>
+</ul>
+
+<h3><a name="s3s3">3.3. Kernel Command Line Options</a></h3>
+<p>
+The following options can be passed to kexec-loader via the kernel command line.
+</p>
+<ul>
+	<li><b>boot_target</b><br />
+	Automatically boot a target by it's title.
+	</li>
+	
+	<li><b>root</b><br />
+	Sets the kexec-loader boot disk. The default is LABEL=kexecloader.
+	</li>
+	
+	<li><b>rootdir</b><br />
+	Set the directory containing the kexec-loader files.
+	</li>
+	
+	<li><b>debug_tty</b><br />
+	Set the terminal/file to write debug messages to. Default is /dev/tty3.
 	</li>
 </ul>
 
