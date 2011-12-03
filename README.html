@@ -154,11 +154,11 @@ Linux's built-in US keymap will be used by default, which is also acceptable for
 There is a shell built into kexec-loader which can be used to configure and boot a target or list/find/read files to aid with configuring a boot target. To access the shell, press C at the menu screen, the shell will be displayed by default if there are no boot targets configured. The commands for configuring and booting a target are very similar to those in the configuration file, as shown below:
 </p>
 <p class="code">
-> root hda1<br />
-> kernel /boot/vmlinuz-2.6.20<br />
-> cmdline root=/dev/hda1 ro<br />
-> initrd /boot/initrd.img-2.6.20<br />
-> <b>boot</b>
+&gt; root hda1<br />
+&gt; kernel /boot/vmlinuz-2.6.20<br />
+&gt; cmdline root=/dev/hda1 ro<br />
+&gt; initrd /boot/initrd.img-2.6.20<br />
+&gt; <b>boot</b>
 </p>
 <p>
 This example will boot the first target example from the configuration file section, the syntax of the shell is exactly the same except you must type <b>boot</b> at the end to show you have finished configuring the boot target. Filenames may specify a disk at the beginning, just as in the configuration file.
@@ -168,7 +168,7 @@ This example will boot the first target example from the configuration file sect
 The <b>ls</b> command lists the contents of a directory, directories have slashes appended to their names. The disk can be omitted from the path in the following example to use the root device.
 </p>
 <p class="code">
-> <b>ls</b> (fd0)/<br />
+&gt; <b>ls</b> (fd0)/<br />
 ldlinux.sys<br />
 linux.cfg<br />
 kexec-loader.conf<br />
@@ -183,7 +183,7 @@ vmlinuz
 The <b>find</b> command searches directories for files that match a pattern, the pattern may contain the * and ? wildcards which have the same meaning as in most shells. The following example searches the floppy disk for any files containing "linux" in their name. The path can be omitted to search the entire disk once a root device has been selected.
 </p>
 <p class="code">
-> <b>find</b> *linux* (fd0)/<br />
+&gt; <b>find</b> *linux* (fd0)/<br />
 (fd0)/ldlinux.sys<br />
 (fd0)/linux.cfg<br />
 (fd0)/syslinux.cfg
