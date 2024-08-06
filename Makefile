@@ -20,7 +20,7 @@
 VERSION=r$(shell svn info | grep 'Revision:' | sed -e 's/Revision: //')
 
 # kexec-tools
-KT_VER := 2.0.2
+KT_VER := 2.0.25
 KT_URL := http://horms.net/projects/kexec/kexec-tools/kexec-tools-$(KT_VER).tar.gz
 KT_CONFIGURE :=
 
@@ -43,7 +43,7 @@ ifdef HOST
 	CC := $(HOST)-gcc
 	LD := $(HOST)-ld
 	
-	KT_CONFIGURE += --host=$(HOST) --build=`./config/config.guess`
+	KT_CONFIGURE += --host=$(HOST) CC=$(CC)
 	E2FS_CONFIGURE += --host=$(HOST) --build=`./config/config.guess` --with-cc=$(CC) --with-linker=$(LD)
 endif
 
