@@ -25,7 +25,7 @@
 #include <sys/stat.h>
 #include <fcntl.h>
 #include <linux/kdev_t.h>
-#include <blkid/blkid.h>
+#include <blkid.h>
 #include <sys/mount.h>
 #include <poll.h>
 #include <stdint.h>

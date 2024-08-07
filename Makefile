@@ -24,15 +24,15 @@ KT_VER := 2.0.25
 KT_URL := http://horms.net/projects/kexec/kexec-tools/kexec-tools-$(KT_VER).tar.gz
 KT_CONFIGURE :=
 
-# e2fsprogs
-E2FS_VER := 1.41.8
-E2FS_URL := http://surfnet.dl.sourceforge.net/sourceforge/e2fsprogs/e2fsprogs-$(E2FS_VER).tar.gz
-E2FS_CONFIGURE :=
+# util-linux
+UL_VER := 2.38.1
+UL_URL := https://mirrors.edge.kernel.org/pub/linux/utils/util-linux/v2.38/util-linux-$(UL_VER).tar.gz
+UL_CONFIGURE :=
 
 CC := gcc
 LD := ld
-CFLAGS := -Wall -DVERSION=\"$(VERSION)\" -O0
-INCLUDES := -Isrc/e2fsprogs-$(E2FS_VER)/lib/
+CFLAGS := -Wall -DVERSION=\"$(VERSION)\" -D_GNU_SOURCE -O0
+INCLUDES := -Isrc/util-linux-$(UL_VER)/libblkid/src/
 LIBS := src/kexec.a src/libblkid.a src/libuuid.a -lz -llzmadec
 
 FLOPPY ?= floppy.img
@@ -44,7 +44,7 @@ ifdef HOST
 	LD := $(HOST)-ld
 	
 	KT_CONFIGURE += --host=$(HOST) CC=$(CC)
-	E2FS_CONFIGURE += --host=$(HOST) --build=`./config/config.guess` --with-cc=$(CC) --with-linker=$(LD)
+	UL_CONFIGURE += --host=$(HOST) CC=$(CC) CXX=$(HOST)-g++ LD=$(LD)
 endif
 
 OBJS := src/misc.o src/disk.o src/console.o src/menu.o src/modprobe.o \
@@ -57,13 +57,13 @@ clean:
 	rm -f src/*.o src/*.a
 	rm -f kexec-loader kexec-loader.static
 	rm -rf src/kexec-tools-$(KT_VER)/
-	rm -rf src/e2fsprogs-$(E2FS_VER)/
+	rm -rf src/util-linux-$(UL_VER)/
 	rm -f initrd.img $(FLOPPY) $(ISO)
 	rm -rf iso-files/ iso-modules/
 
 distclean: clean
 	rm -f kexec-tools-$(KT_VER).tar.gz
-	rm -f e2fsprogs-$(E2FS_VER).tar.gz
+	rm -f util-linux-$(UL_VER).tar.gz
 
 kexec-loader: $(OBJS) src/kexec.a
 	$(CC) $(CFLAGS) -o kexec-loader $(OBJS) $(LIBS)
@@ -140,10 +140,10 @@ src/kexec.a:
 	$(MAKE) -C src/kexec-tools-$(KT_VER)/
 
 src/libblkid.a:
-	wget -nc $(E2FS_URL)
-	tar -C src -xzf e2fsprogs-$(E2FS_VER).tar.gz
-	cd src/e2fsprogs-$(E2FS_VER)/ && \
-	./configure $(E2FS_CONFIGURE)
-	$(MAKE) -C src/e2fsprogs-$(E2FS_VER)/lib/blkid/
-	$(MAKE) -C src/e2fsprogs-$(E2FS_VER)/lib/uuid/
-	cp src/e2fsprogs-$(E2FS_VER)/lib/libblkid.a src/e2fsprogs-$(E2FS_VER)/lib/libuuid.a src/
+	wget -nc $(UL_URL)
+	tar -C src -xzf util-linux-$(UL_VER).tar.gz
+	cd src/util-linux-$(UL_VER)/ && \
+	./configure $(UL_CONFIGURE)
+	$(MAKE) -C src/util-linux-$(UL_VER)/ libblkid.la
+	$(MAKE) -C src/util-linux-$(UL_VER)/ libuuid.la
+	cp src/util-linux-$(UL_VER)/.libs/libblkid.a src/util-linux-$(UL_VER)/.libs/libuuid.a src/
