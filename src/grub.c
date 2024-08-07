@@ -1,5 +1,5 @@
 /* kexec-loader - GRUB compatibility code
- * Copyright (C) 2007-2009 Daniel Collins <solemnwarning@solemnwarning.net>
+ * Copyright (C) 2007-2024 Daniel Collins <solemnwarning@solemnwarning.net>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -503,7 +503,15 @@ static void load_grub2_cfg(const char *filename) {
 				/* TODO: Handle ' and " (?) */
 				
 				char *next = args + len;
-				next += strspn(next, "\t ");
+				
+				if(strncmp(args, "--set=", strlen("--set=")) == 0)
+				{
+					len = strlen("--set");
+					next = args + len + 1;
+				}
+				else{
+					next += strspn(next, "\t ");
+				}
 				
 				int is_last = (next[0] == '\0');
 				

@@ -1,5 +1,5 @@
 /* kexec-loader - Boot the system
- * Copyright (C) 2007-2009 Daniel Collins <solemnwarning@solemnwarning.net>
+ * Copyright (C) 2007-2024 Daniel Collins <solemnwarning@solemnwarning.net>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -76,6 +76,24 @@ void boot_target(kl_target *target) {
 	vfs_set_root(target->root);
 	
 	printd("Preparing to boot...");
+	printm("");
+	printd("device: %s", target->root);
+	printd("kernel: %s", target->kernel);
+	
+	if(target->initrd[0])
+	{
+		printd("initrd: %s", target->initrd);
+	}
+	
+	if(target->cmdline[0] || target->append[0])
+	{
+		printd("command line: %s%s%s",
+			target->cmdline,
+			(target->cmdline[0] && target->append[0] ? " " : ""),
+			target->append);
+	}
+	
+	printm("");
 	
 	ARGV_COPY("kexec");
 	ARGV_COPY("-l");
