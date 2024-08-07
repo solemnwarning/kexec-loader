@@ -36,7 +36,7 @@ diff -ru kexec-tools-2.0.25.orig/kexec/Makefile kexec-tools-2.0.25/kexec/Makefil
  	 $(KEXEC) $(KEXEC_MANPAGE)
  
 -KEXEC = $(SBINDIR)/kexec
-+KEXEC = ../kexec.a
++KEXEC = kexec.a
  KEXEC_MANPAGE = $(MANDIR)/man8/kexec.8
  
  -include $(KEXEC_DEPS)
@@ -44,7 +44,7 @@ diff -ru kexec-tools-2.0.25.orig/kexec/Makefile kexec-tools-2.0.25/kexec/Makefil
  $(KEXEC): $(KEXEC_OBJS) $(UTIL_LIB)
 -	@$(MKDIR) -p $(@D)
 -	$(LINK.o) -o $@ $^ $(CFLAGS) $(LIBS)
-+	cp $(UTIL_LIB) ../kexec.a
++	cp $(UTIL_LIB) kexec.a
 +	ar -r $(KEXEC) $(KEXEC_OBJS)
  
  $(KEXEC): CPPFLAGS+=-I$(srcdir)/kexec/arch/$(ARCH)/include
@@ -57,7 +57,7 @@ diff -ru kexec-tools-2.0.25.orig/Makefile.in kexec-tools-2.0.25/Makefile.in
  UNINSTALL_VMCORE_DMESG_MANPAGE = $(mandir)/man8/vmcore-dmesg.8
  
 -TARGETS:=$(BINARIES) $(MAN_PAGES)
-+TARGETS:=../kexec.a
++TARGETS:=kexec.a
  targets: $(TARGETS)
  
  UNINSTALL_TARGETS_i386:=$(UNINSTALL_KEXEC_TEST)

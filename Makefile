@@ -19,10 +19,13 @@
 #
 VERSION=r$(shell svn info | grep 'Revision:' | sed -e 's/Revision: //')
 
+EXTERN_DOWNLOAD := extern/download
+EXTERN_BUILD := extern/build
+
 # kexec-tools
 KT_VER := 2.0.25
 KT_URL := http://horms.net/projects/kexec/kexec-tools/kexec-tools-$(KT_VER).tar.gz
-KT_CONFIGURE :=
+KT_CONFIGURE := --without-lzma
 
 # util-linux
 UL_VER := 2.38.1
@@ -32,8 +35,8 @@ UL_CONFIGURE :=
 CC := gcc
 LD := ld
 CFLAGS := -Wall -DVERSION=\"$(VERSION)\" -D_GNU_SOURCE -O0
-INCLUDES := -Isrc/util-linux-$(UL_VER)/libblkid/src/
-LIBS := src/kexec.a src/libblkid.a src/libuuid.a -lz -llzmadec
+INCLUDES := -I$(EXTERN_BUILD)/util-linux-$(UL_VER)/libblkid/src/
+LIBS := -lz -llzmadec
 
 FLOPPY ?= floppy.img
 ISOLINUX ?= /usr/share/syslinux/isolinux.bin
@@ -47,25 +50,31 @@ ifdef HOST
 	UL_CONFIGURE += --host=$(HOST) CC=$(CC) CXX=$(HOST)-g++ LD=$(LD)
 endif
 
+KEXEC_A := $(EXTERN_BUILD)/kexec-tools-$(KT_VER)/kexec.a
+
+UTIL_LINUX_CONFIGURED := $(EXTERN_BUILD)/util-linux-$(UL_VER)/.configure-done
+LIBBLKID_A := $(EXTERN_BUILD)/util-linux-$(UL_VER)/.libs/libblkid.a
+LIBUUID_A  := $(EXTERN_BUILD)/util-linux-$(UL_VER)/.libs/libuuid.a
+
 OBJS := src/misc.o src/disk.o src/console.o src/menu.o src/modprobe.o \
 	src/boot.o src/grub.o src/shell.o src/globcmp.o src/keymap.o src/tar.o \
-	src/vfs.o src/trace.o
+	src/vfs.o src/trace.o $(KEXEC_A) $(LIBBLKID_A) $(LIBUUID_A)
 
 all: kexec-loader kexec-loader.static
 
 clean:
-	rm -f src/*.o src/*.a
+	rm -f src/*.o
 	rm -f kexec-loader kexec-loader.static
-	rm -rf src/kexec-tools-$(KT_VER)/
-	rm -rf src/util-linux-$(UL_VER)/
+	rm -rf $(EXTERN_BUILD)/kexec-tools-$(KT_VER)/
+	rm -rf $(EXTERN_BUILD)/util-linux-$(UL_VER)/
 	rm -f initrd.img $(FLOPPY) $(ISO)
 	rm -rf iso-files/ iso-modules/
 
 distclean: clean
-	rm -f kexec-tools-$(KT_VER).tar.gz
-	rm -f util-linux-$(UL_VER).tar.gz
+	rm -f $(EXTERN_DOWNLOAD)/kexec-tools-$(KT_VER).tar.gz
+	rm -f $(EXTERN_DOWNLOAD)/util-linux-$(UL_VER).tar.gz
 
-kexec-loader: $(OBJS) src/kexec.a
+kexec-loader: $(OBJS)
 	$(CC) $(CFLAGS) -o kexec-loader $(OBJS) $(LIBS)
 
 floppy: syslinux.cfg initrd.img
@@ -125,25 +134,29 @@ endif
 iso-files/isolinux/initrd.img: iso-files initrd.img
 	cp initrd.img iso-files/isolinux/
 
-kexec-loader.static: $(OBJS) src/kexec.a
+kexec-loader.static: $(OBJS)
 	$(CC) $(CFLAGS) -static -o kexec-loader.static $(OBJS) $(LIBS)
 
-%.o: %.c src/libblkid.a
+%.o: %.c $(UTIL_LINUX_CONFIGURED)
 	$(CC) $(CFLAGS) $(INCLUDES) -c -o $@ $<
 
-src/kexec.a:
-	wget -nc $(KT_URL)
-	tar -C src -xzf kexec-tools-$(KT_VER).tar.gz
-	cd src/kexec-tools-$(KT_VER)/ && \
-	patch -Np1 -i ../../patches/kexec-tools-$(KT_VER).diff && \
-	./configure $(KT_CONFIGURE)
-	$(MAKE) -C src/kexec-tools-$(KT_VER)/
+$(KEXEC_A):
+	mkdir -p $(EXTERN_DOWNLOAD) $(EXTERN_BUILD)
+	test -e $(EXTERN_DOWNLOAD)/$(notdir $(KT_URL)) || wget -O $(EXTERN_DOWNLOAD)/$(notdir $(KT_URL)) $(KT_URL)
+	tar -C $(EXTERN_BUILD) -xf $(EXTERN_DOWNLOAD)/$(notdir $(KT_URL))
+	patch -p1 -d $(EXTERN_BUILD)/kexec-tools-$(KT_VER)/ < patches/kexec-tools-$(KT_VER).diff
+	cd $(EXTERN_BUILD)/kexec-tools-$(KT_VER)/ && ./configure $(KT_CONFIGURE)
+	$(MAKE) -C $(EXTERN_BUILD)/kexec-tools-$(KT_VER)/
 
-src/libblkid.a:
-	wget -nc $(UL_URL)
-	tar -C src -xzf util-linux-$(UL_VER).tar.gz
-	cd src/util-linux-$(UL_VER)/ && \
-	./configure $(UL_CONFIGURE)
-	$(MAKE) -C src/util-linux-$(UL_VER)/ libblkid.la
-	$(MAKE) -C src/util-linux-$(UL_VER)/ libuuid.la
-	cp src/util-linux-$(UL_VER)/.libs/libblkid.a src/util-linux-$(UL_VER)/.libs/libuuid.a src/
+$(UTIL_LINUX_CONFIGURED):
+	mkdir -p $(EXTERN_DOWNLOAD) $(EXTERN_BUILD)
+	test -e $(EXTERN_DOWNLOAD)/$(notdir $(UL_URL)) || wget -O $(EXTERN_DOWNLOAD)/$(notdir $(UL_URL)) $(UL_URL)
+	tar -C $(EXTERN_BUILD) -xf $(EXTERN_DOWNLOAD)/$(notdir $(UL_URL))
+	cd $(EXTERN_BUILD)/util-linux-$(UL_VER)/ && ./configure $(UL_CONFIGURE)
+	touch $@
+
+$(LIBBLKID_A): $(UTIL_LINUX_CONFIGURED)
+	$(MAKE) -C $(EXTERN_BUILD)/util-linux-$(UL_VER)/ libblkid.la
+
+$(LIBUUID_A):
+	$(MAKE) -C $(EXTERN_BUILD)/util-linux-$(UL_VER)/ libuuid.la

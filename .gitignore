@@ -1,0 +1,9 @@
+/initrd.img
+/kexec-loader
+/kexec-loader.static
+
+/extern/build/
+/extern/download/
+
+/src/*.a
+/src/*.o
