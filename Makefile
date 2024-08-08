@@ -36,7 +36,7 @@ CC := gcc
 LD := ld
 CFLAGS := -Wall -DVERSION=\"$(VERSION)\" -D_GNU_SOURCE -O0
 INCLUDES := -I$(EXTERN_BUILD)/util-linux-$(UL_VER)/libblkid/src/
-LIBS := -lz -llzmadec
+LIBS := -lz
 
 FLOPPY ?= floppy.img
 ISOLINUX ?= /usr/share/syslinux/isolinux.bin
@@ -48,6 +48,18 @@ ifdef HOST
 	
 	KT_CONFIGURE += --host=$(HOST) CC=$(CC)
 	UL_CONFIGURE += --host=$(HOST) CC=$(CC) CXX=$(HOST)-g++ LD=$(LD)
+endif
+
+check-header = $(shell echo "#include <$(1)>" | gcc -x c -c -o /dev/null - > /dev/null 2>&1 && echo 1)
+
+ifeq ($(HAVE_LZMA),)
+	HAVE_LZMA := $(call check-header,lzmadec.h)
+endif
+
+# If not empty or zero
+ifneq ($(filter-out 0,$(HAVE_LZMA)),)
+	CFLAGS += -DHAVE_LZMA
+	LIBS += -llzmadec
 endif
 
 KEXEC_A := $(EXTERN_BUILD)/kexec-tools-$(KT_VER)/kexec.a

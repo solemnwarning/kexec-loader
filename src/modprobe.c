@@ -1,5 +1,5 @@
 /* kexec-loader - Load kernel modules
- * Copyright (C) 2007-2009 Daniel Collins <solemnwarning@solemnwarning.net>
+ * Copyright (C) 2007-2024 Daniel Collins <solemnwarning@solemnwarning.net>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -27,7 +27,6 @@
 #include <sys/types.h>
 #include <dirent.h>
 #include <endian.h>
-#include <lzmadec.h>
 #include <arpa/inet.h>
 #include <sys/mman.h>
 

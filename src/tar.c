@@ -1,5 +1,5 @@
 /* kexec-loader - TAR archive extractor
- * Copyright (C) 2007-2009 Daniel Collins <solemnwarning@solemnwarning.net>
+ * Copyright (C) 2007-2024 Daniel Collins <solemnwarning@solemnwarning.net>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -20,10 +20,13 @@
 #include <stdlib.h>
 #include <string.h>
 #include <errno.h>
-#include <lzmadec.h>
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <zlib.h>
+
+#ifdef HAVE_LZMA
+#include <lzmadec.h>
+#endif
 
 #include "globcmp.h"
 #include "misc.h"
@@ -110,6 +113,7 @@ int extract_tar(char const *name, char const *dest) {
 		file.seek = &raw_file_seek;
 		file.close = &raw_file_close;
 		file.eof = &raw_file_eof;
+	#ifdef HAVE_LZMA
 	}else if(kl_streq_end(name, ".tlz") || kl_streq_end(name, ".tar.lzma")) {
 		file.format = comp_lzma;
 		file.open = &lzma_file_open;
@@ -117,6 +121,7 @@ int extract_tar(char const *name, char const *dest) {
 		file.seek = &lzma_file_seek;
 		file.close = &lzma_file_close;
 		file.eof = &lzma_file_eof;
+	#endif
 	}else if(kl_streq_end(name, ".tgz") || kl_streq_end(name, ".tar.gz")) {
 		file.format = comp_gzip;
 		file.open = &gzip_file_open;
@@ -323,6 +328,7 @@ static int raw_file_eof(struct comp_file *file) {
 	return feof(file->handle) ? 1 : 0;
 }
 
+#ifdef HAVE_LZMA
 static int lzma_file_open(struct comp_file *file, char const *path) {
 	RESET_ERROR();
 	
@@ -382,6 +388,7 @@ static int lzma_file_eof(struct comp_file *file) {
 	NULL_HANDLE_CHECK();
 	return lzmadec_eof(file->handle) ? 1 : 0;
 }
+#endif
 
 static int gzip_file_open(struct comp_file *file, char const *path) {
 	RESET_ERROR();
