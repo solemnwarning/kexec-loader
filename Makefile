@@ -32,8 +32,14 @@ UL_VER := 2.38.1
 UL_URL := https://mirrors.edge.kernel.org/pub/linux/utils/util-linux/v2.38/util-linux-$(UL_VER).tar.gz
 UL_CONFIGURE :=
 
+# mdadm
+MDADM_VER := 4.2
+MDADM_URL := https://mirrors.edge.kernel.org/pub/linux/utils/raid/mdadm/mdadm-$(MDADM_VER).tar.gz
+MDADM_DEFS := LDFLAGS=-static "CXFLAGS=-DNO_LIBUDEV -D_LARGEFILE64_SOURCE"
+
 CC := gcc
 LD := ld
+STRIP := strip
 CFLAGS := -Wall -DVERSION=\"$(VERSION)\" -D_GNU_SOURCE -O0
 INCLUDES := -I$(EXTERN_BUILD)/util-linux-$(UL_VER)/libblkid/src/
 LIBS := -lz
@@ -42,12 +48,24 @@ FLOPPY ?= floppy.img
 ISOLINUX ?= /usr/share/syslinux/isolinux.bin
 ISO ?= cdrom.iso
 
+INITRD_DEPS := kexec-loader.static
+INITRD_FLAGS :=
+
 ifdef HOST
 	CC := $(HOST)-gcc
 	LD := $(HOST)-ld
+	STRIP := $(HOST)-strip
 	
 	KT_CONFIGURE += --host=$(HOST) CC=$(CC)
 	UL_CONFIGURE += --host=$(HOST) CC=$(CC) CXX=$(HOST)-g++ LD=$(LD)
+	MDADM_DEFS += CROSS_COMPILE=$(HOST)-
+endif
+
+# If not empty or zero
+ifneq ($(filter-out 0,$(ENABLE_MDADM)),)
+	CFLAGS += -DENABLE_MDADM
+	INITRD_DEPS += $(EXTERN_BUILD)/mdadm-$(MDADM_VER)/mdadm
+	INITRD_FLAGS += --include-mdadm $(EXTERN_BUILD)/mdadm-$(MDADM_VER)/mdadm
 endif
 
 check-header = $(shell echo "#include <$(1)>" | gcc -x c -c -o /dev/null - > /dev/null 2>&1 && echo 1)
@@ -68,6 +86,8 @@ UTIL_LINUX_CONFIGURED := $(EXTERN_BUILD)/util-linux-$(UL_VER)/.configure-done
 LIBBLKID_A := $(EXTERN_BUILD)/util-linux-$(UL_VER)/.libs/libblkid.a
 LIBUUID_A  := $(EXTERN_BUILD)/util-linux-$(UL_VER)/.libs/libuuid.a
 
+MDADM_BIN := $(EXTERN_BUILD)/mdadm-$(MDADM_VER)/mdadm
+
 OBJS := src/misc.o src/disk.o src/console.o src/menu.o src/modprobe.o \
 	src/boot.o src/grub.o src/shell.o src/globcmp.o src/keymap.o src/tar.o \
 	src/vfs.o src/trace.o $(KEXEC_A) $(LIBBLKID_A) $(LIBUUID_A)
@@ -79,12 +99,14 @@ clean:
 	rm -f kexec-loader kexec-loader.static
 	rm -rf $(EXTERN_BUILD)/kexec-tools-$(KT_VER)/
 	rm -rf $(EXTERN_BUILD)/util-linux-$(UL_VER)/
+	rm -rf $(EXTERN_BUILD)/mdadm-$(MDADM_VER)/
 	rm -f initrd.img $(FLOPPY) $(ISO)
 	rm -rf iso-files/ iso-modules/
 
 distclean: clean
 	rm -f $(EXTERN_DOWNLOAD)/kexec-tools-$(KT_VER).tar.gz
 	rm -f $(EXTERN_DOWNLOAD)/util-linux-$(UL_VER).tar.gz
+	rm -f $(EXTERN_DOWNLOAD)/mdadm-$(MDADM_VER).tar.gz
 
 kexec-loader: $(OBJS)
 	$(CC) $(CFLAGS) -o kexec-loader $(OBJS) $(LIBS)
@@ -110,8 +132,8 @@ endif
 syslinux.cfg:
 	echo "DEFAULT /vmlinuz initrd=/initrd.img" > syslinux.cfg
 
-initrd.img: kexec-loader.static
-	./mkinitramfs.sh initrd.img
+initrd.img: $(INITRD_DEPS)
+	STRIP=$(STRIP) ./mkinitramfs.sh $(INITRD_FLAGS) initrd.img
 
 cdrom: iso-files iso-modules iso-files/isolinux/initrd.img iso-files/isolinux/vmlinuz
 	./mkiso.sh $(ISO)
@@ -172,3 +194,10 @@ $(LIBBLKID_A): $(UTIL_LINUX_CONFIGURED)
 
 $(LIBUUID_A):
 	$(MAKE) -C $(EXTERN_BUILD)/util-linux-$(UL_VER)/ libuuid.la
+
+$(MDADM_BIN):
+	mkdir -p $(EXTERN_DOWNLOAD) $(EXTERN_BUILD)
+	test -e $(EXTERN_DOWNLOAD)/$(notdir $(MDADM_URL)) || wget -O $(EXTERN_DOWNLOAD)/$(notdir $(MDADM_URL)) $(MDADM_URL)
+	tar -C $(EXTERN_BUILD) -xf $(EXTERN_DOWNLOAD)/$(notdir $(MDADM_URL))
+	patch -p1 -d $(EXTERN_BUILD)/mdadm-$(MDADM_VER)/ < patches/mdadm-$(MDADM_VER)-x86.patch
+	make -C $(EXTERN_BUILD)/mdadm-$(MDADM_VER)/ $(MDADM_DEFS)

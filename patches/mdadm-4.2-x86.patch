@@ -1,0 +1,12 @@
+diff -ru mdadm-4.2.orig/monitor.c mdadm-4.2/monitor.c
+--- mdadm-4.2.orig/monitor.c	2021-12-30 19:43:35.000000000 +0000
++++ mdadm-4.2/monitor.c	2024-08-08 00:11:07.793482866 +0100
+@@ -447,7 +447,7 @@
+ 	}
+ 
+ 	gettimeofday(&tv, NULL);
+-	dprintf("(%d): %ld.%06ld state:%s prev:%s action:%s prev: %s start:%llu\n",
++	dprintf("(%d): %lld.%06lld state:%s prev:%s action:%s prev: %s start:%llu\n",
+ 		a->info.container_member,
+ 		tv.tv_sec, tv.tv_usec,
+ 		array_states[a->curr_state],

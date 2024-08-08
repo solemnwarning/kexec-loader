@@ -1,5 +1,5 @@
 /* kexec-loader - Misc. functions
- * Copyright (C) 2007-2011 Daniel Collins <solemnwarning@solemnwarning.net>
+ * Copyright (C) 2007-2024 Daniel Collins <solemnwarning@solemnwarning.net>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -54,6 +54,12 @@ int main(int argc, char **argv) {
 	if(mount("none", "/proc", "proc", 0, NULL)) {
 		die("Error mounting /proc: %s", strerror(errno));
 	}
+	
+	#ifdef ENABLE_MDADM
+	if(mount("none", "/sys", "sysfs", 0, NULL)) {
+		die("Error mounting /sys: %s", strerror(errno));
+	}
+	#endif
 	
 	enable_trace();
 	
@@ -180,9 +186,10 @@ int main(int argc, char **argv) {
 	return 0;
 }
 
+static FILE *debug_fh = NULL;
+
 /* Print a message to the debug log/tty */
 void debug(char const *fmt, ...) {
-	static FILE *debug_fh = NULL;
 	va_list argv;
 	char msgbuf[256];
 	
@@ -201,6 +208,11 @@ void debug(char const *fmt, ...) {
 	
 	fprintf(debug_fh, "%s\n", msgbuf);
 	fflush(debug_fh);
+}
+
+FILE *get_debug_fh(void)
+{
+	return debug_fh;
 }
 
 /* Disable kernel messages to the console and spawn a process that writes all

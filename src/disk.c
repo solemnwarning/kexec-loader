@@ -1,5 +1,5 @@
 /* kexec-loader - Disk functions
- * Copyright (C) 2007-2009 Daniel Collins <solemnwarning@solemnwarning.net>
+ * Copyright (C) 2007-2024 Daniel Collins <solemnwarning@solemnwarning.net>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -16,6 +16,7 @@
  * 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 */
 
+#include <stdarg.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -23,6 +24,7 @@
 #include <unistd.h>
 #include <sys/types.h>
 #include <sys/stat.h>
+#include <sys/wait.h>
 #include <fcntl.h>
 #include <linux/kdev_t.h>
 #include <blkid.h>
@@ -80,10 +82,104 @@ if(!dest[0]) { \
 	} \
 }
 
+#ifdef ENABLE_MDADM
+void mdadm(const char *arg, ...)
+{
+	int argc = 1;
+	char **argv = kl_malloc(sizeof(char*) * 2);
+	argv[0] = "mdadm";
+	argv[1] = NULL;
+	
+	char *cmdline = kl_strdup("mdadm");
+	
+	va_list args;
+	va_start(args, arg);
+	
+	while(arg != NULL)
+	{
+		argv = kl_realloc(argv, ((argc + 2) * sizeof(char*)));
+		
+		argv[argc++] = (char*)(arg);
+		argv[argc] = NULL;
+		
+		char *new_cmdline = kl_sprintf("%s %s", cmdline, arg);
+		free(cmdline);
+		cmdline = new_cmdline;
+		
+		arg = va_arg(args, const char*);
+	}
+	
+	va_end(args);
+	
+	debug("Executing %s...", cmdline);
+	
+	pid_t pid = fork();
+	if(pid == -1)
+	{
+		debug("fork: %s", strerror(errno));
+	}
+	else if(pid == 0)
+	{
+		FILE *debug_fh = get_debug_fh();
+		
+		int new_stdin = open("/dev/null", O_RDONLY);
+		if(new_stdin < 0)
+		{
+			debug("/dev/null: %s", strerror(errno));
+			exit(1);
+		}
+		
+		close(STDIN_FILENO);
+		dup2(new_stdin, STDIN_FILENO);
+		close(new_stdin);
+		
+		if(debug_fh != NULL)
+		{
+			close(STDOUT_FILENO);
+			dup2(fileno(debug_fh), STDOUT_FILENO);
+			
+			close(STDERR_FILENO);
+			dup2(fileno(debug_fh), STDERR_FILENO);
+		}
+		else{
+			int new_out = open("/dev/null", O_WRONLY);
+			if(new_out < 0)
+			{
+				debug("/dev/null: %s", strerror(errno));
+				exit(1);
+			}
+			
+			close(STDOUT_FILENO);
+			dup2(new_out, STDOUT_FILENO);
+			
+			close(STDERR_FILENO);
+			dup2(new_out, STDERR_FILENO);
+			
+			close(new_out);
+		}
+		
+		execve("/mdadm", argv, NULL);
+		debug("mdadm: %s", strerror(errno));
+		
+		exit(1);
+	}
+	else{
+		waitpid(pid, NULL, 0);
+	}
+	
+	free(cmdline);
+	free(argv);
+}
+#endif
+
 /* Return a list containing disks in /proc/diskstats
  * Only returns first disk matching filter if not NULL
 */
 kl_disk *get_disks(const char *filter) {
+	#ifdef ENABLE_MDADM
+	mdadm("--assemble", "--scan", NULL);
+	#endif
+	
 	FILE *fh = fopen("/proc/diskstats", "r");
 	if(!fh) {
 		debug("Error opening /proc/diskstats: %s", strerror(errno));
