@@ -1,5 +1,5 @@
 /* kexec-loader - Menu code
- * Copyright (C) 2007-2010 Daniel Collins <solemnwarning@solemnwarning.net>
+ * Copyright (C) 2007-2024 Daniel Collins <solemnwarning@solemnwarning.net>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -166,8 +166,9 @@ static void draw_static(void) {
 	char version[64];
 	snprintf(version, 64, "kexec-loader " VERSION ", Linux %s", kinfo.release);
 	
-	char *copyright = "Copyright (C) 2007-2011 Daniel Collins";
-	int clen = strlen(copyright), i;
+	// char *copyright = "Copyright (C) 2007-2011 Daniel Collins";
+	// int clen = strlen(copyright);
+	int i;
 	
 	console_clear();
 	
@@ -180,8 +181,8 @@ static void draw_static(void) {
 	console_setpos(1,0);
 	fputs(version, stdout);
 	
-	console_setpos(console_cols-clen-1, 0);
-	fputs(copyright, stdout);
+	// console_setpos(console_cols-clen-1, 0);
+	// fputs(copyright, stdout);
 	
 	console_attrib(0);
 	

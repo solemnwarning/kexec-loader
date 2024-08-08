@@ -17,7 +17,7 @@
 
 # This should be "vN.N" releases
 #
-VERSION=r$(shell svn info | grep 'Revision:' | sed -e 's/Revision: //')
+VERSION=r$(shell git rev-parse --short HEAD)
 
 EXTERN_DOWNLOAD := extern/download
 EXTERN_BUILD := extern/build
