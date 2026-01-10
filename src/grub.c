@@ -1,5 +1,5 @@
 /* kexec-loader - GRUB compatibility code
- * Copyright (C) 2007-2024 Daniel Collins <solemnwarning@solemnwarning.net>
+ * Copyright (C) 2007-2026 Daniel Collins <solemnwarning@solemnwarning.net>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -429,8 +429,8 @@ static void load_grub2_cfg(const char *filename) {
 			INIT_TARGET(&target);
 			
 			entry_start = 0;
-		}else if(kl_streq(cmd, "chainloader")) {
-			printd("chainloader at grub.cfg:%d, ignoring entry", lnum);
+		}else if(kl_streq(cmd, "chainloader") || kl_streq(cmd, "fwsetup")) {
+			printd("%s at grub.cfg:%d, ignoring entry", cmd, lnum);
 			skip_entry = 1;
 		}else if(kl_streq(cmd, "set")) {
 			char *env_name = args, *env_val, *s;
