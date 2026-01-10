@@ -1,5 +1,5 @@
 /* kexec-loader - Console functions
- * Copyright (C) 2007-2009 Daniel Collins <solemnwarning@solemnwarning.net>
+ * Copyright (C) 2007-2026 Daniel Collins <solemnwarning@solemnwarning.net>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -124,8 +124,27 @@ void console_getpos(int *cptr, int *rptr) {
 /* Clear the console */
 void console_clear(void) {
 	if(alert) {
-		printf("\nPress any key to continue...\a");
-		console_getchar();
+		/* Wait up to a minute before carrying on to a potentially best-effort boot in
+		 * case we can still get the system to a usable/accessible state.
+		*/
+		
+		static const int CLEAR_MAXWAIT = 60;
+		
+		printf("\n\a");
+		
+		for(int i = CLEAR_MAXWAIT; i > 0; --i)
+		{
+			printf("\rPress any key to continue (%d)...", i);
+			
+			struct pollfd pollfds;
+			pollfds.fd = fileno(stdin);
+			pollfds.events = POLLIN;
+			
+			if(poll(&pollfds, 1, 1000)) {
+				console_getchar();
+				break;
+			}
+		}
 	}
 	
 	console_erase(ERASE_ALL);
